@@ -24,11 +24,11 @@ runs:
         repository: ${{ inputs.source-repo }}
         fetch-depth: 2
 
-    - name: Install xalan & rapper
+    - name: Install saxon pre-req & rapper
       shell: bash
       run: |
         sudo apt update
-        DEBIAN_FRONTEND=noninteractive sudo apt install -y xalan raptor2-utils
+        DEBIAN_FRONTEND=noninteractive sudo apt install -y raptor2-utils openjdk-11-jdk
         curl -fsSL https://deno.land/x/install/install.sh | sudo DENO_INSTALL=/usr sh
           # This is assuming that /usr/bin is in the path
 
@@ -38,16 +38,16 @@ runs:
       with:
         path: xml
 
-    - name: Run xalan on all modified files
+    - name: Run saxon on all modified files
       shell: bash
       run: |
         cd $GITHUB_WORKSPACE/xml
         mkdir $GITHUB_WORKSPACE/rdf
         for file in ${{ steps.changed-xml-files.outputs.all_changed_files }}; do
           if [[ $file == *.xml ]]; then
-            echo "$file is xml, applying xalan"
+            echo "$file is xml, applying saxon"
             mkdir -p $GITHUB_WORKSPACE/rdf/${file%/*}
-            xalan -in $file -out $GITHUB_WORKSPACE/rdf/${file:0:-4}.rdf -xsl gg2rdf.xslt
+            java -jar ./.github/workflows/saxon-he-10.8.jar -s:$file -o:$GITHUB_WORKSPACE/rdf/${file:0:-4}.rdf -xsl:gg2rdf.xslt
           fi
         done
 
