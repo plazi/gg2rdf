@@ -4,12 +4,14 @@ description: "Transform GoldenGate XML to Turtle (RDF)"
 inputs:
   source-repo:
     description: "Where to take the GGXML from"
-    required: turtle
+    required: true
+    default: ${{ github.repository }}
   destination-repo:
     description: "Where to put the generated TTL"
     required: true
   deploy-key:
     description: "passed as `ssh-key` to actions/checkout@v2 for the destination-repo"
+    required: true
 
 runs:
   using: "composite"
