@@ -31,8 +31,6 @@ runs:
         DEBIAN_FRONTEND=noninteractive sudo apt install -y raptor2-utils openjdk-11-jdk
         curl -fsSL https://deno.land/x/install/install.sh | sudo DENO_INSTALL=/usr sh
           # This is assuming that /usr/bin is in the path
-        cwd
-        ls -l .
         ls -l $GITHUB_ACTION_PATH
         ls -l $GITHUB_WORKSPACE
 
