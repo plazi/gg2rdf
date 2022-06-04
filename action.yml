@@ -49,7 +49,7 @@ runs:
           if [[ $file == *.xml ]]; then
             echo "$file is xml, applying saxon"
             mkdir -p $GITHUB_WORKSPACE/rdf/${file%/*}
-            java -jar $GITHUB_ACTION_PATH/saxon-he-10.8.jar -s:$file -o:$GITHUB_WORKSPACE/rdf/${file:0:-4}.rdf -xsl:gg2rdf.xslt
+            java -jar $GITHUB_ACTION_PATH/saxon-he-10.8.jar -s:$file -o:$GITHUB_WORKSPACE/rdf/${file:0:-4}.rdf -xsl:$GITHUB_ACTION_PATH/gg2rdf.xslt
           fi
         done
 
