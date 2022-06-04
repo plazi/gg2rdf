@@ -31,6 +31,9 @@ runs:
         DEBIAN_FRONTEND=noninteractive sudo apt install -y raptor2-utils openjdk-11-jdk
         curl -fsSL https://deno.land/x/install/install.sh | sudo DENO_INSTALL=/usr sh
           # This is assuming that /usr/bin is in the path
+        cwd
+        ls -l .
+        ls -l $GITHUB_ACTION_PATH
         ls -l $GITHUB_WORKSPACE
 
     - name: Get changed XML files
@@ -48,7 +51,7 @@ runs:
           if [[ $file == *.xml ]]; then
             echo "$file is xml, applying saxon"
             mkdir -p $GITHUB_WORKSPACE/rdf/${file%/*}
-            java -jar $GITHUB_WORKSPACE/saxon-he-10.8.jar -s:$file -o:$GITHUB_WORKSPACE/rdf/${file:0:-4}.rdf -xsl:gg2rdf.xslt
+            java -jar $GITHUB_ACTION_PATH/saxon-he-10.8.jar -s:$file -o:$GITHUB_WORKSPACE/rdf/${file:0:-4}.rdf -xsl:gg2rdf.xslt
           fi
         done
 
@@ -93,7 +96,7 @@ runs:
 
     - name: Apply Changes
       shell: bash
-      run: deno run --allow-all --unstable apply-changes.ts
+      run: deno run --allow-all --unstable $GITHUB_ACTION_PATH/apply-changes.ts
 
     - name: Deploy
       if: github.ref == 'refs/heads/main'
