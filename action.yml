@@ -25,6 +25,7 @@ runs:
         fetch-depth: 2
 
     - name: Install xalan & rapper
+      shell: bash
       run: |
         sudo apt update
         DEBIAN_FRONTEND=noninteractive sudo apt install -y xalan raptor2-utils
@@ -38,6 +39,7 @@ runs:
         path: xml
 
     - name: Run xalan on all modified files
+      shell: bash
       run: |
         cd $GITHUB_WORKSPACE/xml
         mkdir $GITHUB_WORKSPACE/rdf
@@ -50,6 +52,7 @@ runs:
         done
 
     - name: Convert all generated RDF-XML files to TTL
+      shell: bash
       run: |
         cd $GITHUB_WORKSPACE/rdf
         mkdir -p $GITHUB_WORKSPACE/ttl
@@ -69,6 +72,7 @@ runs:
         ssh-key: ${{ inputs.deploy-key }}
 
     - name: Remove deleted
+      shell: bash
       run: |
         for file in ${{ steps.changed-xml-files.outputs.deleted_files }}; do
           cd $GITHUB_WORKSPACE/ttl-repo
@@ -87,10 +91,12 @@ runs:
         done
 
     - name: Apply Changes
+      shell: bash
       run: deno run --allow-all --unstable apply-changes.ts
 
     - name: Deploy
       if: github.ref == 'refs/heads/main'
+      shell: bash
       run: |
         cd $GITHUB_WORKSPACE/ttl-repo
         git config user.name $GITHUB_ACTOR
