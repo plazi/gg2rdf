@@ -1,0 +1,103 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout treatments-xml
+        uses: actions/checkout@v2
+        with:
+          path: xml
+          fetch-depth: 2
+
+      - name: Install xalan & rapper
+        run: |
+          sudo apt update
+          DEBIAN_FRONTEND=noninteractive sudo apt install -y xalan raptor2-utils
+          curl -fsSL https://deno.land/x/install/install.sh | sudo DENO_INSTALL=/usr sh
+            # This is assuming that /usr/bin is in the path
+
+      - name: Get changed XML files
+        id: changed-xml-files
+        uses: tj-actions/changed-files@v13.1
+        with:
+          path: xml
+
+      - name: Run xalan on all modified files
+        run: |
+          cd $GITHUB_WORKSPACE/xml
+          mkdir $GITHUB_WORKSPACE/rdf
+          for file in ${{ steps.changed-xml-files.outputs.all_changed_files }}; do
+            if [[ $file == *.xml ]]; then
+              echo "$file is xml, applying xalan"
+              mkdir -p $GITHUB_WORKSPACE/rdf/${file%/*}
+              xalan -in $file -out $GITHUB_WORKSPACE/rdf/${file:0:-4}.rdf -xsl gg2rdf.xslt
+            fi
+          done
+
+      - name: Convert all generated RDF-XML files to TTL
+        run: |
+          cd $GITHUB_WORKSPACE/rdf
+          mkdir -p $GITHUB_WORKSPACE/ttl
+          for file in $(find . -type f); do
+            echo "$file in generated rdf-xml folder"
+            relative_file=`realpath -m --relative-to=$GITHUB_WORKSPACE/rdf $file`
+            mkdir -p $GITHUB_WORKSPACE/ttl/${relative_file%/*}
+            # $file → $GITHUB_WORKSPACE/ttl/${file:0:-4}.ttl
+            rapper -e -w -q $file --output turtle > $GITHUB_WORKSPACE/ttl/${file:0:-4}.ttl
+          done
+
+      - name: Checkout treatments-rdf
+        uses: actions/checkout@v2
+        with:
+          path: ttl-repo
+          repository: plazi/treatments-rdf
+          ref: main
+          ssh-key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+
+      - name: Remove deleted
+        run: |
+          for file in ${{ steps.changed-xml-files.outputs.deleted_files }}; do
+            cd $GITHUB_WORKSPACE/ttl-repo
+              LAST_CHANGE_MSG=`git log --grep=${{ github.repository }}@ -F -n 1 --format="%s" -- ${file:0:-4}.ttl`
+              LAST_CHANGE_HASH=${LAST_CHANGE_MSG##*${{ github.repository }}@}
+            cd $GITHUB_WORKSPACE/xml
+              LAST_CHANGE_DATE=`git log -n 1 --format="%ct" $LAST_CHANGE_HASH`
+              THIS_CHANGE_HASH=`git log -n 1 --format="%s" -- ${file:0:-4}.ttl`
+              THIS_CHANGE_DATE=`git log -n 1 --format="%ct" -- ${file:0:-4}.ttl`
+              if (( ${THIS_CHANGE_DATE:-1} >= ${LAST_CHANGE_DATE:-2} )); then
+                echo "$LAST_CHANGE_HASH is older than $THIS_CHANGE_HASH (${LAST_CHANGE_DATE:-2} < ${THIS_CHANGE_DATE:-1}), removing ${file:0:-4}.ttl"
+                rm -f -- $GITHUB_WORKSPACE/ttl-repo/${file:0:-4}.ttl
+              else
+                echo "$LAST_CHANGE_HASH is newer than $THIS_CHANGE_HASH (${LAST_CHANGE_DATE:-2} > ${THIS_CHANGE_DATE:-1}), keeping ${file:0:-4}.ttl"
+              fi
+          done
+
+      - name: Apply Changes
+        run: deno run --allow-all --unstable $GITHUB_WORKSPACE/xml/.github/workflows/apply-changes.ts
+
+      - name: Deploy
+        if: github.ref == 'refs/heads/main'
+        run: |
+          cd $GITHUB_WORKSPACE/ttl-repo
+          git config user.name $GITHUB_ACTOR
+          git config user.email $GITHUB_ACTOR@users.noreply.github.com
+          git add -A
+          git commit -m "committed by action runner ${{ github.repository }}@$GITHUB_SHA"
+          git push origin main
