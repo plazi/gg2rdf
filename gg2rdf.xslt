@@ -131,6 +131,39 @@
 		<xsl:apply-templates select="//treatment"/>
 	</xsl:template>
 	
+	<xsl:template match="materialsCitation[@specimenCode]" mode="object">
+		<xsl:param name="treatmentID" />
+		<xsl:element name="dwc:basisOfRecord">
+			<xsl:attribute name="rdf:resource"><xsl:copy-of select="$treatmentID" />/<xsl:value-of select="@specimenCode"/></xsl:attribute>
+		</xsl:element>
+	</xsl:template>
+
+	<xsl:template match="materialsCitation[@specimenCode]" mode="subject">
+		<xsl:param name="treatmentID" />
+		<xsl:element name="rdf:Description">
+			<xsl:attribute name="rdf:about"><xsl:copy-of select="$treatmentID" />/<xsl:value-of select="@specimenCode"/></xsl:attribute>
+			<rdf:type rdf:resource="http://rs.tdwg.org/dwc/terms/MaterialCitation" />
+			<dwc:catalogNumber>
+				<xsl:value-of select="@specimenCode"/>
+			</dwc:catalogNumber>
+			<dwc:collectionCode>
+				<xsl:value-of select="@collectionCode"/>
+			</dwc:collectionCode>
+			<dwc:typeStatus>
+				<xsl:value-of select="@typeStatus"/>
+			</dwc:typeStatus>
+			<dwc:decimalLatitude rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">
+				<xsl:value-of select="@latitude"/>
+			</dwc:decimalLatitude>
+			<dwc:decimalLongitude rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">
+				<xsl:value-of select="@longitude"/>
+			</dwc:decimalLongitude>
+			<!-- dwc:verbatimElevation>
+				<xsl:value-of select="./**/elevation"/>
+			</dwc:verbatimElevation -->
+		</xsl:element>
+	</xsl:template>
+
 	<xsl:template match="treatment">
 		
 		<!-- pre-compute treatment taxon -->
@@ -238,9 +271,9 @@
 			
 			
 			<!-- TODO maybe add references to materials citations that have a specimen (HTTP) URI -->
-			<!--xsl:apply-templates select="//materialsCitation" mode="object">
+			<xsl:apply-templates select="//materialsCitation[@specimenCode]" mode="object">
 				<xsl:with-param name="treatmentID" select="concat('http://treatment.plazi.org/id/', ./ancestor::document/@docId)"/>
-			</xsl:apply-templates-->
+			</xsl:apply-templates>
 			<!--xsl:apply-templates select="//figureCitation[@httpUri]" mode="object"/-->
 			<xsl:apply-templates select="//figureCitation[./@httpUri and not(./@httpUri = ./preceding::figureCitation/@httpUri)]" mode="treatmentObject"/>
 		</rdf:Description>
@@ -331,9 +364,9 @@
 		<!-- xsl:message>TAXON CONCEPT CITATIONS DONE</xsl:message -->
 		
 		<!-- TODO maybe add references to materials citations that have a specimen (HTTP) URI -->
-		<!--xsl:apply-templates select=".//materialsCitation" mode="subject">
+		<xsl:apply-templates select=".//materialsCitation[@specimenCode]" mode="subject">
 			<xsl:with-param name="treatmentID" select="concat('http://treatment.plazi.org/id/', ./ancestor::document/@docId)"/>
-		</xsl:apply-templates-->
+		</xsl:apply-templates>
 		
 		<!--xsl:apply-templates select=".//figureCitation[@httpUri]" mode="subject"/-->
 		<xsl:apply-templates select="//figureCitation[./@httpUri and not(./@httpUri = ./preceding::figureCitation/@httpUri)]" mode="subject"/>
