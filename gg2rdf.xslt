@@ -134,33 +134,99 @@
 	<xsl:template match="materialsCitation[@specimenCode]" mode="object">
 		<xsl:param name="treatmentID" />
 		<xsl:element name="dwc:basisOfRecord">
-			<xsl:attribute name="rdf:resource"><xsl:copy-of select="$treatmentID" />/<xsl:value-of select="@specimenCode"/></xsl:attribute>
+			<xsl:attribute name="rdf:resource">
+				<xsl:value-of select="$treatmentID" />/<xsl:value-of select="encode-for-uri(normalize-space(@specimenCode))" />
+			</xsl:attribute>
 		</xsl:element>
 	</xsl:template>
 
 	<xsl:template match="materialsCitation[@specimenCode]" mode="subject">
 		<xsl:param name="treatmentID" />
 		<xsl:element name="rdf:Description">
-			<xsl:attribute name="rdf:about"><xsl:copy-of select="$treatmentID" />/<xsl:value-of select="@specimenCode"/></xsl:attribute>
+			<xsl:attribute name="rdf:about">
+				<xsl:value-of select="$treatmentID" />/<xsl:value-of select="encode-for-uri(normalize-space(@specimenCode))" />
+			</xsl:attribute>
 			<rdf:type rdf:resource="http://rs.tdwg.org/dwc/terms/MaterialCitation" />
-			<dwc:catalogNumber>
-				<xsl:value-of select="@specimenCode"/>
-			</dwc:catalogNumber>
-			<dwc:collectionCode>
-				<xsl:value-of select="@collectionCode"/>
-			</dwc:collectionCode>
-			<dwc:typeStatus>
-				<xsl:value-of select="@typeStatus"/>
-			</dwc:typeStatus>
-			<dwc:decimalLatitude rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">
-				<xsl:value-of select="@latitude"/>
-			</dwc:decimalLatitude>
-			<dwc:decimalLongitude rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">
-				<xsl:value-of select="@longitude"/>
-			</dwc:decimalLongitude>
-			<!-- dwc:verbatimElevation>
-				<xsl:value-of select="./**/elevation"/>
-			</dwc:verbatimElevation -->
+			<xsl:if test="@specimenCode">
+				<dwc:catalogNumber>
+					<xsl:value-of select="@specimenCode" />
+				</dwc:catalogNumber>
+			</xsl:if>
+			<xsl:if test="@collectionCode">
+				<dwc:collectionCode>
+					<xsl:value-of select="@collectionCode" />
+				</dwc:collectionCode>
+			</xsl:if>
+			<xsl:if test="@typeStatus">
+				<dwc:typeStatus>
+					<xsl:value-of select="@typeStatus" />
+				</dwc:typeStatus>
+			</xsl:if>
+			<xsl:if test="@latitude">
+				<dwc:decimalLatitude rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">
+					<xsl:value-of select="@latitude" />
+				</dwc:decimalLatitude>
+			</xsl:if>
+			<xsl:if test="@longitude">
+				<dwc:decimalLongitude rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">
+					<xsl:value-of select="@longitude" />
+				</dwc:decimalLongitude>
+			</xsl:if>
+			<xsl:if test="@elevation">
+				<dwc:verbatimElevation>
+					<xsl:value-of select="@elevation" />
+				</dwc:verbatimElevation>
+			</xsl:if>
+			<xsl:if test="@collectingCountry">
+				<dwc:countryCode>
+					<xsl:value-of select="@collectingCountry" />
+				</dwc:countryCode>
+			</xsl:if>
+			<xsl:if test="@collectingRegion">
+				<dwc:stateProvince>
+					<xsl:value-of select="@collectingRegion" />
+				</dwc:stateProvince>
+			</xsl:if>
+			<xsl:if test="@collectingMunicipality">
+				<dwc:municipality>
+					<xsl:value-of select="@collectingMunicipality" />
+				</dwc:municipality>
+			</xsl:if>
+			<xsl:if test="@collectingCounty">
+				<dwc:county>
+					<xsl:value-of select="@collectingCounty" />
+				</dwc:county>
+			</xsl:if>
+			<xsl:if test="@collectingCounty">
+				<dwc:county>
+					<xsl:value-of select="@collectingCounty" />
+				</dwc:county>
+			</xsl:if>
+			<xsl:if test="@location">
+				<dwc:locality>
+					<xsl:value-of select="@location" />
+				</dwc:locality>
+			</xsl:if>
+			<xsl:if test="@locationDeviation">
+				<dwc:verbatimLocality>
+					<xsl:value-of select="@locationDeviation" />
+				</dwc:verbatimLocality>
+			</xsl:if>
+			<xsl:if test="@collectorName">
+				<dwc:recordedBy>
+					<xsl:value-of select="@collectorName" />
+				</dwc:recordedBy>
+			</xsl:if>
+			<xsl:if test="@collectingDate">
+				<dwc:eventDate>
+					<xsl:value-of select="@collectingDate" />
+				</dwc:eventDate>
+			</xsl:if>
+			<xsl:if test="@collectingMethod">
+				<dwc:samplingProtocol>
+					<xsl:value-of select="@collectingMethod" />
+				</dwc:samplingProtocol>
+			</xsl:if>
 		</xsl:element>
 	</xsl:template>
 
