@@ -1,0 +1,5 @@
+Run the ./main-on-all-wrapper.sh skript to convert everything in pwd/xml to ttl (placed into pwd/ttl)
+
+`pwd`/xml must exist & contain xml data
+`pwd`/ttl must not exist
+`pwd`/gg2rdf.xslt must exist
