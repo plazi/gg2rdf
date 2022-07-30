@@ -19,7 +19,7 @@ echo "script       : $GITHUB_WORKSPACE/main-on-all.sh"
 
 mkdir "$GITHUB_WORKSPACE/ttl"
 
-docker run -ti\
+docker run\
   -v "$GITHUB_WORKSPACE"/xml:/workspace/xml\
   -v "$GITHUB_WORKSPACE"/ttl:/workspace/ttl\
   -v "$GITHUB_WORKSPACE"/gg2rdf.xslt:/workspace/gg2rdf.xslt\
