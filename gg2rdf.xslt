@@ -739,7 +739,7 @@
 			<xsl:with-param name="kingdom" select="$taxonName/@kingdom"/>
 		</xsl:call-template>/<xsl:call-template name="taxonNameForURI">
 			<xsl:with-param name="taxonName" select="$taxonName"/>
-		</xsl:call-template><xsl:value-of select="normalize-space($taxonAuthority)"/>
+		</xsl:call-template><xsl:value-of select="encode-for-uri(normalize-space($taxonAuthority))"/>
 	</xsl:template>
 	
 	<xsl:template name="taxonNameURI">
