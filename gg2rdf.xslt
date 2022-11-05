@@ -162,15 +162,16 @@
 					<xsl:value-of select="@typeStatus" />
 				</dwc:typeStatus>
 			</xsl:if>
+			<!-- The below removal of xsd:decimal types and decimalL → verbatimL is an attempt at creating more valid RDF-->
 			<xsl:if test="@latitude">
-				<dwc:decimalLatitude rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">
+				<dwc:verbatimLatitude> <!-- replaces <dwc:decimalLatitude rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">-->
 					<xsl:value-of select="@latitude" />
-				</dwc:decimalLatitude>
+				</dwc:verbatimLatitude>
 			</xsl:if>
 			<xsl:if test="@longitude">
-				<dwc:decimalLongitude rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">
+				<dwc:verbatimLongitude> <!-- replaces <dwc:decimalLongitude rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">-->
 					<xsl:value-of select="@longitude" />
-				</dwc:decimalLongitude>
+				</dwc:verbatimLongitude>
 			</xsl:if>
 			<xsl:if test="@elevation">
 				<dwc:verbatimElevation>
@@ -684,7 +685,7 @@
 	<xsl:template name="taxonConceptBaseURI">
 		<xsl:param name="kingdom"/>
 		<xsl:choose>
-			<xsl:when test="$kingdom">http://taxon-concept.plazi.org/id/<xsl:value-of select="translate(normalize-space($kingdom), ' ', '_')"/></xsl:when>
+			<xsl:when test="$kingdom">http://taxon-concept.plazi.org/id/<xsl:value-of select="encode-for-uri(translate(normalize-space($kingdom), ' ', '_'))"/></xsl:when>
 			<xsl:otherwise>http://taxon-concept.plazi.org/id/Animalia</xsl:otherwise>
 		</xsl:choose>
 	</xsl:template>
@@ -692,7 +693,7 @@
 	<xsl:template name="taxonNameBaseURI">
 		<xsl:param name="kingdom"/>
 		<xsl:choose>
-			<xsl:when test="$kingdom">http://taxon-name.plazi.org/id/<xsl:value-of select="translate(normalize-space($kingdom), ' ', '_')"/></xsl:when>
+			<xsl:when test="$kingdom">http://taxon-name.plazi.org/id/<xsl:value-of select="encode-for-uri(translate(normalize-space($kingdom), ' ', '_'))"/></xsl:when>
 			<xsl:otherwise>http://taxon-name.plazi.org/id/Animalia</xsl:otherwise>
 		</xsl:choose>
 	</xsl:template>
@@ -885,7 +886,7 @@
 				<!-- TODO replace fixed base URL and kingdom with template call -->
 				<xsl:attribute name="rdf:about"><xsl:call-template name="taxonNameBaseURI">
 					<xsl:with-param name="kingdom" select="$taxonName/@kingdom"/>
-				</xsl:call-template>/<xsl:value-of select="translate(normalize-space($taxonName/@genus), ' ', '_')"/>_<xsl:value-of select="translate(normalize-space($taxonName/@species), ' ', '_')"/></xsl:attribute>
+				</xsl:call-template>/<xsl:value-of select="encode-for-uri(translate(normalize-space($taxonName/@genus), ' ', '_'))"/>_<xsl:value-of select="encode-for-uri(translate(normalize-space($taxonName/@species), ' ', '_'))"/></xsl:attribute>
 				<rdf:type rdf:resource="http://filteredpush.org/ontologies/oa/dwcFP#TaxonName"/>
 				<xsl:if test="$taxonName/@kingdom"><dwc:kingdom><xsl:value-of select="$taxonName/@kingdom"/></dwc:kingdom></xsl:if>
 				<xsl:if test="$taxonName/@phylum"><dwc:phylum><xsl:value-of select="$taxonName/@phylum"/></dwc:phylum></xsl:if>
@@ -898,7 +899,7 @@
 				<!-- TODO replace fixed base URL and kingdom with template call -->
 				<xsl:if test="$taxonName/@genus"><xsl:element name="trt:hasParentName"><xsl:attribute name="rdf:resource"><xsl:call-template name="taxonNameBaseURI">
 					<xsl:with-param name="kingdom" select="$taxonName/@kingdom"/>
-				</xsl:call-template>/<xsl:value-of select="translate(normalize-space($taxonName/@genus), ' ', '_')"/></xsl:attribute></xsl:element></xsl:if>
+				</xsl:call-template>/<xsl:value-of select="encode-for-uri(translate(normalize-space($taxonName/@genus), ' ', '_'))"/></xsl:attribute></xsl:element></xsl:if>
 				<xsl:if test="$showSource = 'yes'"><source via="speciesName"><xsl:copy-of select="$taxonName"/></source></xsl:if>
 			</rdf:Description>
 			<xsl:if test="$taxonName/@genus"><xsl:call-template name="genusName">
@@ -915,7 +916,7 @@
 				<!-- TODO replace fixed base URL and kingdom with template call -->
 				<xsl:attribute name="rdf:about"><xsl:call-template name="taxonNameBaseURI">
 					<xsl:with-param name="kingdom" select="$taxonName/@kingdom"/>
-				</xsl:call-template>/<xsl:value-of select="translate(normalize-space($taxonName/@genus), ' ', '_')"/></xsl:attribute>
+				</xsl:call-template>/<xsl:value-of select="encode-for-uri(translate(normalize-space($taxonName/@genus), ' ', '_'))"/></xsl:attribute>
 				<rdf:type rdf:resource="http://filteredpush.org/ontologies/oa/dwcFP#TaxonName"/>
 				<xsl:if test="$taxonName/@kingdom"><dwc:kingdom><xsl:value-of select="$taxonName/@kingdom"/></dwc:kingdom></xsl:if>
 				<xsl:if test="$taxonName/@phylum"><dwc:phylum><xsl:value-of select="$taxonName/@phylum"/></dwc:phylum></xsl:if>
@@ -927,7 +928,7 @@
 				<!-- TODO replace fixed base URL and kingdom with template call -->
 				<xsl:if test="$taxonName/@family"><xsl:element name="trt:hasParentName"><xsl:attribute name="rdf:resource"><xsl:call-template name="taxonNameBaseURI">
 					<xsl:with-param name="kingdom" select="$taxonName/@kingdom"/>
-				</xsl:call-template>/<xsl:value-of select="translate(normalize-space($taxonName/@family), ' ', '_')"/></xsl:attribute></xsl:element></xsl:if>
+				</xsl:call-template>/<xsl:value-of select="encode-for-uri(translate(normalize-space($taxonName/@family), ' ', '_'))"/></xsl:attribute></xsl:element></xsl:if>
 				<xsl:if test="$showSource = 'yes'"><source via="genusName"><xsl:copy-of select="$taxonName"/></source></xsl:if>
 			</rdf:Description>
 			<xsl:if test="$taxonName/@family"><xsl:call-template name="familyName">
@@ -944,7 +945,7 @@
 				<!-- TODO replace fixed base URL and kingdom with template call -->
 				<xsl:attribute name="rdf:about"><xsl:call-template name="taxonNameBaseURI">
 					<xsl:with-param name="kingdom" select="$taxonName/@kingdom"/>
-				</xsl:call-template>/<xsl:value-of select="translate(normalize-space($taxonName/@family), ' ', '_')"/></xsl:attribute>
+				</xsl:call-template>/<xsl:value-of select="encode-for-uri(translate(normalize-space($taxonName/@family), ' ', '_'))"/></xsl:attribute>
 				<rdf:type rdf:resource="http://filteredpush.org/ontologies/oa/dwcFP#TaxonName"/>
 				<xsl:if test="$taxonName/@kingdom"><dwc:kingdom><xsl:value-of select="$taxonName/@kingdom"/></dwc:kingdom></xsl:if>
 				<xsl:if test="$taxonName/@phylum"><dwc:phylum><xsl:value-of select="$taxonName/@phylum"/></dwc:phylum></xsl:if>
@@ -955,7 +956,7 @@
 				<!-- TODO replace fixed base URL and kingdom with template call -->
 				<xsl:if test="$taxonName/@order"><xsl:element name="trt:hasParentName"><xsl:attribute name="rdf:resource"><xsl:call-template name="taxonNameBaseURI">
 					<xsl:with-param name="kingdom" select="$taxonName/@kingdom"/>
-				</xsl:call-template>/<xsl:value-of select="translate(normalize-space($taxonName/@order), ' ', '_')"/></xsl:attribute></xsl:element></xsl:if>
+				</xsl:call-template>/<xsl:value-of select="encode-for-uri(translate(normalize-space($taxonName/@order), ' ', '_'))"/></xsl:attribute></xsl:element></xsl:if>
 				<xsl:if test="$showSource = 'yes'"><source via="familyName"><xsl:copy-of select="$taxonName"/></source></xsl:if>
 			</rdf:Description>
 			<xsl:if test="$taxonName/@order"><xsl:call-template name="orderName">
@@ -972,7 +973,7 @@
 				<!-- TODO replace fixed base URL and kingdom with template call -->
 				<xsl:attribute name="rdf:about"><xsl:call-template name="taxonNameBaseURI">
 					<xsl:with-param name="kingdom" select="$taxonName/@kingdom"/>
-				</xsl:call-template>/<xsl:value-of select="translate(normalize-space($taxonName/@order), ' ', '_')"/></xsl:attribute>
+				</xsl:call-template>/<xsl:value-of select="encode-for-uri(translate(normalize-space($taxonName/@order), ' ', '_'))"/></xsl:attribute>
 				<rdf:type rdf:resource="http://filteredpush.org/ontologies/oa/dwcFP#TaxonName"/>
 				<xsl:if test="$taxonName/@kingdom"><dwc:kingdom><xsl:value-of select="$taxonName/@kingdom"/></dwc:kingdom></xsl:if>
 				<xsl:if test="$taxonName/@phylum"><dwc:phylum><xsl:value-of select="$taxonName/@phylum"/></dwc:phylum></xsl:if>
@@ -982,7 +983,7 @@
 				<!-- TODO replace fixed base URL and kingdom with template call -->
 				<xsl:if test="$taxonName/@class"><xsl:element name="trt:hasParentName"><xsl:attribute name="rdf:resource"><xsl:call-template name="taxonNameBaseURI">
 					<xsl:with-param name="kingdom" select="$taxonName/@kingdom"/>
-				</xsl:call-template>/<xsl:value-of select="translate(normalize-space($taxonName/@class), ' ', '_')"/></xsl:attribute></xsl:element></xsl:if>
+				</xsl:call-template>/<xsl:value-of select="encode-for-uri(translate(normalize-space($taxonName/@class), ' ', '_'))"/></xsl:attribute></xsl:element></xsl:if>
 				<xsl:if test="$showSource = 'yes'"><source via="orderName"><xsl:copy-of select="$taxonName"/></source></xsl:if>
 			</rdf:Description>
 			<xsl:if test="$taxonName/@class"><xsl:call-template name="className">
@@ -999,7 +1000,7 @@
 				<!-- TODO replace fixed base URL and kingdom with template call -->
 				<xsl:attribute name="rdf:about"><xsl:call-template name="taxonNameBaseURI">
 					<xsl:with-param name="kingdom" select="$taxonName/@kingdom"/>
-				</xsl:call-template>/<xsl:value-of select="translate(normalize-space($taxonName/@class), ' ', '_')"/></xsl:attribute>
+				</xsl:call-template>/<xsl:value-of select="encode-for-uri(translate(normalize-space($taxonName/@class), ' ', '_'))"/></xsl:attribute>
 				<rdf:type rdf:resource="http://filteredpush.org/ontologies/oa/dwcFP#TaxonName"/>
 				<xsl:if test="$taxonName/@kingdom"><dwc:kingdom><xsl:value-of select="$taxonName/@kingdom"/></dwc:kingdom></xsl:if>
 				<xsl:if test="$taxonName/@phylum"><dwc:phylum><xsl:value-of select="$taxonName/@phylum"/></dwc:phylum></xsl:if>
@@ -1008,7 +1009,7 @@
 				<!-- TODO replace fixed base URL and kingdom with template call -->
 				<xsl:if test="$taxonName/@phylum"><xsl:element name="trt:hasParentName"><xsl:attribute name="rdf:resource"><xsl:call-template name="taxonNameBaseURI">
 					<xsl:with-param name="kingdom" select="$taxonName/@kingdom"/>
-				</xsl:call-template>/<xsl:value-of select="translate(normalize-space($taxonName/@phylum), ' ', '_')"/></xsl:attribute></xsl:element></xsl:if>
+				</xsl:call-template>/<xsl:value-of select="encode-for-uri(translate(normalize-space($taxonName/@phylum), ' ', '_'))"/></xsl:attribute></xsl:element></xsl:if>
 				<xsl:if test="$showSource = 'yes'"><source via="className"><xsl:copy-of select="$taxonName"/></source></xsl:if>
 			</rdf:Description>
 			<!-- TODO replace fixed base URL and kingdom with template call -->
@@ -1026,7 +1027,7 @@
 				<!-- TODO replace fixed base URL and kingdom with template call -->
 				<xsl:attribute name="rdf:about"><xsl:call-template name="taxonNameBaseURI">
 					<xsl:with-param name="kingdom" select="$taxonName/@kingdom"/>
-				</xsl:call-template>/<xsl:value-of select="translate(normalize-space($taxonName/@phylum), ' ', '_')"/></xsl:attribute>
+				</xsl:call-template>/<xsl:value-of select="encode-for-uri(translate(normalize-space($taxonName/@phylum), ' ', '_'))"/></xsl:attribute>
 				<rdf:type rdf:resource="http://filteredpush.org/ontologies/oa/dwcFP#TaxonName"/>
 				<xsl:if test="$taxonName/@kingdom"><dwc:kingdom><xsl:value-of select="$taxonName/@kingdom"/></dwc:kingdom></xsl:if>
 				<dwc:phylum><xsl:value-of select="$taxonName/@phylum"/></dwc:phylum>
