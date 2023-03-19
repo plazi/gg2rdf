@@ -228,6 +228,21 @@
 					<xsl:value-of select="@collectingMethod" />
 				</dwc:samplingProtocol>
 			</xsl:if>
+			<xsl:if test="@ID-GBIF-Occurrence">
+				<trt:gbifOccurrenceId>
+					<xsl:value-of select="@ID-GBIF-Occurrence" />
+				</trt:gbifOccurrenceId>
+			</xsl:if>
+			<xsl:if test="@ID-GBIF-Specimen">
+				<trt:gbifSpecimenId>
+					<xsl:value-of select="@ID-GBIF-Specimen" />
+				</trt:gbifSpecimenId>
+			</xsl:if>
+			<xsl:if test="@httpUri">
+				<trt:httpUri>
+					<xsl:value-of select="@httpUri" />
+				</trt:httpUri>
+			</xsl:if>
 		</xsl:element>
 	</xsl:template>
 
