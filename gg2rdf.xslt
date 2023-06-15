@@ -275,7 +275,7 @@
 			<xsl:choose>
 				<!-- no valid authority given, fall back to taxon name -->
 				<xsl:when test="$taxonAuthority = 'INVALID'"><xsl:element name="trt:treatsTaxonName"><xsl:attribute name="rdf:resource"><xsl:call-template name="taxonNameBaseURI">
-					<xsl:with-param name="taxonName" select="$taxon"/>
+					<xsl:with-param name="kingdom" select="$taxon/@kingdom"/>
 				</xsl:call-template>/<xsl:call-template name="taxonNameForURI">
 					<xsl:with-param name="taxonName" select="$taxon"/>
 				</xsl:call-template></xsl:attribute></xsl:element></xsl:when>
