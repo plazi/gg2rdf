@@ -36,7 +36,7 @@ runs:
 
     - name: Get changed XML files
       id: changed-xml-files
-      uses: tj-actions/changed-files@v13.1
+      uses: tj-actions/changed-files@v39.0
       with:
         path: xml
 
