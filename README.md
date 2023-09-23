@@ -1,20 +1,28 @@
 # gg2rdf
-This repo provides a GitHub action to transform golden gate XML (GG_XML) to RDF turtle. It also includes an XSLT to transform GG-XML to RDF/XML.
+
+Pipeline to transform GoldenGate XML into RDF.
+
+This Docker Image exposes a server on port `4505` which:
+
+- listens for github webhooks (`POST` requests) from the configured source repo
+  (`plazi/treatments-xml`)
+- processes the changed files to generate rdf
+- pushes these into the configured target repo (`plazi/treatments-rdf`)
+
+This webserver also exposes the follwing paths:
+
+- `/status`: Serves a Badge (svg) to show the current pipeline status
+- `/logs`: List of logs of past runs
+- `/logs/[id]`: Log of past run with that id.
+- `/full_update`: send a `POST` here to run the full_update script. (Not
+  implemented yet, continue using the scripts in the "manual run" directory)
 
 ## Usage
 
-```yaml
-- uses: plazi/gg2rdf@v0
-  with:
-    # Where to take the GGXML from
-    # (Repository name with owner. For example, plazi/treatments-xml)
-    # Default: ${{ github.repository }}
-    source-repo: ""
+Build and run as a docker container.
 
-    # Where to put the generated TTL
-    # (Repository name with owner. For example, plazi/treatments-rdf)
-    destination-repo: ""
-    
-    # Deploy key to be passed as `ssh-key` to actions/checkout@v2 for the destination-repo
-    deploy-key: ""
-```
+Exposes port `4505`.
+
+## Configuration
+
+Edit the file `config/config.ts`. Should be self-explanatory what goes where.
