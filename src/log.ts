@@ -13,7 +13,7 @@ export const log = async (id: string, data: string) => {
       JSON.stringify(index),
     );
   }
-  console.log("~", id, data);
+  console.log("~", /*id,*/ data);
   return await Deno.writeTextFile(
     `workdir/log/${id}`,
     `${timestamp}: ${data}\n`,

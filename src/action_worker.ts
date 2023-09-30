@@ -8,11 +8,16 @@ const queue: commit[] = [];
 let currentId = "";
 let isRunning = false;
 
+let GHTOKEN = "";
+
 self.onmessage = (evt) => {
-  const msg = evt.data as workerMessage;
-  queue.push(...msg.commits);
-  if (!isRunning) startTask();
-  else console.log("· Waiting for previous run to finish");
+  const msg = evt.data;
+  if ((msg as { GHTOKEN: string }).GHTOKEN) GHTOKEN = msg.GHTOKEN;
+  else {
+    queue.push(...(msg as workerMessage).commits);
+    if (!isRunning) startTask();
+    else console.log("· Waiting for previous run to finish");
+  }
 };
 
 const emptyDataDir = async (which: "source" | "target") => {
@@ -29,7 +34,12 @@ const cloneRepo = async (which: "source" | "target") => {
       "--single-branch",
       `--branch`,
       `${config[`${which}Branch`]}`,
-      config[`${which}RepositoryUri`],
+      which === "target"
+        ? config[`${which}RepositoryUri`].replace(
+          "https://",
+          `https://${GHTOKEN}@`,
+        )
+        : config[`${which}RepositoryUri`],
       `repo/${which}`,
     ],
     cwd: "workdir",
@@ -58,7 +68,16 @@ const updateLocalData = async (which: "source" | "target") => {
     },
     cwd: `workdir/repo/${which}`,
   });
-  const { success } = await p.output();
+  const { success, stdout, stderr } = await p.output();
+  if (!success) {
+    await log(currentId, "git pull failed:");
+  } else {
+    await log(currentId, "git pull succesful:");
+  }
+  await log(currentId, "STDOUT:");
+  await log(currentId, new TextDecoder().decode(stdout));
+  await log(currentId, "STDERR:");
+  await log(currentId, new TextDecoder().decode(stderr));
   if (!success) {
     await emptyDataDir(which);
     await cloneRepo(which);
@@ -101,13 +120,21 @@ async function startTask() {
             ],
             cwd: "workdir/repo/source",
           });
-          const { success } = await p.output();
-          // TODO handle output
-          // TODO errors
+          const { success, stdout, stderr } = await p.output();
+          if (!success) {
+            await log(currentId, "saxon failed:");
+          } else {
+            await log(currentId, "saxon succesful:");
+          }
+          await log(currentId, "STDOUT:");
+          await log(currentId, new TextDecoder().decode(stdout));
+          await log(currentId, "STDERR:");
+          await log(currentId, new TextDecoder().decode(stderr));
+          // TODO: handle failure
         }
       }
 
-      // TODO: convert modified files to ttl
+      // convert modified files to ttl
       for (const file of modified) {
         if (file.endsWith(".xml")) {
           await Deno.mkdir(
@@ -128,6 +155,7 @@ async function startTask() {
             cwd: "workdir/tmprdf",
             stdin: "piped",
             stdout: "piped",
+            stderr: "piped",
           });
           const child = p.spawn();
 
@@ -139,11 +167,21 @@ async function startTask() {
             }).writable,
           );
 
+          child.stderr.pipeTo(
+            Deno.openSync(`workdir/log/${currentId}`, {
+              append: true,
+              write: true,
+              create: true,
+            }).writable,
+          );
+
           // manually close stdin
           child.stdin.close();
+
           const status = await child.status;
-          // TODO handle output
-          // TODO errors
+          if (!status.success) {
+            log(currentId, `Rapper failed on ${file.slice(0, -4)}.rdf`);
+          }
         }
       }
 
@@ -181,12 +219,24 @@ async function startTask() {
         ],
         cwd: "workdir/repo/target",
       });
-      const { success } = await p.output();
-      // TODO handle output
-      // TODO errors
+      const { success, stdout, stderr } = await p.output();
+      if (!success) {
+        await log(currentId, "git push failed:");
+      } else {
+        await log(currentId, "git push succesful:");
+      }
+      await log(currentId, "STDOUT:");
+      await log(currentId, new TextDecoder().decode(stdout));
+      await log(currentId, "STDERR:");
+      await log(currentId, new TextDecoder().decode(stderr));
+      if (!success) {
+        throw new Error("Abort.");
+      }
 
+      await log(currentId, "Completed transformation successfully");
       await createBadge("OK");
     } catch (error) {
+      await log(currentId, "FAILED TRANSFORMATION");
       await log(currentId, error);
       await createBadge("Failed");
     }

@@ -30,6 +30,10 @@ export type workerMessage = {
 //////////////////////////////////////////////////
 // initialize
 
+const GHTOKEN = Deno.env.get("GHTOKEN");
+
+if (!GHTOKEN) throw new Error("Requires GHTOKEN");
+
 // ensure all required directories
 await Deno.mkdir(`workdir/repo`, { recursive: true });
 await Deno.mkdir(`workdir/tmprdf`, { recursive: true });
@@ -44,6 +48,8 @@ const worker = new Worker(
     type: "module",
   },
 );
+
+worker.postMessage({ GHTOKEN });
 
 //////////////////////////////////////////////////
 
@@ -102,7 +108,7 @@ const webhookHandler = async (request: Request) => {
       fsRoot: "workdir/log",
       urlRoot: "log",
     });
-    response.headers.set("Content-Type", "application/json");
+    // response.headers.set("Content-Type", "application/json");
     return response;
   } else if (pathname === "/status" || pathname === "/status/") {
     console.log("· Got status badge request");

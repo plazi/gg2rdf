@@ -24,9 +24,12 @@ Build as a docker container.
 docker build . -t gg2rdf
 ```
 
+Requres a the environment-variable `GHTOKEN` as `username:<personal-acces-token>`
+to authenticate the pushing into the target-repo.
+
 Then run using a volume
 ```sh
-docker run --name gg2rdf -p 4505:4505 -v gg2rdf:/app/workdir gg2rdf
+docker run --name gg2rdf --env GHTOKEN=username:<personal-acces-token> -p 4505:4505 -v gg2rdf:/app/workdir gg2rdf
 ```
 
 Exposes port `4505`.
@@ -37,6 +40,8 @@ Exposes port `4505`.
 services:
   gg2rdf:
     ...
+    environment:
+      - GHTOKEN=username:<personal-acces-token>
     volumes:
       - gg2rdf:/app/workdir
 volumes:
