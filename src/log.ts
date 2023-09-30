@@ -7,7 +7,7 @@ export const log = async (id: string, data: string) => {
     const index: string[] = JSON.parse(
       await Deno.readTextFile(`workdir/log/index.json`),
     );
-    index.push(id);
+    if (!index.find((e) => e === id)) index.push(id);
     await Deno.writeTextFile(
       `workdir/log/index.json`,
       JSON.stringify(index),
