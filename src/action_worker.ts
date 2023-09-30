@@ -189,6 +189,12 @@ async function startTask() {
 
       for (const file of modified) {
         if (file.endsWith(".xml")) {
+          await Deno.mkdir(
+            `workdir/repo/target/${file.slice(0, file.lastIndexOf("/"))}`,
+            {
+              recursive: true,
+            },
+          );
           await Deno.rename(
             `workdir/tmpttl/${file.slice(0, -4)}.ttl`,
             `workdir/repo/target/${file.slice(0, -4)}.ttl`,
@@ -200,11 +206,14 @@ async function startTask() {
 
       for (const file of removed) {
         if (file.endsWith(".xml")) {
-          await Deno.remove(
-            `workdir/repo/target/${file.slice(0, -4)}.ttl`,
-          );
+          try {
+            await Deno.remove(
+              `workdir/repo/target/${file.slice(0, -4)}.ttl`,
+            );
+          } catch (_) {
+            // TODO errors
+          }
           // TODO check if newer?
-          // TODO errors
         }
       }
 
