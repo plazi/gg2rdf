@@ -1,0 +1,7 @@
+{
+	"name": "gg2rdf",
+	"build": {
+		"context": "..",
+		"dockerfile": "../Dockerfile"
+	}
+}
