@@ -12,6 +12,7 @@ self.onmessage = (evt) => {
   const msg = evt.data as workerMessage;
   queue.push(...msg.commits);
   if (!isRunning) startTask();
+  else console.log("· Waiting for previous run to finish");
 };
 
 const emptyDataDir = async (which: "source" | "target") => {
@@ -19,21 +20,32 @@ const emptyDataDir = async (which: "source" | "target") => {
 };
 
 const cloneRepo = async (which: "source" | "target") => {
-  log(currentId, `Cloning ${which} repo. This will take some time.`);
+  await log(currentId, `Cloning ${which} repo. This will take some time.`);
   const p = new Deno.Command("git", {
     args: [
       "clone",
-      "--depth 1",
+      "--depth",
+      "1",
       "--single-branch",
-      `--branch ${config[`${which}Branch`]}`,
+      `--branch`,
+      `${config[`${which}Branch`]}`,
       config[`${which}RepositoryUri`],
       `repo/${which}`,
     ],
     cwd: "workdir",
   });
-  const { success } = await p.output();
+  const { success, stdout, stderr } = await p.output();
   if (!success) {
-    throw new Error("Bad, really bad");
+    await log(currentId, "git clone failed:");
+  } else {
+    await log(currentId, "git clone succesful:");
+  }
+  await log(currentId, "STDOUT:");
+  await log(currentId, new TextDecoder().decode(stdout));
+  await log(currentId, "STDERR:");
+  await log(currentId, new TextDecoder().decode(stderr));
+  if (!success) {
+    throw new Error("Abort.");
   }
 };
 
@@ -59,6 +71,8 @@ async function startTask() {
     try {
       currentId = (new Date()).toISOString();
 
+      await log(currentId, "Starting transformation");
+
       // get changes to consider
       // remove from queue
       const q = queue.shift()!;
@@ -66,7 +80,7 @@ async function startTask() {
       const modified = [...q.added, ...q.modified];
       const removed = q.removed;
 
-      updateLocalData("source");
+      await updateLocalData("source");
 
       // run saxon on modified files
       for (const file of modified) {
@@ -80,10 +94,10 @@ async function startTask() {
           const p = new Deno.Command("java", {
             args: [
               "-jar",
-              `${Deno.cwd()}/saxon-he-10.8.jar`,
+              `${Deno.cwd()}/src/saxon-he-10.8.jar`,
               `-s:${file}`,
               `-o:${Deno.cwd()}/workdir/tmprdf/${file.slice(0, -4)}.rdf`,
-              `-xsl:${Deno.cwd()}/gg2rdf.xslt`,
+              `-xsl:${Deno.cwd()}/src/gg2rdf.xslt`,
             ],
             cwd: "workdir/repo/source",
           });
@@ -133,7 +147,7 @@ async function startTask() {
         }
       }
 
-      updateLocalData("target");
+      await updateLocalData("target");
 
       for (const file of modified) {
         if (file.endsWith(".xml")) {
@@ -171,10 +185,10 @@ async function startTask() {
       // TODO handle output
       // TODO errors
 
-      createBadge("OK");
+      await createBadge("OK");
     } catch (error) {
-      log(currentId, error);
-      createBadge("Failed");
+      await log(currentId, error);
+      await createBadge("Failed");
     }
   }
   isRunning = false;

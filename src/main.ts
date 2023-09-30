@@ -122,7 +122,7 @@ const webhookHandler = async (request: Request) => {
 // start server
 
 const server = new Server({ handler: webhookHandler });
-const listener = Deno.listen({ port: 4505 });
+const listener = Deno.listen({ port: 4505, hostname: "0.0.0.0" });
 console.log(`server listening on http://${Deno.env.get("HOSTNAME")}:4505`);
 
 await server.serve(listener);

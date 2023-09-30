@@ -1,6 +1,7 @@
 import { exists } from "./deps.ts";
 
 export const log = async (id: string, data: string) => {
+  const timestamp = (new Date()).toISOString();
   const isNew = await exists(`workdir/log/${id}`);
   if (isNew) {
     const index: string[] = JSON.parse(
@@ -12,9 +13,10 @@ export const log = async (id: string, data: string) => {
       JSON.stringify(index),
     );
   }
+  console.log("~", id, data);
   return await Deno.writeTextFile(
     `workdir/log/${id}`,
-    `${(new Date()).toISOString()}: ${data}\n`,
+    `${timestamp}: ${data}\n`,
     {
       append: true,
     },

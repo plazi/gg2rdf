@@ -19,9 +19,29 @@ This webserver also exposes the follwing paths:
 
 ## Usage
 
-Build and run as a docker container.
+Build as a docker container.
+```sh
+docker build . -t gg2rdf
+```
+
+Then run using a volume
+```sh
+docker run --name gg2rdf -p 4505:4505 -v gg2rdf:/app/workdir gg2rdf
+```
 
 Exposes port `4505`.
+
+### Docker-Compose
+
+```yml
+services:
+  gg2rdf:
+    ...
+    volumes:
+      - gg2rdf:/app/workdir
+volumes:
+  gg2rdf:
+```
 
 ## Configuration
 
