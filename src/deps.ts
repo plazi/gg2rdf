@@ -9,4 +9,4 @@ export {
   serveFile,
 } from "https://deno.land/std@0.202.0/http/file_server.ts";
 
-export { exists } from "https://deno.land/std@0.202.0/fs/mod.ts";
+export { existsSync } from "https://deno.land/std@0.202.0/fs/mod.ts";

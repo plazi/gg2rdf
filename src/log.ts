@@ -1,13 +1,13 @@
-import { exists } from "./deps.ts";
+import { existsSync } from "./deps.ts";
 
 export const log = async (id: string, data: string) => {
   const timestamp = (new Date()).toISOString();
-  const isNew = await exists(`workdir/log/${id}`);
+  const isNew = !existsSync(`workdir/log/${id}`);
   if (isNew) {
     const index: string[] = JSON.parse(
       await Deno.readTextFile(`workdir/log/index.json`),
     );
-    if (!index.find((e) => e === id)) index.push(id);
+    index.push(id);
     await Deno.writeTextFile(
       `workdir/log/index.json`,
       JSON.stringify(index),

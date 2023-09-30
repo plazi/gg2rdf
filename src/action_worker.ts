@@ -180,7 +180,7 @@ async function startTask() {
 
           const status = await child.status;
           if (!status.success) {
-            log(currentId, `Rapper failed on ${file.slice(0, -4)}.rdf`);
+            await log(currentId, `Rapper failed on ${file.slice(0, -4)}.rdf`);
           }
         }
       }
