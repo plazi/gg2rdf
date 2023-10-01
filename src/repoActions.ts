@@ -2,6 +2,12 @@ import { config } from "../config/config.ts";
 
 const GHTOKEN = Deno.env.get("GHTOKEN");
 
+export type ChangeSummary = {
+  added: string[];
+  removed: string[];
+  modified: string[];
+};
+
 const emptyDataDir = async (which: "source" | "target") => {
   await Deno.remove(`workdir/repo/${which}`, { recursive: true });
 };
@@ -11,8 +17,6 @@ const cloneRepo = async (which: "source" | "target", log = console.log) => {
   const p = new Deno.Command("git", {
     args: [
       "clone",
-      "--depth",
-      "1",
       "--single-branch",
       `--branch`,
       `${config[`${which}Branch`]}`,
@@ -65,4 +69,35 @@ export async function updateLocalData(which: "source" | "target", log = console.
     await emptyDataDir(which);
     await cloneRepo(which, log);
   }
+}
+
+export async function getModifiedAfter(
+  commitId: string,
+  log = console.log,
+): ChangeSummary {
+  await updateLocalData("source");
+  const p = new Deno.Command("git", {
+    args: [
+      "diff",
+      "--name-status",
+      commitId,
+    ],
+    cwd: "workdir/repo/source",
+  });
+  const { success, stdout, stderr } = await p.output();
+  await log("STDOUT:");
+  await log(new TextDecoder().decode(stdout));
+  await log("STDERR:");
+  await log(new TextDecoder().decode(stderr));
+  if (!success) {
+    throw new Error("Abort.");
+  }
+  const typedFiles = new TextDecoder().decode(stdout).split("\n").filter((s) =>
+    s.length > 0
+  ).map((s) => s.split(/(\s+)/).filter(p => p.trim().length > 0));
+  return ({
+    added: typedFiles.filter((t) => t[0] === "A").map((t) => t[1]),
+    modified: typedFiles.filter((t) => t[0] === "M").map((t) => t[1]),
+    removed: typedFiles.filter((t) => t[0] === "D").map((t) => t[1]),
+  });
 }
