@@ -23,6 +23,10 @@ export const log = async (id: string, data: string) => {
   );
 };
 
+export function getLog(id: string) {
+  return (data: string) => log(id,data)
+}
+
 const colors = {
   OK: "#26a269",
   Failed: "#c01c28",

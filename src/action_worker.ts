@@ -1,8 +1,9 @@
 /// <reference lib="webworker" />
 
 import { config } from "../config/config.ts";
-import { createBadge, log } from "./log.ts";
+import { createBadge, log, getLog } from "./log.ts";
 import type { commit, workerMessage } from "./main.ts";
+import { updateLocalData } from "./repoActions.ts";
 
 const queue: commit[] = [];
 let currentId = "";
@@ -17,70 +18,6 @@ self.onmessage = (evt) => {
     queue.push(...(msg as workerMessage).commits);
     if (!isRunning) startTask();
     else console.log("· Waiting for previous run to finish");
-  }
-};
-
-const emptyDataDir = async (which: "source" | "target") => {
-  await Deno.remove(`workdir/repo/${which}`, { recursive: true });
-};
-
-const cloneRepo = async (which: "source" | "target") => {
-  await log(currentId, `Cloning ${which} repo. This will take some time.`);
-  const p = new Deno.Command("git", {
-    args: [
-      "clone",
-      "--depth",
-      "1",
-      "--single-branch",
-      `--branch`,
-      `${config[`${which}Branch`]}`,
-      which === "target"
-        ? config[`${which}RepositoryUri`].replace(
-          "https://",
-          `https://${GHTOKEN}@`,
-        )
-        : config[`${which}RepositoryUri`],
-      `repo/${which}`,
-    ],
-    cwd: "workdir",
-  });
-  const { success, stdout, stderr } = await p.output();
-  if (!success) {
-    await log(currentId, "git clone failed:");
-  } else {
-    await log(currentId, "git clone succesful:");
-  }
-  await log(currentId, "STDOUT:");
-  await log(currentId, new TextDecoder().decode(stdout));
-  await log(currentId, "STDERR:");
-  await log(currentId, new TextDecoder().decode(stderr));
-  if (!success) {
-    throw new Error("Abort.");
-  }
-};
-
-const updateLocalData = async (which: "source" | "target") => {
-  await Deno.mkdir(`workdir/repo/${which}/.git`, { recursive: true });
-  const p = new Deno.Command("git", {
-    args: ["pull"],
-    env: {
-      GIT_CEILING_DIRECTORIES: Deno.cwd(),
-    },
-    cwd: `workdir/repo/${which}`,
-  });
-  const { success, stdout, stderr } = await p.output();
-  if (!success) {
-    await log(currentId, "git pull failed:");
-  } else {
-    await log(currentId, "git pull succesful:");
-  }
-  await log(currentId, "STDOUT:");
-  await log(currentId, new TextDecoder().decode(stdout));
-  await log(currentId, "STDERR:");
-  await log(currentId, new TextDecoder().decode(stderr));
-  if (!success) {
-    await emptyDataDir(which);
-    await cloneRepo(which);
   }
 };
 
@@ -99,7 +36,7 @@ async function startTask() {
       const modified = [...q.added, ...q.modified];
       const removed = q.removed;
 
-      await updateLocalData("source");
+      await updateLocalData("source", getLog(currentId));
 
       // run saxon on modified files
       for (const file of modified) {
@@ -185,7 +122,7 @@ async function startTask() {
         }
       }
 
-      await updateLocalData("target");
+      await updateLocalData("target", getLog(currentId));
 
       for (const file of modified) {
         if (file.endsWith(".xml")) {
