@@ -74,7 +74,7 @@ export async function updateLocalData(which: "source" | "target", log = console.
 export async function getModifiedAfter(
   commitId: string,
   log = console.log,
-): ChangeSummary {
+): Promise<ChangeSummary> {
   await updateLocalData("source");
   const p = new Deno.Command("git", {
     args: [

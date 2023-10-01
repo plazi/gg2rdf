@@ -2,39 +2,38 @@
 
 import { config } from "../config/config.ts";
 import { createBadge, log, getLog } from "./log.ts";
-import type { commit, workerMessage } from "./main.ts";
-import { updateLocalData } from "./repoActions.ts";
+import type { Job } from "./types.ts";
+import { updateLocalData, getModifiedAfter } from "./repoActions.ts";
 
-const queue: commit[] = [];
+
+const queue: Job[] = [];
 let currentId = "";
 let isRunning = false;
 
-let GHTOKEN = "";
-
 self.onmessage = (evt) => {
-  const msg = evt.data;
-  if ((msg as { GHTOKEN: string }).GHTOKEN) GHTOKEN = msg.GHTOKEN;
-  else {
-    queue.push(...(msg as workerMessage).commits);
-    if (!isRunning) startTask();
-    else console.log("· Waiting for previous run to finish");
-  }
+  const job = evt.data as Job;
+  queue.push(job);
+  if (!isRunning) startTask();
+  else console.log("· Waiting for previous run to finish");
 };
 
 async function startTask() {
   isRunning = true;
   while (queue.length) {
     try {
-      currentId = (new Date()).toISOString();
 
-      await log(currentId, "Starting transformation");
-
-      // get changes to consider
+      // get job to consider
       // remove from queue
-      const q = queue.shift()!;
+      const job = queue.shift()!;
 
-      const modified = [...q.added, ...q.modified];
-      const removed = q.removed;
+      currentId = job.id
+
+      await log(currentId, "Starting transformation"+ JSON.stringify(job,undefined, 2));
+
+      const files = await getModifiedAfter(job.after, getLog(currentId));
+
+      const modified = [...files.added, ...files.modified];
+      const removed = files.removed;
 
       await updateLocalData("source", getLog(currentId));
 
@@ -157,10 +156,10 @@ async function startTask() {
       const p = new Deno.Command("bash", {
         args: [
           "-c",
-          `git config user.name ${q.author.username}
-          git config user.email ${q.author.email}
+          `git config user.name ${job.author.name}
+          git config user.email ${job.author.email}
           git add -A
-          git commit -m "committed by action runner ${config.sourceRepository}@${q.id}"
+          git commit -m "committed by action runner ${config.sourceRepository}@${job.id}"
           git push origin ${config.targetBranch}`,
         ],
         cwd: "workdir/repo/target",

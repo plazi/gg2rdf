@@ -5,10 +5,10 @@ export const log = async (id: string, data: string) => {
   const isNew = !existsSync(`workdir/log/${id}`);
   if (isNew) {
     const index: string[] = JSON.parse(
-      await Deno.readTextFile(`workdir/log/index.json`),
+      Deno.readTextFileSync(`workdir/log/index.json`),
     );
     index.push(id);
-    await Deno.writeTextFile(
+    Deno.writeTextFileSync(
       `workdir/log/index.json`,
       JSON.stringify(index),
     );

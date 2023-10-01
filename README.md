@@ -14,6 +14,7 @@ This webserver also exposes the follwing paths:
 - `/status`: Serves a Badge (svg) to show the current pipeline status
 - `/logs`: List of logs of past runs
 - `/logs/[id]`: Log of past run with that id.
+- `/update?after=[commit-id]`: send a `POST` here to update all files modified since commit-id
 - `/full_update`: send a `POST` here to run the full_update script. (Not
   implemented yet, continue using the scripts in the "manual run" directory)
 

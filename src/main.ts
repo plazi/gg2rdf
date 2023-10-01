@@ -1,30 +1,20 @@
 import { serveDir, serveFile, Server, Status, STATUS_TEXT } from "./deps.ts";
 import { config } from "../config/config.ts";
-import { createBadge } from "./log.ts";
-
-// Incomplete, only what we need
-export type commit = {
-  id: string;
-  author: {
-    "name": string;
-    "email": string;
-    "username": string;
-  };
-  added: string[];
-  removed: string[];
-  modified: string[];
-};
+import { createBadge, log } from "./log.ts";
+import { getModifiedAfter } from "./repoActions.ts";
+import { Job } from "./types.ts";
 
 // Incomplete, only what we need
 type webhookPayload = {
   repository: {
     full_name: string;
   };
-  commits: commit[];
-};
-
-export type workerMessage = {
-  commits: commit[];
+  before: string;
+  after: string;
+  pusher: {
+    name: string;
+    email: string;
+  };
 };
 
 //////////////////////////////////////////////////
@@ -49,13 +39,39 @@ const worker = new Worker(
   },
 );
 
-worker.postMessage({ GHTOKEN });
-
 //////////////////////////////////////////////////
 
 const webhookHandler = async (request: Request) => {
-  const pathname = new URL(request.url).pathname;
+  const requestUrl = new URL(request.url);
+  const pathname = requestUrl.pathname;
   if (request.method === "POST") {
+    if (pathname === "/update") {
+      const after = requestUrl.searchParams.get("after");
+      if (!after) {
+        return new Response("Query parameter 'after' required", {
+          status: Status.BadRequest,
+          statusText: STATUS_TEXT[Status.BadRequest],
+        });
+      }
+      console.log(await getModifiedAfter(after));
+      const job: Job = {
+        id: (new Date()).toISOString(),
+        after,
+        author: {
+          name: "GG2RDF Service",
+          email: "gg2rdf@plazi.org",
+        },
+      };
+      worker.postMessage(job);
+      await log(
+        job.id,
+        `Job submitted: ${JSON.stringify(job, undefined, 2)}`,
+      );
+      return new Response(undefined, {
+        status: Status.Accepted,
+        statusText: STATUS_TEXT[Status.Accepted],
+      });
+    }
     if (pathname === "/full_update") {
       console.log("· got full_update request");
       // TODO
@@ -70,7 +86,7 @@ const webhookHandler = async (request: Request) => {
 
         console.log("· got webhook from", repoName);
 
-        if (!repoName || !json.commits) {
+        if (!repoName) {
           return new Response("Invalid Payload", {
             status: Status.BadRequest,
             statusText: STATUS_TEXT[Status.BadRequest],
@@ -83,9 +99,16 @@ const webhookHandler = async (request: Request) => {
             statusText: STATUS_TEXT[Status.BadRequest],
           });
         }
-
-        worker.postMessage({ commits: json?.commits } as workerMessage);
-
+        const job: Job = {
+          id: (new Date()).toISOString(),
+          after: json.before,
+          author: json.pusher,
+        };
+        worker.postMessage(job);
+        await log(
+          job.id,
+          `Job submitted: ${JSON.stringify(job, undefined, 2)}`,
+        );
         return new Response(undefined, {
           status: Status.Accepted,
           statusText: STATUS_TEXT[Status.Accepted],
