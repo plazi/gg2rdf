@@ -19,6 +19,14 @@ self.onmessage = (evt) => {
 
 async function startTask() {
   isRunning = true;
+  try {
+    await run()
+  } finally {
+    isRunning = false
+  }
+}
+
+async function run() {
   while (queue.length) {
     try {
 
@@ -186,5 +194,4 @@ async function startTask() {
       await createBadge("Failed");
     }
   }
-  isRunning = false;
 }
