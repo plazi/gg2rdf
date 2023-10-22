@@ -18,6 +18,7 @@ const cloneRepo = async (which: "source" | "target", log = console.log) => {
     args: [
       "clone",
       "--single-branch",
+      "--quiet",
       `--branch`,
       `${config[`${which}Branch`]}`,
       which === "target"

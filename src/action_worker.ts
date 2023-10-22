@@ -1,5 +1,7 @@
 /// <reference lib="webworker" />
 
+/* The webworker performing the long running operations on the repository
+*/
 import { config } from "../config/config.ts";
 import { createBadge, log, getLog } from "./log.ts";
 import type { Job } from "./types.ts";
@@ -167,8 +169,8 @@ async function run() {
           `git config user.name ${job.author.name}
           git config user.email ${job.author.email}
           git add -A
-          git commit -m "committed by action runner ${config.sourceRepository}@${job.id}"
-          git push origin ${config.targetBranch}`,
+          git commit --quiet -m "committed by action runner ${config.sourceRepository}@${job.id}"
+          git push --quiet origin ${config.targetBranch}`,
         ],
         cwd: "workdir/repo/target",
       });
