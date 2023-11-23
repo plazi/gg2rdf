@@ -47,7 +47,10 @@ const cloneRepo = async (which: "source" | "target", log = console.log) => {
 };
 
 // Function to update local data
-export async function updateLocalData(which: "source" | "target", log = console.log) {
+export async function updateLocalData(
+  which: "source" | "target",
+  log = console.log,
+) {
   await Deno.mkdir(`workdir/repo/${which}/.git`, { recursive: true });
   const p = new Deno.Command("git", {
     args: ["pull"],
@@ -73,7 +76,8 @@ export async function updateLocalData(which: "source" | "target", log = console.
 }
 
 export async function getModifiedAfter(
-  commitId: string,
+  fromCommit: string,
+  tillCommit = "HEAD",
   log = console.log,
 ): Promise<ChangeSummary> {
   await updateLocalData("source");
@@ -81,7 +85,8 @@ export async function getModifiedAfter(
     args: [
       "diff",
       "--name-status",
-      commitId,
+      fromCommit,
+      tillCommit,
     ],
     cwd: "workdir/repo/source",
   });
@@ -95,7 +100,7 @@ export async function getModifiedAfter(
   }
   const typedFiles = new TextDecoder().decode(stdout).split("\n").filter((s) =>
     s.length > 0
-  ).map((s) => s.split(/(\s+)/).filter(p => p.trim().length > 0));
+  ).map((s) => s.split(/(\s+)/).filter((p) => p.trim().length > 0));
   return ({
     added: typedFiles.filter((t) => t[0] === "A").map((t) => t[1]),
     modified: typedFiles.filter((t) => t[0] === "M").map((t) => t[1]),

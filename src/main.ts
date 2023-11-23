@@ -1,7 +1,7 @@
 import { serveDir, serveFile, Server, Status, STATUS_TEXT } from "./deps.ts";
 import { config } from "../config/config.ts";
 import { createBadge, log } from "./log.ts";
-import { getModifiedAfter } from "./repoActions.ts";
+//import { getModifiedAfter } from "./repoActions.ts";
 import { Job } from "./types.ts";
 
 // Incomplete, only what we need
@@ -46,17 +46,18 @@ const webhookHandler = async (request: Request) => {
   const pathname = requestUrl.pathname;
   if (request.method === "POST") {
     if (pathname === "/update") {
-      const after = requestUrl.searchParams.get("after");
-      if (!after) {
+      const from = requestUrl.searchParams.get("after");
+      if (!from) {
         return new Response("Query parameter 'after' required", {
           status: Status.BadRequest,
           statusText: STATUS_TEXT[Status.BadRequest],
         });
       }
-      console.log(await getModifiedAfter(after));
+      // console.log(await getModifiedAfter(from));
       const job: Job = {
         id: (new Date()).toISOString(),
-        after,
+        from,
+        till: "HEAD",
         author: {
           name: "GG2RDF Service",
           email: "gg2rdf@plazi.org",
@@ -101,7 +102,8 @@ const webhookHandler = async (request: Request) => {
         }
         const job: Job = {
           id: (new Date()).toISOString(),
-          after: json.before,
+          from: json.before,
+          till: json.after,
           author: json.pusher,
         };
         worker.postMessage(job);

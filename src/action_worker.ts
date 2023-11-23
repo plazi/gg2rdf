@@ -1,6 +1,8 @@
 /// <reference lib="webworker" />
 
-/* The webworker performing the long running operations on the repository
+/* This webworker performs the actual work, including the long running operations on the repository.
+* The jobs are accepted as messages and stored on disk, when the worker is started uncompleted jobs are picked up and exxecuted.
+
 */
 import { config } from "../config/config.ts";
 import { createBadge, log, getLog } from "./log.ts";
@@ -11,6 +13,8 @@ import { updateLocalData, getModifiedAfter } from "./repoActions.ts";
 const queue: Job[] = [];
 let currentId = "";
 let isRunning = false;
+
+console.log("TODO: load uncompleted jobs from files")
 
 self.onmessage = (evt) => {
   const job = evt.data as Job;
@@ -40,7 +44,7 @@ async function run() {
 
       await log(currentId, "Starting transformation"+ JSON.stringify(job,undefined, 2));
 
-      const files = await getModifiedAfter(job.after, getLog(currentId));
+      const files = await getModifiedAfter(job.from, job.till, getLog(currentId));
 
       const modified = [...files.added, ...files.modified];
       const removed = files.removed;

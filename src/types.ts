@@ -1,6 +1,7 @@
 export type Job = {
     id: string;
-    after: string;
+    from: string;
+    till: string;
     author: {
       "name": string;
       "email": string;
