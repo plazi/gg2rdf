@@ -1,8 +1,9 @@
-FROM denoland/deno:ubuntu-1.37.0
+FROM denoland/deno:ubuntu-1.38.3
 
 # Install cron
 RUN apt update
 RUN DEBIAN_FRONTEND=noninteractive apt install -y raptor2-utils openjdk-11-jdk git
+RUN git config --global http.postBuffer 1048576000
 
 # The port that your application listens to.
 EXPOSE 4505

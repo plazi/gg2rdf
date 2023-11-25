@@ -25,7 +25,7 @@ Build as a docker container.
 docker build . -t gg2rdf
 ```
 
-Requres a the environment-variable `GHTOKEN` as `username:<personal-acces-token>`
+Requires a the environment-variable `GHTOKEN` as `username:<personal-acces-token>`
 to authenticate the pushing into the target-repo.
 
 Then run using a volume
@@ -52,3 +52,11 @@ volumes:
 ## Configuration
 
 Edit the file `config/config.ts`. Should be self-explanatory what goes where.
+
+## Development
+
+The repo comes with vscode devcontaioner configurations.
+
+To start from the terminal in vscode:
+
+    set -a; source .env; set +a; deno run -A src/main.ts

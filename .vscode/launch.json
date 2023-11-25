@@ -9,12 +9,11 @@
             "name": "Launch Program",
             "type": "node",
             "program": "${workspaceFolder}/src/main.ts",
-            "cwd": "${workspaceFolder}",
+            "cwd": "/workspaces/",
             "runtimeExecutable": "/usr/bin/deno",
             "runtimeArgs": [
                 "run",
-                "--unstable",
-                "--inspect-wait",
+                "--inspect-brk",
                 "--allow-all"
             ],
             "envFile": "${workspaceFolder}/.env",
