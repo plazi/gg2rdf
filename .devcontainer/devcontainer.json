@@ -5,6 +5,7 @@
 	"workspaceFolder": "/workspaces/gg2rdf",
 	"customizations": {
 	  "vscode": {
+		"extensions": [ "denoland.vscode-deno"],
 		"settings": {
 		  "terminal.integrated.defaultProfile.linux": "bash",
 		  "terminal.integrated.profiles.linux": {
