@@ -168,22 +168,23 @@ async function run() {
         }
       }
 
+      const gitCommands = `git config user.name ${job.author.name}
+      git config user.email ${job.author.email}
+      git add -A
+      git commit --quiet -m "committed by action runner ${config.sourceRepository}@${job.id}"
+      git push --quiet ${config.targetRepositoryUri.replace(
+        "https://",
+        `https://${GHTOKEN}@`)}`
       const p = new Deno.Command("bash", {
         args: [
           "-c",
-          `git config user.name ${job.author.name}
-          git config user.email ${job.author.email}
-          git add -A
-          git commit --quiet -m "committed by action runner ${config.sourceRepository}@${job.id}"
-          git push --quiet origin ${config.targetBranch.replace(
-            "https://",
-            `https://${GHTOKEN}@`)}`
+          gitCommands
         ],
         cwd: `${config.workDir}/repo/target`,
       });
       const { success, stdout, stderr } = await p.output();
       if (!success) {
-        await log(currentId, "git push failed:");
+        await log(currentId, "git push failed: ");
       } else {
         await log(currentId, "git push succesful:");
       }
