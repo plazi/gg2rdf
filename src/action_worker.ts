@@ -9,6 +9,7 @@ import { createBadge, log, getLog } from "./log.ts";
 import type { Job } from "./types.ts";
 import { updateLocalData, getModifiedAfter } from "./repoActions.ts";
 
+const GHTOKEN = Deno.env.get("GHTOKEN");
 
 const queue: Job[] = [];
 let currentId = "";
@@ -174,7 +175,9 @@ async function run() {
           git config user.email ${job.author.email}
           git add -A
           git commit --quiet -m "committed by action runner ${config.sourceRepository}@${job.id}"
-          git push --quiet origin ${config.targetBranch}`,
+          git push --quiet origin ${config.targetBranch.replace(
+            "https://",
+            `https://${GHTOKEN}@`)}`
         ],
         cwd: `${config.workDir}/repo/target`,
       });
