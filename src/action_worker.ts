@@ -55,7 +55,7 @@ async function run() {
       for (const file of modified) {
         if (file.endsWith(".xml")) {
           await Deno.mkdir(
-            "workdir/tmprdf/" + file.slice(0, file.lastIndexOf("/")),
+            config.workDir + "/tmprdf/" + file.slice(0, file.lastIndexOf("/")),
             {
               recursive: true,
             },
@@ -65,10 +65,10 @@ async function run() {
               "-jar",
               `${Deno.cwd()}/src/saxon-he-10.8.jar`,
               `-s:${file}`,
-              `-o:${Deno.cwd()}/workdir/tmprdf/${file.slice(0, -4)}.rdf`,
+              `-o:${config.workDir}/tmprdf/${file.slice(0, -4)}.rdf`,
               `-xsl:${Deno.cwd()}/src/gg2rdf.xslt`,
             ],
-            cwd: "workdir/repo/source",
+            cwd: config.workDir+"/repo/source",
           });
           const { success, stdout, stderr } = await p.output();
           if (!success) {
@@ -88,7 +88,7 @@ async function run() {
       for (const file of modified) {
         if (file.endsWith(".xml")) {
           await Deno.mkdir(
-            "workdir/tmpttl/" + file.slice(0, file.lastIndexOf("/")),
+            config.workDir+"/tmpttl/" + file.slice(0, file.lastIndexOf("/")),
             {
               recursive: true,
             },
@@ -102,7 +102,7 @@ async function run() {
               "--output",
               "turtle",
             ],
-            cwd: "workdir/tmprdf",
+            cwd: config.workDir+"/tmprdf",
             stdin: "piped",
             stdout: "piped",
             stderr: "piped",
@@ -111,14 +111,14 @@ async function run() {
 
           // open a file and pipe the subprocess output to it.
           child.stdout.pipeTo(
-            Deno.openSync(`workdir/tmpttl/${file.slice(0, -4)}.ttl`, {
+            Deno.openSync(`${config.workDir}/tmpttl/${file.slice(0, -4)}.ttl`, {
               write: true,
               create: true,
             }).writable,
           );
 
           child.stderr.pipeTo(
-            Deno.openSync(`workdir/log/${currentId}`, {
+            Deno.openSync(`${config.workDir}/log/${currentId}`, {
               append: true,
               write: true,
               create: true,
@@ -140,14 +140,14 @@ async function run() {
       for (const file of modified) {
         if (file.endsWith(".xml")) {
           await Deno.mkdir(
-            `workdir/repo/target/${file.slice(0, file.lastIndexOf("/"))}`,
+            `${config.workDir}/repo/target/${file.slice(0, file.lastIndexOf("/"))}`,
             {
               recursive: true,
             },
           );
           await Deno.rename(
-            `workdir/tmpttl/${file.slice(0, -4)}.ttl`,
-            `workdir/repo/target/${file.slice(0, -4)}.ttl`,
+            `${config.workDir}/tmpttl/${file.slice(0, -4)}.ttl`,
+            `${config.workDir}/repo/target/${file.slice(0, -4)}.ttl`,
           );
           // TODO check if newer?
           // TODO errors
@@ -158,7 +158,7 @@ async function run() {
         if (file.endsWith(".xml")) {
           try {
             await Deno.remove(
-              `workdir/repo/target/${file.slice(0, -4)}.ttl`,
+              `${config.workDir}/repo/target/${file.slice(0, -4)}.ttl`,
             );
           } catch (_) {
             // TODO errors
@@ -176,7 +176,7 @@ async function run() {
           git commit --quiet -m "committed by action runner ${config.sourceRepository}@${job.id}"
           git push --quiet origin ${config.targetBranch}`,
         ],
-        cwd: "workdir/repo/target",
+        cwd: `${config.workDir}/repo/target`,
       });
       const { success, stdout, stderr } = await p.output();
       if (!success) {
