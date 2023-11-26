@@ -9,7 +9,7 @@ export type ChangeSummary = {
 };
 
 const emptyDataDir = async (which: "source" | "target") => {
-  await Deno.remove(`workdir/repo/${which}`, { recursive: true });
+  await Deno.remove(`${config.workDir}/repo/${which}`, { recursive: true });
 };
 
 const cloneRepo = async (which: "source" | "target", log = console.log) => {
@@ -29,7 +29,7 @@ const cloneRepo = async (which: "source" | "target", log = console.log) => {
         : config[`${which}RepositoryUri`],
       `repo/${which}`,
     ],
-    cwd: "workdir",
+    cwd: config.workDir,
   });
   const { success, stdout, stderr } = await p.output();
   if (!success) {
@@ -47,14 +47,17 @@ const cloneRepo = async (which: "source" | "target", log = console.log) => {
 };
 
 // Function to update local data
-export async function updateLocalData(which: "source" | "target", log = console.log) {
-  await Deno.mkdir(`workdir/repo/${which}/.git`, { recursive: true });
+export async function updateLocalData(
+  which: "source" | "target",
+  log = console.log,
+) {
+  await Deno.mkdir(`${config.workDir}/repo/${which}/.git`, { recursive: true });
   const p = new Deno.Command("git", {
     args: ["pull"],
     env: {
       GIT_CEILING_DIRECTORIES: Deno.cwd(),
     },
-    cwd: `workdir/repo/${which}`,
+    cwd: `${config.workDir}/repo/${which}`,
   });
   const { success, stdout, stderr } = await p.output();
   if (!success) {
@@ -73,7 +76,8 @@ export async function updateLocalData(which: "source" | "target", log = console.
 }
 
 export async function getModifiedAfter(
-  commitId: string,
+  fromCommit: string,
+  tillCommit = "HEAD",
   log = console.log,
 ): Promise<ChangeSummary> {
   await updateLocalData("source");
@@ -81,9 +85,10 @@ export async function getModifiedAfter(
     args: [
       "diff",
       "--name-status",
-      commitId,
+      fromCommit,
+      tillCommit,
     ],
-    cwd: "workdir/repo/source",
+    cwd: `${config.workDir}/repo/source`,
   });
   const { success, stdout, stderr } = await p.output();
   await log("STDOUT:");
@@ -95,7 +100,7 @@ export async function getModifiedAfter(
   }
   const typedFiles = new TextDecoder().decode(stdout).split("\n").filter((s) =>
     s.length > 0
-  ).map((s) => s.split(/(\s+)/).filter(p => p.trim().length > 0));
+  ).map((s) => s.split(/(\s+)/).filter((p) => p.trim().length > 0));
   return ({
     added: typedFiles.filter((t) => t[0] === "A").map((t) => t[1]),
     modified: typedFiles.filter((t) => t[0] === "M").map((t) => t[1]),

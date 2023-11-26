@@ -1,0 +1,16 @@
+version: '3'
+services:
+  gg2rdf:
+    image: tmp/gg2rdf
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    command: /bin/sh -c "while sleep 1000; do :; done"
+    volumes:
+      - ../:/workspaces/gg2rdf
+      - gg2rdf_data:/workdir
+    env_file:
+     - ../.env
+volumes:
+  gg2rdf_data:
+    driver: local

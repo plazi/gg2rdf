@@ -1,16 +1,21 @@
 /// <reference lib="webworker" />
 
-/* The webworker performing the long running operations on the repository
+/* This webworker performs the actual work, including the long running operations on the repository.
+* The jobs are accepted as messages and stored on disk, when the worker is started uncompleted jobs are picked up and exxecuted.
+
 */
 import { config } from "../config/config.ts";
 import { createBadge, log, getLog } from "./log.ts";
 import type { Job } from "./types.ts";
 import { updateLocalData, getModifiedAfter } from "./repoActions.ts";
 
+const GHTOKEN = Deno.env.get("GHTOKEN");
 
 const queue: Job[] = [];
 let currentId = "";
 let isRunning = false;
+
+console.log("TODO: load uncompleted jobs from files")
 
 self.onmessage = (evt) => {
   const job = evt.data as Job;
@@ -40,7 +45,7 @@ async function run() {
 
       await log(currentId, "Starting transformation"+ JSON.stringify(job,undefined, 2));
 
-      const files = await getModifiedAfter(job.after, getLog(currentId));
+      const files = await getModifiedAfter(job.from, job.till, getLog(currentId));
 
       const modified = [...files.added, ...files.modified];
       const removed = files.removed;
@@ -51,7 +56,7 @@ async function run() {
       for (const file of modified) {
         if (file.endsWith(".xml")) {
           await Deno.mkdir(
-            "workdir/tmprdf/" + file.slice(0, file.lastIndexOf("/")),
+            config.workDir + "/tmprdf/" + file.slice(0, file.lastIndexOf("/")),
             {
               recursive: true,
             },
@@ -61,10 +66,10 @@ async function run() {
               "-jar",
               `${Deno.cwd()}/src/saxon-he-10.8.jar`,
               `-s:${file}`,
-              `-o:${Deno.cwd()}/workdir/tmprdf/${file.slice(0, -4)}.rdf`,
+              `-o:${config.workDir}/tmprdf/${file.slice(0, -4)}.rdf`,
               `-xsl:${Deno.cwd()}/src/gg2rdf.xslt`,
             ],
-            cwd: "workdir/repo/source",
+            cwd: config.workDir+"/repo/source",
           });
           const { success, stdout, stderr } = await p.output();
           if (!success) {
@@ -84,7 +89,7 @@ async function run() {
       for (const file of modified) {
         if (file.endsWith(".xml")) {
           await Deno.mkdir(
-            "workdir/tmpttl/" + file.slice(0, file.lastIndexOf("/")),
+            config.workDir+"/tmpttl/" + file.slice(0, file.lastIndexOf("/")),
             {
               recursive: true,
             },
@@ -98,7 +103,7 @@ async function run() {
               "--output",
               "turtle",
             ],
-            cwd: "workdir/tmprdf",
+            cwd: config.workDir+"/tmprdf",
             stdin: "piped",
             stdout: "piped",
             stderr: "piped",
@@ -107,14 +112,14 @@ async function run() {
 
           // open a file and pipe the subprocess output to it.
           child.stdout.pipeTo(
-            Deno.openSync(`workdir/tmpttl/${file.slice(0, -4)}.ttl`, {
+            Deno.openSync(`${config.workDir}/tmpttl/${file.slice(0, -4)}.ttl`, {
               write: true,
               create: true,
             }).writable,
           );
 
           child.stderr.pipeTo(
-            Deno.openSync(`workdir/log/${currentId}`, {
+            Deno.openSync(`${config.workDir}/log/${currentId}`, {
               append: true,
               write: true,
               create: true,
@@ -136,14 +141,14 @@ async function run() {
       for (const file of modified) {
         if (file.endsWith(".xml")) {
           await Deno.mkdir(
-            `workdir/repo/target/${file.slice(0, file.lastIndexOf("/"))}`,
+            `${config.workDir}/repo/target/${file.slice(0, file.lastIndexOf("/"))}`,
             {
               recursive: true,
             },
           );
           await Deno.rename(
-            `workdir/tmpttl/${file.slice(0, -4)}.ttl`,
-            `workdir/repo/target/${file.slice(0, -4)}.ttl`,
+            `${config.workDir}/tmpttl/${file.slice(0, -4)}.ttl`,
+            `${config.workDir}/repo/target/${file.slice(0, -4)}.ttl`,
           );
           // TODO check if newer?
           // TODO errors
@@ -154,7 +159,7 @@ async function run() {
         if (file.endsWith(".xml")) {
           try {
             await Deno.remove(
-              `workdir/repo/target/${file.slice(0, -4)}.ttl`,
+              `${config.workDir}/repo/target/${file.slice(0, -4)}.ttl`,
             );
           } catch (_) {
             // TODO errors
@@ -163,20 +168,23 @@ async function run() {
         }
       }
 
+      const gitCommands = `git config user.name ${job.author.name}
+      git config user.email ${job.author.email}
+      git add -A
+      git commit --quiet -m "committed by action runner ${config.sourceRepository}@${job.id}"
+      git push --quiet ${config.targetRepositoryUri.replace(
+        "https://",
+        `https://${GHTOKEN}@`)}`
       const p = new Deno.Command("bash", {
         args: [
           "-c",
-          `git config user.name ${job.author.name}
-          git config user.email ${job.author.email}
-          git add -A
-          git commit --quiet -m "committed by action runner ${config.sourceRepository}@${job.id}"
-          git push --quiet origin ${config.targetBranch}`,
+          gitCommands
         ],
-        cwd: "workdir/repo/target",
+        cwd: `${config.workDir}/repo/target`,
       });
       const { success, stdout, stderr } = await p.output();
       if (!success) {
-        await log(currentId, "git push failed:");
+        await log(currentId, "git push failed: ");
       } else {
         await log(currentId, "git push succesful:");
       }

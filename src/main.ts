@@ -1,7 +1,7 @@
 import { serveDir, serveFile, Server, Status, STATUS_TEXT } from "./deps.ts";
 import { config } from "../config/config.ts";
 import { createBadge, log } from "./log.ts";
-import { getModifiedAfter } from "./repoActions.ts";
+//import { getModifiedAfter } from "./repoActions.ts";
 import { Job } from "./types.ts";
 
 // Incomplete, only what we need
@@ -25,11 +25,11 @@ const GHTOKEN = Deno.env.get("GHTOKEN");
 if (!GHTOKEN) throw new Error("Requires GHTOKEN");
 
 // ensure all required directories
-await Deno.mkdir(`workdir/repo`, { recursive: true });
-await Deno.mkdir(`workdir/tmprdf`, { recursive: true });
-await Deno.mkdir(`workdir/tmpttl`, { recursive: true });
-await Deno.mkdir(`workdir/log`, { recursive: true });
-await Deno.writeTextFile(`workdir/log/index.json`, "[]");
+await Deno.mkdir(`${config.workDir}/repo`, { recursive: true });
+await Deno.mkdir(`${config.workDir}/tmprdf`, { recursive: true });
+await Deno.mkdir(`${config.workDir}/tmpttl`, { recursive: true });
+await Deno.mkdir(`${config.workDir}/log`, { recursive: true });
+await Deno.writeTextFile(`${config.workDir}/log/index.json`, "[]");
 await createBadge("Unknown");
 
 const worker = new Worker(
@@ -46,17 +46,18 @@ const webhookHandler = async (request: Request) => {
   const pathname = requestUrl.pathname;
   if (request.method === "POST") {
     if (pathname === "/update") {
-      const after = requestUrl.searchParams.get("after");
-      if (!after) {
+      const from = requestUrl.searchParams.get("after");
+      if (!from) {
         return new Response("Query parameter 'after' required", {
           status: Status.BadRequest,
           statusText: STATUS_TEXT[Status.BadRequest],
         });
       }
-      console.log(await getModifiedAfter(after));
+      // console.log(await getModifiedAfter(from));
       const job: Job = {
         id: (new Date()).toISOString(),
-        after,
+        from,
+        till: "HEAD",
         author: {
           name: "GG2RDF Service",
           email: "gg2rdf@plazi.org",
@@ -101,7 +102,8 @@ const webhookHandler = async (request: Request) => {
         }
         const job: Job = {
           id: (new Date()).toISOString(),
-          after: json.before,
+          from: json.before,
+          till: json.after,
           author: json.pusher,
         };
         worker.postMessage(job);
@@ -122,20 +124,20 @@ const webhookHandler = async (request: Request) => {
     }
   } else if (pathname === "/log" || pathname === "/log/") {
     console.log("· Got log index request");
-    const response = await serveFile(request, "workdir/log/index.json");
+    const response = await serveFile(request, `${config.workDir}/log/index.json`);
     response.headers.set("Content-Type", "application/json");
     return response;
   } else if (pathname.startsWith("/log")) {
     console.log("· Got log request for", pathname);
     const response = await serveDir(request, {
-      fsRoot: "workdir/log",
+      fsRoot: `${config.workDir}/log`,
       urlRoot: "log",
     });
     // response.headers.set("Content-Type", "application/json");
     return response;
   } else if (pathname === "/status" || pathname === "/status/") {
     console.log("· Got status badge request");
-    const response = await serveFile(request, "workdir/status.svg");
+    const response = await serveFile(request, `${config.workDir}/status.svg`);
     response.headers.set("Content-Type", "image/svg+xml");
     return response;
   } else {
