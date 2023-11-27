@@ -55,7 +55,7 @@ Edit the file `config/config.ts`. Should be self-explanatory what goes where.
 
 ## Development
 
-The repo comes with vscode devcontaioner configurations.
+The repo comes with vscode devcontaioner configurations. Some tweaks to allow using git from inside the devcontainer.
 
 To start from the terminal in vscode:
 
