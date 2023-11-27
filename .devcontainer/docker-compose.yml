@@ -5,11 +5,11 @@ services:
     build:
       context: ..
       dockerfile: Dockerfile
-    command: /bin/sh -c "cp -r /root/.ssh-host /root/.ssh; chmod -R 0700 /root/.ssh; while sleep 1000; do :; done"
+    command: /bin/sh -c "cp -r /root/.ssh-host /root/.ssh; chmod -R 0700 /root/.ssh; cat /root/.gitconfig-host > /root/.gitconfig; while sleep 1000; do :; done"
     volumes:
       - ../:/workspaces/gg2rdf
       - gg2rdf_data:/workdir
-      - ~/.gitconfig:/root/.gitconfig
+      - ~/.gitconfig:/root/.gitconfig-host
       - ~/.ssh:/root/.ssh-host:ro
     env_file:
      - ../.env
