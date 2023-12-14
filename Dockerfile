@@ -1,4 +1,4 @@
-FROM denoland/deno:ubuntu-1.38.3
+FROM denoland/deno:ubuntu-1.39.0
 
 # Install cron
 RUN apt update
