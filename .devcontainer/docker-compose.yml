@@ -11,8 +11,8 @@ services:
       - gg2rdf_data:/workdir
       - ~/.gitconfig:/root/.gitconfig-host
       - ~/.ssh:/root/.ssh-host:ro
-    env_file:
-     - ../.env
+    # env_file:
+    # - ../.env
 volumes:
   gg2rdf_data:
     driver: local
