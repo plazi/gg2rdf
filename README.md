@@ -14,7 +14,7 @@ This webserver also exposes the follwing paths:
 - `/status`: Serves a Badge (svg) to show the current pipeline status
 - `/logs`: List of logs of past runs
 - `/logs/[id]`: Log of past run with that id.
-- `/update?after=[commit-id]`: send a `POST` here to update all files modified since commit-id
+- `/update?from=[from-commit-id]&till=[till-commit-id]`: send a `POST` here to update all files modified since from-commit-id up till-commit-id or HEAD if not specified
 - `/full_update`: send a `POST` here to run the full_update script. (Not
   implemented yet, continue using the scripts in the "manual run" directory)
 
@@ -34,6 +34,8 @@ docker run --name gg2rdf --env GHTOKEN=username:<personal-acces-token> -p 4505:4
 ```
 
 Exposes port `4505`.
+
+
 
 ### Docker-Compose
 

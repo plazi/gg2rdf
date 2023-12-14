@@ -46,18 +46,19 @@ const webhookHandler = async (request: Request) => {
   const pathname = requestUrl.pathname;
   if (request.method === "POST") {
     if (pathname === "/update") {
-      const from = requestUrl.searchParams.get("after");
+      const from = requestUrl.searchParams.get("from");
       if (!from) {
-        return new Response("Query parameter 'after' required", {
+        return new Response("Query parameter 'from' required", {
           status: Status.BadRequest,
           statusText: STATUS_TEXT[Status.BadRequest],
         });
       }
+      const till = requestUrl.searchParams.get("till") || "HEAD";
       // console.log(await getModifiedAfter(from));
       const job: Job = {
         id: (new Date()).toISOString(),
         from,
-        till: "HEAD",
+        till,
         author: {
           name: "GG2RDF Service",
           email: "gg2rdf@plazi.org",
