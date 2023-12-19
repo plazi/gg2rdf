@@ -4,58 +4,61 @@
 * The jobs are accepted as messages and stored on disk, when the worker is started uncompleted jobs are picked up and exxecuted.
 
 */
+import * as path from "https://deno.land/std@0.209.0/path/mod.ts";
 import { config } from "../config/config.ts";
-import { createBadge, log, getLog } from "./log.ts";
-import type { Job } from "./types.ts";
+import { createBadge, getLog } from "./log.ts";
+import { JobsDataBase, type Job } from "./JobsDataBase.ts";
 import { updateLocalData, getModifiedAfter } from "./repoActions.ts";
 
 const GHTOKEN = Deno.env.get("GHTOKEN");
 
-const queue: Job[] = [];
+const queue = new JobsDataBase(`${config.workDir}/log`);
 let currentId = "";
 let isRunning = false;
 
-console.log("TODO: load uncompleted jobs from files")
+startTask();
 
 self.onmessage = (evt) => {
   const job = evt.data as Job;
-  queue.push(job);
+  queue.addJob(job);
   if (!isRunning) startTask();
-  else console.log("· Waiting for previous run to finish");
+  else console.log("Already running");
 };
 
-async function startTask() {
+function startTask() {
   isRunning = true;
   try {
-    await run()
+    run()
   } finally {
     isRunning = false
   }
 }
 
-async function run() {
-  while (queue.length) {
+function run() {
+  while (queue.pendingJobs().length > 0) {
+  const jobStatus = queue.pendingJobs()[0];
+    const job = jobStatus.job;
     try {
-
-      // get job to consider
-      // remove from queue
-      const job = queue.shift()!;
+      const log = (msg: string) => {
+        Deno.writeTextFileSync(path.join(jobStatus.dir, "log.txt"), msg + "\n", { append: true})
+      };
 
       currentId = job.id
 
-      await log(currentId, "Starting transformation"+ JSON.stringify(job,undefined, 2));
 
-      const files = await getModifiedAfter(job.from, job.till, getLog(currentId));
+      log("Starting transformation"+ JSON.stringify(job,undefined, 2));
+
+      const files = getModifiedAfter(job.from, job.till, log);
 
       const modified = [...files.added, ...files.modified];
       const removed = files.removed;
 
-      await updateLocalData("source", getLog(currentId));
+      updateLocalData("source", log);
 
       // run saxon on modified files
       for (const file of modified) {
         if (file.endsWith(".xml")) {
-          await Deno.mkdir(
+          Deno.mkdirSync(
             config.workDir + "/tmprdf/" + file.slice(0, file.lastIndexOf("/")),
             {
               recursive: true,
@@ -73,22 +76,24 @@ async function run() {
           });
           const { success, stdout, stderr } = await p.output();
           if (!success) {
-            await log(currentId, "saxon failed:");
+            log("saxon failed:");
           } else {
-            await log(currentId, "saxon succesful:");
+            log( "saxon succesful:");
           }
-          await log(currentId, "STDOUT:");
-          await log(currentId, new TextDecoder().decode(stdout));
-          await log(currentId, "STDERR:");
-          await log(currentId, new TextDecoder().decode(stderr));
-          // TODO: handle failure
+          log("STDOUT:");
+          log(new TextDecoder().decode(stdout));
+          log("STDERR:");
+          log(new TextDecoder().decode(stderr));
+          if (!success) {
+            throw new Error("Saxon failed")
+          }
         }
       }
 
       // convert modified files to ttl
       for (const file of modified) {
         if (file.endsWith(".xml")) {
-          await Deno.mkdir(
+          Deno.mkdirSync(
             config.workDir+"/tmpttl/" + file.slice(0, file.lastIndexOf("/")),
             {
               recursive: true,

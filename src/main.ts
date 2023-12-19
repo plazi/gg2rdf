@@ -2,7 +2,7 @@ import { serveDir, serveFile, Server, Status, STATUS_TEXT } from "./deps.ts";
 import { config } from "../config/config.ts";
 import { createBadge, log } from "./log.ts";
 //import { getModifiedAfter } from "./repoActions.ts";
-import { Job } from "./types.ts";
+import { Job } from "./JobsDataBase.ts";
 
 // Incomplete, only what we need
 type webhookPayload = {
