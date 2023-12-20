@@ -33,5 +33,5 @@ export const createBadge = (status: "OK" | "Failed" | "Unknown") => {
        y="28"
      >${status}</text>
   </svg>`;
-  return Deno.writeTextFile(`${config.workDir}/status.svg`, svg);
+  return Deno.writeTextFileSync(`${config.workDir}/status.svg`, svg);
 };
