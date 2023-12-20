@@ -55,7 +55,7 @@ export function updateLocalData(
   const p = new Deno.Command("git", {
     args: ["pull"],
     env: {
-      GIT_CEILING_DIRECTORIES: Deno.cwd(),
+      GIT_CEILING_DIRECTORIES: `${config.workDir}/repo/`,
     },
     cwd: `${config.workDir}/repo/${which}`,
   });

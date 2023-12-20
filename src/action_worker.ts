@@ -65,10 +65,10 @@ async function run() {
           const p = new Deno.Command("java", {
             args: [
               "-jar",
-              `${Deno.cwd()}/src/saxon-he-10.8.jar`,
+              path.fromFileUrl(import.meta.resolve("./saxon-he-10.8.jar")),
               `-s:${file}`,
               `-o:${config.workDir}/tmprdf/${file.slice(0, -4)}.rdf`,
-              `-xsl:${Deno.cwd()}/src/gg2rdf.xslt`,
+              `-xsl:${path.fromFileUrl(import.meta.resolve("./gg2rdf.xslt"))}`,
             ],
             cwd: config.workDir + "/repo/source",
           });
