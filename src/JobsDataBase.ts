@@ -55,20 +55,27 @@ export class JobsDataBase {
     for (const jobDir of Deno.readDirSync(this.jobsDir)) {
       jobDirs.push(jobDir);
     }
-    jobDirs.filter((entry) => entry.isDirectory).sort();
+    jobDirs.filter((entry) => entry.isDirectory).sort((a,b) => a.name.localeCompare(b.name));
 
     return jobDirs.map((jobDir) => {
       const statusFile = path.join(this.jobsDir, jobDir.name, "status.json");
       try {
         return Deno.readTextFileSync(statusFile);
       } catch (err) {
-        if (!(err instanceof Deno.errors.NotFound)) {
+        if (err instanceof Deno.errors.NotFound) {
+          console.warn(
+            `No statusfile found at ${statusFile}. Please remove directory.`,
+          );
+          return null;
+        } else if ((err instanceof Deno.errors.NotADirectory) || err.code === "ENOTDIR") {
+          console.warn(
+            `${statusFile} is not a diretory. Please remove the file.`,
+          );
+          return null;
+        } else {
           throw err;
         }
-        console.warn(
-          `No statusfile found at ${statusFile}. Please remove directory.`,
-        );
-        return null;
+        
       }
     }).filter(notEmpty).map((t) => {
       try {

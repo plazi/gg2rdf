@@ -6,17 +6,17 @@
 */
 import * as path from "https://deno.land/std@0.209.0/path/mod.ts";
 import { config } from "../config/config.ts";
-import { createBadge, getLog } from "./log.ts";
-import { JobsDataBase, type Job } from "./JobsDataBase.ts";
-import { updateLocalData, getModifiedAfter } from "./repoActions.ts";
+import { createBadge } from "./log.ts";
+import { type Job, JobsDataBase } from "./JobsDataBase.ts";
+import { getModifiedAfter, updateLocalData } from "./repoActions.ts";
 
 const GHTOKEN = Deno.env.get("GHTOKEN");
 
 const queue = new JobsDataBase(`${config.workDir}/log`);
-let currentId = "";
+
 let isRunning = false;
 
-startTask();
+await startTask();
 
 self.onmessage = (evt) => {
   const job = evt.data as Job;
@@ -25,28 +25,26 @@ self.onmessage = (evt) => {
   else console.log("Already running");
 };
 
-function startTask() {
+async function startTask() {
   isRunning = true;
   try {
-    run()
+    await run();
   } finally {
-    isRunning = false
+    isRunning = false;
   }
 }
 
-function run() {
+async function run() {
   while (queue.pendingJobs().length > 0) {
-  const jobStatus = queue.pendingJobs()[0];
+    const jobStatus = queue.pendingJobs()[0];
     const job = jobStatus.job;
+    const log = (msg: string) => {
+      Deno.writeTextFileSync(path.join(jobStatus.dir, "log.txt"), msg + "\n", {
+        append: true,
+      });
+    };
     try {
-      const log = (msg: string) => {
-        Deno.writeTextFileSync(path.join(jobStatus.dir, "log.txt"), msg + "\n", { append: true})
-      };
-
-      currentId = job.id
-
-
-      log("Starting transformation"+ JSON.stringify(job,undefined, 2));
+      log("Starting transformation" + JSON.stringify(job, undefined, 2));
 
       const files = getModifiedAfter(job.from, job.till, log);
 
@@ -72,20 +70,20 @@ function run() {
               `-o:${config.workDir}/tmprdf/${file.slice(0, -4)}.rdf`,
               `-xsl:${Deno.cwd()}/src/gg2rdf.xslt`,
             ],
-            cwd: config.workDir+"/repo/source",
+            cwd: config.workDir + "/repo/source",
           });
           const { success, stdout, stderr } = await p.output();
           if (!success) {
             log("saxon failed:");
           } else {
-            log( "saxon succesful:");
+            log("saxon succesful:");
           }
           log("STDOUT:");
           log(new TextDecoder().decode(stdout));
           log("STDERR:");
           log(new TextDecoder().decode(stderr));
           if (!success) {
-            throw new Error("Saxon failed")
+            throw new Error("Saxon failed");
           }
         }
       }
@@ -94,7 +92,7 @@ function run() {
       for (const file of modified) {
         if (file.endsWith(".xml")) {
           Deno.mkdirSync(
-            config.workDir+"/tmpttl/" + file.slice(0, file.lastIndexOf("/")),
+            config.workDir + "/tmpttl/" + file.slice(0, file.lastIndexOf("/")),
             {
               recursive: true,
             },
@@ -108,7 +106,7 @@ function run() {
               "--output",
               "turtle",
             ],
-            cwd: config.workDir+"/tmprdf",
+            cwd: config.workDir + "/tmprdf",
             stdin: "piped",
             stdout: "piped",
             stderr: "piped",
@@ -124,7 +122,7 @@ function run() {
           );
 
           child.stderr.pipeTo(
-            Deno.openSync(`${config.workDir}/log/${currentId}`, {
+            Deno.openSync(path.join(jobStatus.dir, "log.txt"), {
               append: true,
               write: true,
               create: true,
@@ -136,22 +134,25 @@ function run() {
 
           const status = await child.status;
           if (!status.success) {
-            await log(currentId, `Rapper failed on ${file.slice(0, -4)}.rdf`);
+            log(`Rapper failed on ${file.slice(0, -4)}.rdf`);
+            throw new Error("Rapper failed");
           }
         }
       }
 
-      await updateLocalData("target", getLog(currentId));
+      updateLocalData("target", log);
 
       for (const file of modified) {
         if (file.endsWith(".xml")) {
-          await Deno.mkdir(
-            `${config.workDir}/repo/target/${file.slice(0, file.lastIndexOf("/"))}`,
+          Deno.mkdirSync(
+            `${config.workDir}/repo/target/${
+              file.slice(0, file.lastIndexOf("/"))
+            }`,
             {
               recursive: true,
             },
           );
-          await Deno.rename(
+          Deno.renameSync(
             `${config.workDir}/tmpttl/${file.slice(0, -4)}.ttl`,
             `${config.workDir}/repo/target/${file.slice(0, -4)}.ttl`,
           );
@@ -163,11 +164,12 @@ function run() {
       for (const file of removed) {
         if (file.endsWith(".xml")) {
           try {
-            await Deno.remove(
+            Deno.removeSync(
               `${config.workDir}/repo/target/${file.slice(0, -4)}.ttl`,
             );
-          } catch (_) {
+          } catch (e) {
             // TODO errors
+            throw e;
           }
           // TODO check if newer?
         }
@@ -177,36 +179,40 @@ function run() {
       git config user.email ${job.author.email}
       git add -A
       git commit --quiet -m "committed by action runner ${config.sourceRepository}@${job.id}"
-      git push --quiet ${config.targetRepositoryUri.replace(
-        "https://",
-        `https://${GHTOKEN}@`)}`
+      git push --quiet ${
+        config.targetRepositoryUri.replace(
+          "https://",
+          `https://${GHTOKEN}@`,
+        )
+      }`;
       const p = new Deno.Command("bash", {
         args: [
           "-c",
-          gitCommands
+          gitCommands,
         ],
         cwd: `${config.workDir}/repo/target`,
       });
-      const { success, stdout, stderr } = await p.output();
+      const { success, stdout, stderr } = p.outputSync();
       if (!success) {
-        await log(currentId, "git push failed: ");
+        log("git push failed: ");
       } else {
-        await log(currentId, "git push succesful:");
+        log("git push succesful:");
       }
-      await log(currentId, "STDOUT:");
-      await log(currentId, new TextDecoder().decode(stdout));
-      await log(currentId, "STDERR:");
-      await log(currentId, new TextDecoder().decode(stderr));
+      log("STDOUT:");
+      log(new TextDecoder().decode(stdout));
+      log("STDERR:");
+      log(new TextDecoder().decode(stderr));
       if (!success) {
         throw new Error("Abort.");
       }
-
-      await log(currentId, "Completed transformation successfully");
-      await createBadge("OK");
+      queue.setStatus(job, "completed");
+      log("Completed transformation successfully");
+      createBadge("OK");
     } catch (error) {
-      await log(currentId, "FAILED TRANSFORMATION");
-      await log(currentId, error);
-      await createBadge("Failed");
+      queue.setStatus(job, "failed");
+      log("FAILED TRANSFORMATION");
+      log(error);
+      createBadge("Failed");
     }
   }
 }

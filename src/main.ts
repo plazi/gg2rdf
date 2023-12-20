@@ -1,6 +1,6 @@
 import { serveDir, serveFile, Server, Status, STATUS_TEXT } from "./deps.ts";
 import { config } from "../config/config.ts";
-import { createBadge, log } from "./log.ts";
+import { createBadge } from "./log.ts";
 //import { getModifiedAfter } from "./repoActions.ts";
 import { Job } from "./JobsDataBase.ts";
 
@@ -65,8 +65,7 @@ const webhookHandler = async (request: Request) => {
         },
       };
       worker.postMessage(job);
-      await log(
-        job.id,
+      console.log(
         `Job submitted: ${JSON.stringify(job, undefined, 2)}`,
       );
       return new Response(undefined, {
@@ -108,8 +107,7 @@ const webhookHandler = async (request: Request) => {
           author: json.pusher,
         };
         worker.postMessage(job);
-        await log(
-          job.id,
+        console.log(
           `Job submitted: ${JSON.stringify(job, undefined, 2)}`,
         );
         return new Response(undefined, {
