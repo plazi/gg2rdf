@@ -26,7 +26,6 @@ function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
 /** A filesystem backed database of jobs and their status. For every job there
  * is a directory where logs might be added. */
 export class JobsDataBase {
-  
   constructor(public jobsDir: string) {
     Deno.mkdirSync(jobsDir, { recursive: true });
   }
@@ -38,7 +37,10 @@ export class JobsDataBase {
       dir: path.join(this.jobsDir, job.id),
     };
     Deno.mkdirSync(status.dir);
-    Deno.writeTextFileSync(path.join(status.dir, "status.json"), JSON.stringify(status, undefined, 2));
+    Deno.writeTextFileSync(
+      path.join(status.dir, "status.json"),
+      JSON.stringify(status, undefined, 2),
+    );
   }
 
   setStatus(job: Job, status: "failed" | "completed") {
@@ -47,7 +49,10 @@ export class JobsDataBase {
       status,
       dir: path.join(this.jobsDir, job.id),
     };
-    Deno.writeTextFileSync(path.join(jobStatus.dir, "status.json"), JSON.stringify(jobStatus, undefined, 2));
+    Deno.writeTextFileSync(
+      path.join(jobStatus.dir, "status.json"),
+      JSON.stringify(jobStatus, undefined, 2),
+    );
   }
 
   allJobs(): JobStatus[] {
@@ -55,9 +60,9 @@ export class JobsDataBase {
     for (const jobDir of Deno.readDirSync(this.jobsDir)) {
       jobDirs.push(jobDir);
     }
-    jobDirs.filter((entry) => entry.isDirectory).sort((a,b) => a.name.localeCompare(b.name));
-
-    return jobDirs.map((jobDir) => {
+    return jobDirs.filter((entry) => entry.isDirectory).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    ).map((jobDir) => {
       const statusFile = path.join(this.jobsDir, jobDir.name, "status.json");
       try {
         return Deno.readTextFileSync(statusFile);
@@ -67,7 +72,9 @@ export class JobsDataBase {
             `No statusfile found at ${statusFile}. Please remove directory.`,
           );
           return null;
-        } else if ((err instanceof Deno.errors.NotADirectory) || err.code === "ENOTDIR") {
+        } else if (
+          (err instanceof Deno.errors.NotADirectory) || err.code === "ENOTDIR"
+        ) {
           console.warn(
             `${statusFile} is not a diretory. Please remove the file.`,
           );
@@ -75,7 +82,6 @@ export class JobsDataBase {
         } else {
           throw err;
         }
-        
       }
     }).filter(notEmpty).map((t) => {
       try {

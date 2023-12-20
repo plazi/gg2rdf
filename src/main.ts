@@ -2,7 +2,8 @@ import { serveDir, serveFile, Server, Status, STATUS_TEXT } from "./deps.ts";
 import { config } from "../config/config.ts";
 import { createBadge } from "./log.ts";
 //import { getModifiedAfter } from "./repoActions.ts";
-import { Job } from "./JobsDataBase.ts";
+import { Job, JobsDataBase } from "./JobsDataBase.ts";
+import * as path from "https://deno.land/std@0.209.0/path/mod.ts";
 
 // Incomplete, only what we need
 type webhookPayload = {
@@ -125,13 +126,27 @@ const webhookHandler = async (request: Request) => {
     const response = await serveFile(request, `${config.workDir}/status.svg`);
     response.headers.set("Content-Type", "image/svg+xml");
     return response;
-  } else {
+  } else if (pathname === "/jobs.json") {
+    const db = new JobsDataBase(`${config.workDir}/jobs`);
+    const json = JSON.stringify(db.allJobs(), undefined, 2);
+    const response = new Response(json);
+    response.headers.set("Content-Type", "application/json");
+    return response;
+  } else if (pathname.startsWith(config.workDir)) {
+    //serving workdir
     const response = await serveDir(request, {
-      fsRoot: config.workDir,
-      showDirListing: true
+      fsRoot: "/",
+      showDirListing: true,
     });
     return response;
-  } 
+  } else {
+    //fallback to directory serving
+    const response = await serveDir(request, {
+      fsRoot: path.join(path.fromFileUrl(import.meta.resolve("../")), "web"),
+      showDirListing: true,
+    });
+    return response;
+  }
 };
 
 //////////////////////////////////////////////////

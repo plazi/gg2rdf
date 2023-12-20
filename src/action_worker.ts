@@ -12,7 +12,7 @@ import { getModifiedAfter, updateLocalData } from "./repoActions.ts";
 
 const GHTOKEN = Deno.env.get("GHTOKEN");
 
-const queue = new JobsDataBase(`${config.workDir}/log`);
+const queue = new JobsDataBase(`${config.workDir}/jobs`);
 
 let isRunning = false;
 
