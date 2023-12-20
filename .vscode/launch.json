@@ -13,7 +13,7 @@
             "runtimeExecutable": "/usr/bin/deno",
             "runtimeArgs": [
                 "run",
-                "--inspect-brk",
+                "--inspect",
                 "--allow-all"
             ],
             "envFile": "${workspaceFolder}/.env",

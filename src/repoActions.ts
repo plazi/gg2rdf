@@ -8,12 +8,12 @@ export type ChangeSummary = {
   modified: string[];
 };
 
-const emptyDataDir = async (which: "source" | "target") => {
-  await Deno.remove(`${config.workDir}/repo/${which}`, { recursive: true });
+const emptyDataDir = (which: "source" | "target") => {
+  Deno.removeSync(`${config.workDir}/repo/${which}`, { recursive: true });
 };
 
-const cloneRepo = async (which: "source" | "target", log = console.log) => {
-  await log(`Cloning ${which} repo. This will take some time.`);
+const cloneRepo = (which: "source" | "target", log = console.log) => {
+  log(`Cloning ${which} repo. This will take some time.`);
   const p = new Deno.Command("git", {
     args: [
       "clone",
@@ -31,56 +31,56 @@ const cloneRepo = async (which: "source" | "target", log = console.log) => {
     ],
     cwd: config.workDir,
   });
-  const { success, stdout, stderr } = await p.output();
+  const { success, stdout, stderr } = p.outputSync();
   if (!success) {
-    await log("git clone failed:");
+    log("git clone failed:");
   } else {
-    await log("git clone succesful:");
+    log("git clone succesful:");
   }
-  await log("STDOUT:");
-  await log(new TextDecoder().decode(stdout));
-  await log("STDERR:");
-  await log(new TextDecoder().decode(stderr));
+  log("STDOUT:");
+  log(new TextDecoder().decode(stdout));
+  log("STDERR:");
+  log(new TextDecoder().decode(stderr));
   if (!success) {
     throw new Error("Abort.");
   }
 };
 
 // Function to update local data
-export async function updateLocalData(
+export function updateLocalData(
   which: "source" | "target",
   log = console.log,
 ) {
-  await Deno.mkdir(`${config.workDir}/repo/${which}/.git`, { recursive: true });
+  Deno.mkdirSync(`${config.workDir}/repo/${which}/.git`, { recursive: true });
   const p = new Deno.Command("git", {
     args: ["pull"],
     env: {
-      GIT_CEILING_DIRECTORIES: Deno.cwd(),
+      GIT_CEILING_DIRECTORIES: `${config.workDir}/repo/`,
     },
     cwd: `${config.workDir}/repo/${which}`,
   });
-  const { success, stdout, stderr } = await p.output();
+  const { success, stdout, stderr } = p.outputSync();
   if (!success) {
-    await log("git pull failed:");
+    log("git pull failed:");
   } else {
-    await log("git pull successful:");
+    log("git pull successful:");
   }
-  await log("STDOUT:");
-  await log(new TextDecoder().decode(stdout));
-  await log("STDERR:");
-  await log(new TextDecoder().decode(stderr));
+  log(new TextDecoder().decode(stdout));
+  log("STDERR:");
+  log(new TextDecoder().decode(stderr));
+  log("STDOUT:");
   if (!success) {
-    await emptyDataDir(which);
-    await cloneRepo(which, log);
+    emptyDataDir(which);
+    cloneRepo(which, log);
   }
 }
 
-export async function getModifiedAfter(
+export function getModifiedAfter(
   fromCommit: string,
   tillCommit = "HEAD",
   log = console.log,
-): Promise<ChangeSummary> {
-  await updateLocalData("source");
+): ChangeSummary {
+  updateLocalData("source");
   const p = new Deno.Command("git", {
     args: [
       "diff",
@@ -90,11 +90,11 @@ export async function getModifiedAfter(
     ],
     cwd: `${config.workDir}/repo/source`,
   });
-  const { success, stdout, stderr } = await p.output();
-  await log("STDOUT:");
-  await log(new TextDecoder().decode(stdout));
-  await log("STDERR:");
-  await log(new TextDecoder().decode(stderr));
+  const { success, stdout, stderr } = p.outputSync();
+  log("STDOUT:");
+  log(new TextDecoder().decode(stdout));
+  log("STDERR:");
+  log(new TextDecoder().decode(stderr));
   if (!success) {
     throw new Error("Abort.");
   }
