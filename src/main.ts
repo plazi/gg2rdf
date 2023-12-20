@@ -29,7 +29,6 @@ await Deno.mkdir(`${config.workDir}/repo`, { recursive: true });
 await Deno.mkdir(`${config.workDir}/tmprdf`, { recursive: true });
 await Deno.mkdir(`${config.workDir}/tmpttl`, { recursive: true });
 await Deno.mkdir(`${config.workDir}/log`, { recursive: true });
-await Deno.writeTextFile(`${config.workDir}/log/index.json`, "[]");
 await createBadge("Unknown");
 
 const worker = new Worker(
@@ -121,31 +120,18 @@ const webhookHandler = async (request: Request) => {
         });
       }
     }
-  } else if (pathname === "/log" || pathname === "/log/") {
-    console.log("· Got log index request");
-    const response = await serveFile(request, `${config.workDir}/log/index.json`);
-    response.headers.set("Content-Type", "application/json");
-    return response;
-  } else if (pathname.startsWith("/log")) {
-    console.log("· Got log request for", pathname);
-    const response = await serveDir(request, {
-      fsRoot: `${config.workDir}/log`,
-      urlRoot: "log",
-    });
-    // response.headers.set("Content-Type", "application/json");
-    return response;
   } else if (pathname === "/status" || pathname === "/status/") {
     console.log("· Got status badge request");
     const response = await serveFile(request, `${config.workDir}/status.svg`);
     response.headers.set("Content-Type", "image/svg+xml");
     return response;
   } else {
-    console.log("· Got invalid request");
-    return new Response(undefined, {
-      status: Status.BadRequest,
-      statusText: STATUS_TEXT[Status.BadRequest],
+    const response = await serveDir(request, {
+      fsRoot: config.workDir,
+      showDirListing: true
     });
-  }
+    return response;
+  } 
 };
 
 //////////////////////////////////////////////////
