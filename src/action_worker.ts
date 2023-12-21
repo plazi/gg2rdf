@@ -163,15 +163,14 @@ async function run() {
 
       for (const file of removed) {
         if (file.endsWith(".xml")) {
+          const ttlFile = `${config.workDir}/repo/target/${
+            file.slice(0, -4)
+          }.ttl`;
           try {
-            Deno.removeSync(
-              `${config.workDir}/repo/target/${file.slice(0, -4)}.ttl`,
-            );
+            Deno.removeSync(ttlFile);
           } catch (e) {
-            // TODO errors
-            throw e;
+            log(`Failed to remove file ${ttlFile}. Possbly the xml file was removed before it was trnsformed. \n${e}`);
           }
-          // TODO check if newer?
         }
       }
 
