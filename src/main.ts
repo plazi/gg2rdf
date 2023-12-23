@@ -29,7 +29,6 @@ if (!GHTOKEN) throw new Error("Requires GHTOKEN");
 await Deno.mkdir(`${config.workDir}/repo`, { recursive: true });
 await Deno.mkdir(`${config.workDir}/tmprdf`, { recursive: true });
 await Deno.mkdir(`${config.workDir}/tmpttl`, { recursive: true });
-await Deno.mkdir(`${config.workDir}/log`, { recursive: true });
 await createBadge("Unknown");
 
 const worker = new Worker(
