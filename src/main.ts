@@ -5,6 +5,8 @@ import { createBadge } from "./log.ts";
 import { Job, JobsDataBase } from "./JobsDataBase.ts";
 import * as path from "https://deno.land/std@0.209.0/path/mod.ts";
 
+const encoder = new TextEncoder();
+
 // Incomplete, only what we need
 type webhookPayload = {
   repository: {
@@ -24,6 +26,8 @@ type webhookPayload = {
 const GHTOKEN = Deno.env.get("GHTOKEN");
 
 if (!GHTOKEN) throw new Error("Requires GHTOKEN");
+
+const WEBHOOK_SECRET: string | undefined = Deno.env.get("WEBHOOK_SECRET");
 
 // ensure all required directories
 await Deno.mkdir(`${config.workDir}/repo`, { recursive: true });
@@ -80,6 +84,12 @@ const webhookHandler = async (request: Request) => {
         statusText: STATUS_TEXT[Status.NotImplemented],
       });
     } else {
+      if (WEBHOOK_SECRET && !(await verifySignature(request))) {
+        return new Response("Unauthorized", {
+          status: Status.Unauthorized,
+          statusText: STATUS_TEXT[Status.Unauthorized],
+        });
+      }
       try {
         const json: webhookPayload | undefined = await request.json();
         const repoName = json?.repository?.full_name;
@@ -147,6 +157,54 @@ const webhookHandler = async (request: Request) => {
     return response;
   }
 };
+
+const verifySignature = async (req: Request) => {
+  const header = req.headers.get("x-hub-signature-256");
+  if (!header) {
+    throw new Error("No x-hub-signature-256");
+  }
+  const payload = JSON.stringify(req.body);
+  const parts = header.split("=");
+  const sigHex = parts[1];
+
+  const algorithm = { name: "HMAC", hash: { name: "SHA-256" } };
+
+  const keyBytes = encoder.encode(WEBHOOK_SECRET);
+  const extractable = false;
+  const key = await crypto.subtle.importKey(
+    "raw",
+    keyBytes,
+    algorithm,
+    extractable,
+    ["sign", "verify"],
+  );
+
+  const sigBytes = hexToBytes(sigHex);
+  const dataBytes = encoder.encode(payload);
+  const equal = await crypto.subtle.verify(
+    algorithm.name,
+    key,
+    sigBytes,
+    dataBytes,
+  );
+
+  return equal;
+};
+
+function hexToBytes(hex: string) {
+  const len = hex.length / 2;
+  const bytes = new Uint8Array(len);
+
+  let index = 0;
+  for (let i = 0; i < hex.length; i += 2) {
+    const c = hex.slice(i, i + 2);
+    const b = parseInt(c, 16);
+    bytes[index] = b;
+    index += 1;
+  }
+
+  return bytes;
+}
 
 //////////////////////////////////////////////////
 // start server
