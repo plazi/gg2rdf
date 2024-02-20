@@ -26,6 +26,7 @@ const document = new DOMParser().parseFromString(
 );
 
 Deno.writeTextFileSync(flags.output!, ""); // clear prexisting file
+
 output(`@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix bibo: <http://purl.org/ontology/bibo/> .
 @prefix cito: <http://purl.org/spar/cito/> .
@@ -45,11 +46,116 @@ const doc = document.querySelector("document") as Element;
 const id = doc.getAttribute("docId");
 console.log("document id :", id);
 
-makeTreatment();
+try {
+  checkForErrors();
+  makeTreatment();
+} catch (error) {
+  console.error("" + error);
+  output(
+    "# There was some Error in gg2rdf\n" +
+      ("# " + error).replace(/\n/g, "\n# "),
+  );
+}
 
 // end of top-level code
 
-/** outputs turtle describing the treatment */
+/** replaces <xsl:template match="/"> (root template) */
+function checkForErrors() {
+  const errors: string[] = [];
+  const nomenclature: Element | undefined = document.querySelector(
+    'document treatment subSubSection[type="nomenclature"]',
+  );
+  const taxon = nomenclature?.querySelector("taxonomicName");
+  if (!taxon) {
+    errors.push("the treatment is lacking the taxon");
+  } else {
+    const rank = taxon.getAttribute("rank");
+    if (!rank) errors.push("the treatment taxon is lacking its rank attribute");
+    const sigEpithet = normalizeSpace(taxon.getAttribute(rank)); // get the attribute with the rank as the name
+    if (sigEpithet.match(/[^a-zA-Z\-]/)) {
+      errors.push(`sigEpithet '${sigEpithet}' contains invalid characters`);
+    }
+    if (
+      (rank === "subSpecies" || rank === "variety") &&
+      normalizeSpace(taxon.getAttribute("species")).match(/[^a-zA-Z\-]/)
+    ) {
+      errors.push(
+        `species '${
+          normalizeSpace(taxon.getAttribute("species"))
+        }' contains invalid characters`,
+      );
+    }
+    if (
+      (rank === "subGenus" || rank === "species" || rank === "subSpecies" ||
+        rank === "variety") &&
+      normalizeSpace(taxon.getAttribute("genus")).match(/[^a-zA-Z\-]/)
+    ) {
+      errors.push(
+        `genus '${
+          normalizeSpace(taxon.getAttribute("genus"))
+        }' contains invalid characters`,
+      );
+    }
+    if (
+      (rank === "subFamily" || rank === "tribe" || rank === "subTribe") &&
+      normalizeSpace(taxon.getAttribute("family")).match(/[^a-zA-Z\-]/)
+    ) {
+      errors.push(
+        `family '${
+          normalizeSpace(taxon.getAttribute("family"))
+        }' contains invalid characters`,
+      );
+    }
+    if (
+      rank === "subOrder" &&
+      normalizeSpace(taxon.getAttribute("order")).match(/[^a-zA-Z\-]/)
+    ) {
+      errors.push(
+        `order '${
+          normalizeSpace(taxon.getAttribute("order"))
+        }' contains invalid characters`,
+      );
+    }
+    if (
+      rank === "subClass" &&
+      normalizeSpace(taxon.getAttribute("class")).match(/[^a-zA-Z\-]/)
+    ) {
+      errors.push(
+        `class '${
+          normalizeSpace(taxon.getAttribute("class"))
+        }' contains invalid characters`,
+      );
+    }
+    if (
+      rank === "subPhylum" &&
+      normalizeSpace(taxon.getAttribute("phylum")).match(/[^a-zA-Z\-]/)
+    ) {
+      errors.push(
+        `phylum '${
+          normalizeSpace(taxon.getAttribute("phylum"))
+        }' contains invalid characters`,
+      );
+    }
+    if (!taxon.getAttribute("kingdom")) {
+      console.warn(
+        "Warning: treatment taxon is missing ancestor kingdom, defaulting to 'Animalia'",
+      );
+      output(
+        "# Warning: treatment taxon is missing ancestor kingdom, defaulting to 'Animalia'",
+      );
+    }
+  }
+  if (errors.length) {
+    throw new Error(
+      "Cannot produce RDF XML due to data errors:\n - " + errors.join("\n - "),
+    );
+  }
+}
+
+/** outputs turtle describing the treatment
+ *
+ * replaces <xsl:template match="document"> and <xsl:template match="treatment"> (incomplete)
+ */
 function makeTreatment() {
   output(`treatment:${id}
     dc:creator ${getAuthors()} ;
@@ -81,6 +187,11 @@ function getAuthors() {
 
 function STR(s: string) {
   return `"${s.replace(/"/g, `\\"`).replace(/\n/g, "\\n")}"`;
+}
+
+function normalizeSpace(s: string) {
+  // deno-lint-ignore no-control-regex
+  return s.replace(/(\x20|\x09|\x0A|\x0D)+/, " ").trim();
 }
 
 /** this function should only be called with valid turtle segments,
