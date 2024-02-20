@@ -8,7 +8,7 @@
   only incorporating improvements after we have confirmed that it is equivalent.
 */
 
-import { DOMParser } from "https://esm.sh/linkedom@0.16.8";
+import { DOMParser } from "https://esm.sh/linkedom@0.16.8/cached";
 import { Element } from "https://esm.sh/v135/linkedom@0.16.8/types/interface/element.d.ts";
 import { parseArgs } from "https://deno.land/std@0.215.0/cli/parse_args.ts";
 
