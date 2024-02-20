@@ -11,8 +11,6 @@
 import { DOMParser } from "https://esm.sh/linkedom@0.16.8/cached";
 import { Element } from "https://esm.sh/v135/linkedom@0.16.8/types/interface/element.d.ts";
 import { parseArgs } from "https://deno.land/std@0.215.0/cli/parse_args.ts";
-import { HTTP_METHODS } from "https://deno.land/std@0.202.0/http/method.ts";
-import { mergeHeaders } from "https://deno.land/std@0.202.0/http/cookie_map.ts";
 
 const flags = parseArgs(Deno.args, {
   string: ["input", "output"],
