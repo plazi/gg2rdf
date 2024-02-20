@@ -1,111 +1,63 @@
 /// <reference lib="webworker" />
 
-import { config } from "../config/config.ts";
-import { createBadge, log } from "./log.ts";
-import type { commit, workerMessage } from "./main.ts";
+/* This webworker performs the actual work, including the long running operations on the repository.
+* The jobs are accepted as messages and stored on disk, when the worker is started uncompleted jobs are picked up and exxecuted.
 
-const queue: commit[] = [];
-let currentId = "";
+*/
+import * as path from "https://deno.land/std@0.209.0/path/mod.ts";
+import { config } from "../config/config.ts";
+import { createBadge } from "./log.ts";
+import { type Job, JobsDataBase } from "./JobsDataBase.ts";
+import { getModifiedAfter, updateLocalData } from "./repoActions.ts";
+
+const GHTOKEN = Deno.env.get("GHTOKEN");
+
+const queue = new JobsDataBase(`${config.workDir}/jobs`);
+
 let isRunning = false;
 
-let GHTOKEN = "";
+await startTask();
 
 self.onmessage = (evt) => {
-  const msg = evt.data;
-  if ((msg as { GHTOKEN: string }).GHTOKEN) GHTOKEN = msg.GHTOKEN;
-  else {
-    queue.push(...(msg as workerMessage).commits);
-    if (!isRunning) startTask();
-    else console.log("· Waiting for previous run to finish");
-  }
-};
-
-const emptyDataDir = async (which: "source" | "target") => {
-  await Deno.remove(`workdir/repo/${which}`, { recursive: true });
-};
-
-const cloneRepo = async (which: "source" | "target") => {
-  await log(currentId, `Cloning ${which} repo. This will take some time.`);
-  const p = new Deno.Command("git", {
-    args: [
-      "clone",
-      "--depth",
-      "1",
-      "--single-branch",
-      `--branch`,
-      `${config[`${which}Branch`]}`,
-      which === "target"
-        ? config[`${which}RepositoryUri`].replace(
-          "https://",
-          `https://${GHTOKEN}@`,
-        )
-        : config[`${which}RepositoryUri`],
-      `repo/${which}`,
-    ],
-    cwd: "workdir",
-  });
-  const { success, stdout, stderr } = await p.output();
-  if (!success) {
-    await log(currentId, "git clone failed:");
-  } else {
-    await log(currentId, "git clone succesful:");
-  }
-  await log(currentId, "STDOUT:");
-  await log(currentId, new TextDecoder().decode(stdout));
-  await log(currentId, "STDERR:");
-  await log(currentId, new TextDecoder().decode(stderr));
-  if (!success) {
-    throw new Error("Abort.");
-  }
-};
-
-const updateLocalData = async (which: "source" | "target") => {
-  await Deno.mkdir(`workdir/repo/${which}/.git`, { recursive: true });
-  const p = new Deno.Command("git", {
-    args: ["pull"],
-    env: {
-      GIT_CEILING_DIRECTORIES: Deno.cwd(),
-    },
-    cwd: `workdir/repo/${which}`,
-  });
-  const { success, stdout, stderr } = await p.output();
-  if (!success) {
-    await log(currentId, "git pull failed:");
-  } else {
-    await log(currentId, "git pull succesful:");
-  }
-  await log(currentId, "STDOUT:");
-  await log(currentId, new TextDecoder().decode(stdout));
-  await log(currentId, "STDERR:");
-  await log(currentId, new TextDecoder().decode(stderr));
-  if (!success) {
-    await emptyDataDir(which);
-    await cloneRepo(which);
-  }
+  const job = evt.data as Job;
+  queue.addJob(job);
+  if (!isRunning) startTask();
+  else console.log("Already running");
 };
 
 async function startTask() {
   isRunning = true;
-  while (queue.length) {
+  try {
+    await run();
+  } finally {
+    isRunning = false;
+  }
+}
+
+async function run() {
+  while (queue.pendingJobs().length > 0) {
+    const jobStatus = queue.pendingJobs()[0];
+    const job = jobStatus.job;
+    const log = (msg: string) => {
+      Deno.writeTextFileSync(path.join(jobStatus.dir, "log.txt"), msg + "\n", {
+        append: true,
+      });
+    };
     try {
-      currentId = (new Date()).toISOString();
+      log("Starting transformation" + JSON.stringify(job, undefined, 2));
 
-      await log(currentId, "Starting transformation");
+      const files = getModifiedAfter(job.from, job.till, log);
 
-      // get changes to consider
-      // remove from queue
-      const q = queue.shift()!;
+      const modified = [...files.added, ...files.modified];
+      const removed = files.removed;
 
-      const modified = [...q.added, ...q.modified];
-      const removed = q.removed;
-
-      await updateLocalData("source");
+      updateLocalData("source", log);
 
       // run saxon on modified files
       for (const file of modified) {
         if (file.endsWith(".xml")) {
-          await Deno.mkdir(
-            "workdir/tmprdf/" + file.slice(0, file.lastIndexOf("/")),
+          Deno.mkdirSync(
+            config.workDir + "/tmprdf/" + file.slice(0, file.lastIndexOf("/")),
             {
               recursive: true,
             },
@@ -113,32 +65,34 @@ async function startTask() {
           const p = new Deno.Command("java", {
             args: [
               "-jar",
-              `${Deno.cwd()}/src/saxon-he-10.8.jar`,
+              path.fromFileUrl(import.meta.resolve("./saxon-he-10.8.jar")),
               `-s:${file}`,
-              `-o:${Deno.cwd()}/workdir/tmprdf/${file.slice(0, -4)}.rdf`,
-              `-xsl:${Deno.cwd()}/src/gg2rdf.xslt`,
+              `-o:${config.workDir}/tmprdf/${file.slice(0, -4)}.rdf`,
+              `-xsl:${path.fromFileUrl(import.meta.resolve("./gg2rdf.xslt"))}`,
             ],
-            cwd: "workdir/repo/source",
+            cwd: config.workDir + "/repo/source",
           });
           const { success, stdout, stderr } = await p.output();
           if (!success) {
-            await log(currentId, "saxon failed:");
+            log("saxon failed:");
           } else {
-            await log(currentId, "saxon succesful:");
+            log("saxon succesful:");
           }
-          await log(currentId, "STDOUT:");
-          await log(currentId, new TextDecoder().decode(stdout));
-          await log(currentId, "STDERR:");
-          await log(currentId, new TextDecoder().decode(stderr));
-          // TODO: handle failure
+          log("STDOUT:");
+          log(new TextDecoder().decode(stdout));
+          log("STDERR:");
+          log(new TextDecoder().decode(stderr));
+          if (!success) {
+            throw new Error("Saxon failed");
+          }
         }
       }
 
       // convert modified files to ttl
       for (const file of modified) {
         if (file.endsWith(".xml")) {
-          await Deno.mkdir(
-            "workdir/tmpttl/" + file.slice(0, file.lastIndexOf("/")),
+          Deno.mkdirSync(
+            config.workDir + "/tmpttl/" + file.slice(0, file.lastIndexOf("/")),
             {
               recursive: true,
             },
@@ -152,7 +106,7 @@ async function startTask() {
               "--output",
               "turtle",
             ],
-            cwd: "workdir/tmprdf",
+            cwd: config.workDir + "/tmprdf",
             stdin: "piped",
             stdout: "piped",
             stderr: "piped",
@@ -161,14 +115,14 @@ async function startTask() {
 
           // open a file and pipe the subprocess output to it.
           child.stdout.pipeTo(
-            Deno.openSync(`workdir/tmpttl/${file.slice(0, -4)}.ttl`, {
+            Deno.openSync(`${config.workDir}/tmpttl/${file.slice(0, -4)}.ttl`, {
               write: true,
               create: true,
             }).writable,
           );
 
           child.stderr.pipeTo(
-            Deno.openSync(`workdir/log/${currentId}`, {
+            Deno.openSync(path.join(jobStatus.dir, "log.txt"), {
               append: true,
               write: true,
               create: true,
@@ -180,24 +134,27 @@ async function startTask() {
 
           const status = await child.status;
           if (!status.success) {
-            await log(currentId, `Rapper failed on ${file.slice(0, -4)}.rdf`);
+            log(`Rapper failed on ${file.slice(0, -4)}.rdf`);
+            throw new Error("Rapper failed");
           }
         }
       }
 
-      await updateLocalData("target");
+      updateLocalData("target", log);
 
       for (const file of modified) {
         if (file.endsWith(".xml")) {
-          await Deno.mkdir(
-            `workdir/repo/target/${file.slice(0, file.lastIndexOf("/"))}`,
+          Deno.mkdirSync(
+            `${config.workDir}/repo/target/${
+              file.slice(0, file.lastIndexOf("/"))
+            }`,
             {
               recursive: true,
             },
           );
-          await Deno.rename(
-            `workdir/tmpttl/${file.slice(0, -4)}.ttl`,
-            `workdir/repo/target/${file.slice(0, -4)}.ttl`,
+          Deno.renameSync(
+            `${config.workDir}/tmpttl/${file.slice(0, -4)}.ttl`,
+            `${config.workDir}/repo/target/${file.slice(0, -4)}.ttl`,
           );
           // TODO check if newer?
           // TODO errors
@@ -206,49 +163,55 @@ async function startTask() {
 
       for (const file of removed) {
         if (file.endsWith(".xml")) {
+          const ttlFile = `${config.workDir}/repo/target/${
+            file.slice(0, -4)
+          }.ttl`;
           try {
-            await Deno.remove(
-              `workdir/repo/target/${file.slice(0, -4)}.ttl`,
-            );
-          } catch (_) {
-            // TODO errors
+            Deno.removeSync(ttlFile);
+          } catch (e) {
+            log(`Failed to remove file ${ttlFile}. Possbly the xml file was removed before it was trnsformed. \n${e}`);
           }
-          // TODO check if newer?
         }
       }
 
+      const gitCommands = `git config user.name ${job.author.name}
+      git config user.email ${job.author.email}
+      git add -A
+      git commit --quiet -m "committed by action runner ${config.sourceRepository}@${job.id}"
+      git push --quiet ${
+        config.targetRepositoryUri.replace(
+          "https://",
+          `https://${GHTOKEN}@`,
+        )
+      }`;
       const p = new Deno.Command("bash", {
         args: [
           "-c",
-          `git config user.name ${q.author.username}
-          git config user.email ${q.author.email}
-          git add -A
-          git commit -m "committed by action runner ${config.sourceRepository}@${q.id}"
-          git push origin ${config.targetBranch}`,
+          gitCommands,
         ],
-        cwd: "workdir/repo/target",
+        cwd: `${config.workDir}/repo/target`,
       });
-      const { success, stdout, stderr } = await p.output();
+      const { success, stdout, stderr } = p.outputSync();
       if (!success) {
-        await log(currentId, "git push failed:");
+        log("git push failed: ");
       } else {
-        await log(currentId, "git push succesful:");
+        log("git push succesful:");
       }
-      await log(currentId, "STDOUT:");
-      await log(currentId, new TextDecoder().decode(stdout));
-      await log(currentId, "STDERR:");
-      await log(currentId, new TextDecoder().decode(stderr));
+      log("STDOUT:");
+      log(new TextDecoder().decode(stdout));
+      log("STDERR:");
+      log(new TextDecoder().decode(stderr));
       if (!success) {
         throw new Error("Abort.");
       }
-
-      await log(currentId, "Completed transformation successfully");
-      await createBadge("OK");
+      queue.setStatus(job, "completed");
+      log("Completed transformation successfully");
+      createBadge("OK");
     } catch (error) {
-      await log(currentId, "FAILED TRANSFORMATION");
-      await log(currentId, error);
-      await createBadge("Failed");
+      queue.setStatus(job, "failed");
+      log("FAILED TRANSFORMATION");
+      log(error);
+      createBadge("Failed");
     }
   }
-  isRunning = false;
 }

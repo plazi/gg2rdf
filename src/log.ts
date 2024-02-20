@@ -1,27 +1,4 @@
-import { existsSync } from "./deps.ts";
-
-export const log = async (id: string, data: string) => {
-  const timestamp = (new Date()).toISOString();
-  const isNew = !existsSync(`workdir/log/${id}`);
-  if (isNew) {
-    const index: string[] = JSON.parse(
-      await Deno.readTextFile(`workdir/log/index.json`),
-    );
-    index.push(id);
-    await Deno.writeTextFile(
-      `workdir/log/index.json`,
-      JSON.stringify(index),
-    );
-  }
-  console.log("~", /*id,*/ data);
-  return await Deno.writeTextFile(
-    `workdir/log/${id}`,
-    `${timestamp}: ${data}\n`,
-    {
-      append: true,
-    },
-  );
-};
+import { config } from "../config/config.ts";
 
 const colors = {
   OK: "#26a269",
@@ -56,5 +33,5 @@ export const createBadge = (status: "OK" | "Failed" | "Unknown") => {
        y="28"
      >${status}</text>
   </svg>`;
-  return Deno.writeTextFile("workdir/status.svg", svg);
+  return Deno.writeTextFileSync(`${config.workDir}/status.svg`, svg);
 };

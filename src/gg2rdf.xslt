@@ -9,6 +9,7 @@
 	xmlns:dwcFP="http://filteredpush.org/ontologies/oa/dwcFP#"
 	xmlns:fabio="http://purl.org/spar/fabio/"
 	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+	xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
 	xmlns:trt="http://plazi.org/vocab/treatment#"
 	xmlns:xs="http://www.w3.org/2001/XMLSchema/"
 	exclude-result-prefixes="xs" version="1.0">
@@ -275,7 +276,7 @@
 			<xsl:choose>
 				<!-- no valid authority given, fall back to taxon name -->
 				<xsl:when test="$taxonAuthority = 'INVALID'"><xsl:element name="trt:treatsTaxonName"><xsl:attribute name="rdf:resource"><xsl:call-template name="taxonNameBaseURI">
-					<xsl:with-param name="taxonName" select="$taxon"/>
+					<xsl:with-param name="kingdom" select="$taxon/@kingdom"/>
 				</xsl:call-template>/<xsl:call-template name="taxonNameForURI">
 					<xsl:with-param name="taxonName" select="$taxon"/>
 				</xsl:call-template></xsl:attribute></xsl:element></xsl:when>
@@ -1096,6 +1097,11 @@
 			<xsl:when test="name() = 'lastPageNumber'"/>
 			<xsl:when test="name() = 'higherTaxonomySource'"/>
 			<xsl:when test="name() = 'status'"/>
+			<xsl:when test="name() = 'ID-CoL'">
+				<xsl:element name="rdfs:seeAlso">
+					<xsl:attribute name="rdf:resource">https://www.catalogueoflife.org/data/taxon/<xsl:value-of select="normalize-space(.)"/></xsl:attribute>
+				</xsl:element>
+			</xsl:when>
 			<xsl:when test="starts-with(name(), '_')"/>
 			<xsl:when test="contains(name(), '.')"/>
 			<xsl:when test="contains(name(), 'authority')"/>

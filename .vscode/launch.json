@@ -13,10 +13,10 @@
             "runtimeExecutable": "/usr/bin/deno",
             "runtimeArgs": [
                 "run",
-                "--unstable",
-                "--inspect-wait",
+                "--inspect",
                 "--allow-all"
             ],
+            "envFile": "${workspaceFolder}/.env",
             "attachSimplePort": 9229
         }
     ]

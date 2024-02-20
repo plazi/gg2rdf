@@ -14,6 +14,7 @@ This webserver also exposes the follwing paths:
 - `/status`: Serves a Badge (svg) to show the current pipeline status
 - `/logs`: List of logs of past runs
 - `/logs/[id]`: Log of past run with that id.
+- `/update?from=[from-commit-id]&till=[till-commit-id]`: send a `POST` here to update all files modified since from-commit-id up till-commit-id or HEAD if not specified
 - `/full_update`: send a `POST` here to run the full_update script. (Not
   implemented yet, continue using the scripts in the "manual run" directory)
 
@@ -24,7 +25,7 @@ Build as a docker container.
 docker build . -t gg2rdf
 ```
 
-Requres a the environment-variable `GHTOKEN` as `username:<personal-acces-token>`
+Requires a the environment-variable `GHTOKEN` as `username:<personal-acces-token>`
 to authenticate the pushing into the target-repo.
 
 Then run using a volume
@@ -33,6 +34,8 @@ docker run --name gg2rdf --env GHTOKEN=username:<personal-acces-token> -p 4505:4
 ```
 
 Exposes port `4505`.
+
+
 
 ### Docker-Compose
 
@@ -51,3 +54,11 @@ volumes:
 ## Configuration
 
 Edit the file `config/config.ts`. Should be self-explanatory what goes where.
+
+## Development
+
+The repo comes with vscode devcontaioner configurations. Some tweaks to allow using git from inside the devcontainer.
+
+To start from the terminal in vscode:
+
+    set -a; source .env; set +a; deno run -A src/main.ts

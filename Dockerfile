@@ -1,8 +1,10 @@
-FROM denoland/deno:ubuntu-1.37.0
+FROM denoland/deno:ubuntu-1.39.0
 
 # Install cron
 RUN apt update
-RUN DEBIAN_FRONTEND=noninteractive apt install -y raptor2-utils openjdk-11-jdk git
+RUN DEBIAN_FRONTEND=noninteractive apt install -y raptor2-utils openjdk-11-jdk git curl
+RUN git config --system http.postBuffer 1048576000
+RUN git config --system --add safe.directory /workspaces/gg2rdf
 
 # The port that your application listens to.
 EXPOSE 4505
@@ -20,6 +22,7 @@ RUN deno cache src/deps.ts
 # These steps will be re-run upon each file change in your working directory:
 ADD config config
 ADD src src
+ADD web web
 # Compile the main app so that it doesn't need to be compiled each startup/entry.
 RUN deno cache src/main.ts
 
