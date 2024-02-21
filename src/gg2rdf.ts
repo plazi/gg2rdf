@@ -231,6 +231,27 @@ function makeTreatment() {
   ).join(", ");
   if (materials) properties.push(`dwc:basisOfRecord ${materials}`);
 
+  const figures = document.querySelectorAll("figureCitation[httpUri]").map(
+    (c: Element) => {
+      const uri = c.getAttribute("httpUri") ?? "";
+      if (uri.includes("10.5281/zenodo.")) {
+        return `<${uri.replaceAll(" ", "")}>`;
+      }
+      if (uri.includes("zenodo.")) {
+        return `<http://dx.doi.org/10.5281/zenodo.${
+          substringAfter(
+            substringBefore(uri.replaceAll(" ", ""), "/files/"),
+            "/record/",
+          )
+        }>`;
+      }
+      const doi = c.getAttribute("figureDoi") ?? "";
+      if (doi.includes("doi.org/10.")) return `<${doi.replaceAll(" ", "")}>`;
+      if (doi) return `<http://dx.doi.org/${doi.replaceAll(" ", "")}>`;
+    },
+  ).join(", ");
+  if (figures) properties.push(`cito:cites ${figures}`);
+
   properties.push(`a trt:Treatment`);
 
   outputProperties(`treatment:${id}`, properties);
