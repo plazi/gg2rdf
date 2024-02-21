@@ -36,8 +36,6 @@ output(`@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix fabio: <http://purl.org/spar/fabio/> .
 @prefix trt: <http://plazi.org/vocab/treatment#> .
 @prefix treatment: <http://treatment.plazi.org/id/> .
-@prefix taxonName: <http://taxon-name.plazi.org/id/> .
-@prefix taxonConcept: <http://taxon-concept.plazi.org/id/> .
 @prefix xlink: <http://www.w3.org/1999/xlink/> .`);
 
 // this is the <document> surrounding everything. doc != document
@@ -186,15 +184,15 @@ function makeTreatment() {
       taxon.parentNode.querySelector(`taxonomicName ~ taxonomicNameLabel`)
     ) {
       properties.push(
-        `trt:definesTaxonConcept <${
+        `trt:definesTaxonConcept ${
           taxonConceptURI({ taxonName: taxon, taxonAuthority })
-        }>`,
+        }`,
       );
     } else {
       properties.push(
-        `trt:augmentsTaxonConcept <${
+        `trt:augmentsTaxonConcept ${
           taxonConceptURI({ taxonName: taxon, taxonAuthority })
-        }>`,
+        }`,
       );
     }
   }
@@ -202,7 +200,25 @@ function makeTreatment() {
   properties.push(`dc:creator ${getAuthors()}`);
   properties.push(`trt:publishedIn ${getPublication()}`);
 
-  // TODO after "add cited taxon concepts"
+  // add cited taxon concepts
+  document.querySelectorAll(
+    "subSubSection:has(>[type='reference_group']) treatmentCitationGroup, subSubSection:has(>[type='reference_group']) treatmentCitation, subSubSection:has(>[type='reference_group']) taxonomicName",
+  ).forEach((e: Element) => {
+    if (
+      (e.tagName === "treatmentCitation" &&
+        e.closest("treatmentCitationGroup")) ||
+      (e.tagName === "taxonomicName" &&
+        (e.closest("treatmentCitation") || e.closest("treatmentCitationGroup")))
+    ) {
+      return;
+    }
+    const cTaxon = e.tagName === "taxonomicName"
+      ? e
+      : e.querySelector("taxonomicName");
+    const citation = taxonConceptCitation(taxon, cTaxon);
+    if (citation) properties.push(citation);
+  });
+
   // TODO after "maybe add references to materials citations that have a specimen (HTTP) URI"
 
   properties.push(`a trt:Treatment`);
@@ -276,6 +292,79 @@ function getBookChapterProperties(e: Element): string[] {
   return result;
 }
 
+/** replaces <xsl:template name="taxonConceptCitation"> */
+function taxonConceptCitation(
+  taxon: Element,
+  cTaxon: Element,
+): string | undefined {
+  const cTaxonAuthority = getAuthority({
+    taxonName: cTaxon,
+    taxonStatus: "ABSENT",
+  });
+  const taxonRelation = getTaxonRelation({ taxon, cTaxon });
+  const cTaxonRankGroup = getTaxonRankGroup(cTaxon);
+  // check required attributes
+  if (
+    cTaxonRankGroup === RANKS.INVALID || !cTaxon.getAttribute("kingdom") ||
+    (cTaxonRankGroup === RANKS.species && !cTaxon.getAttribute("genus"))
+  ) return;
+  if (cTaxonAuthority === "INVALID") {
+    // no valid authority cited, fall back to taxon name
+    return `trt:citesTaxonName <${taxonNameForURI({ taxonName: cTaxon })}>`;
+  }
+  if (taxonRelation === REL.CITES) {
+    // do not let a citing treatment deprecate a cited name
+    return `cito:cites ${
+      taxonConceptURI({ taxonName: cTaxon, taxonAuthority: cTaxonAuthority })
+    }`;
+  }
+  // do not let a taxon deprecate itself
+  // skip taxon names with insufficient attributes
+  if (taxonRelation === REL.SAME || taxonRelation === REL.NONE) return;
+  // deprecate recombined, renamed, and synonymized names
+  return `trt:deprecates ${
+    taxonConceptURI({ taxonName: cTaxon, taxonAuthority: cTaxonAuthority })
+  }`;
+}
+
+enum REL {
+  CITES,
+  SAME,
+  NONE, // depr etc?
+}
+
+/** replaces <xsl:template name="taxonRelation"> */
+function getTaxonRelation(
+  { taxon, cTaxon }: { taxon: Element; cTaxon: Element },
+) {
+  // TODO
+  return REL.NONE;
+}
+
+enum RANKS {
+  INVALID,
+  kingdom,
+  phylum,
+  class,
+  order,
+  family,
+  tribe,
+  genus,
+  species,
+}
+
+function getTaxonRankGroup(t: Element): RANKS {
+  if (t.getAttribute("species")) return RANKS.species;
+  if (t.getAttribute("genus")) return RANKS.genus;
+  if (t.getAttribute("tribe")) return RANKS.tribe;
+  if (t.getAttribute("family")) return RANKS.family;
+  if (t.getAttribute("order")) return RANKS.order;
+  if (t.getAttribute("class")) return RANKS.class;
+  if (t.getAttribute("phylum")) return RANKS.phylum;
+  if (t.getAttribute("kingdom")) return RANKS.kingdom;
+  return RANKS.INVALID;
+}
+
 /** replaces <xsl:call-template name="authority"> */
 function getAuthority(
   { taxonName, taxonStatus }: { taxonName: Element; taxonStatus: string },
@@ -338,7 +427,9 @@ function taxonNameBaseURI({ kingdom }: { kingdom: string }) {
   }`;
 }
 
-/** replaces <xsl:call-template name="taxonNameForURI"> */
+/** returns the end part of a taxon-name uri
+ *
+ * replaces <xsl:call-template name="taxonNameForURI"> */
 function taxonNameForURI(
   { taxonName }: { taxonName: Element | string },
 ) {
@@ -373,22 +464,26 @@ function taxonNameForURI(
   return "";
 }
 
-/** replaces <xsl:call-template name="taxonConceptBaseURI"> */
+/** returns plain uri
+ *
+ * replaces <xsl:call-template name="taxonConceptBaseURI"> */
 function taxonConceptBaseURI({ kingdom }: { kingdom: string }) {
   return `http://taxon-concept.plazi.org/id/${
     kingdom ? encodeURIComponent(kingdom.replaceAll(" ", "_")) : "Animalia"
   }`;
 }
 
-/** replaces <xsl:call-template name="taxonConceptURI"> */
+/** returns valid turtle uri
+ *
+ * replaces <xsl:call-template name="taxonConceptURI"> */
 function taxonConceptURI(
   { taxonName, taxonAuthority }: { taxonName: Element; taxonAuthority: string },
 ) {
-  return `${
+  return `<${
     taxonConceptBaseURI({ kingdom: taxonName.getAttribute("kingdom") })
   }/${taxonNameForURI({ taxonName })}${
     encodeURIComponent(normalizeSpace(taxonAuthority))
-  }`;
+  }>`;
 }
 
 /** → turtle snippet a la `"author1", "author2", ... "authorN"` */
