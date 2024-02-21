@@ -300,7 +300,7 @@ function makeTaxonConcept(taxon: Element, cTaxon: Element) {
   if (alreadyDoneTC.includes(uri)) return;
   alreadyDoneTC.push(uri);
 
-  // TODO taxonNameDetails(cTaxon)
+  properties.push(...taxonNameDetails(cTaxon));
 
   properties.push(
     `trt:hasTaxonName <${
@@ -350,6 +350,31 @@ function makeTaxonConcept(taxon: Element, cTaxon: Element) {
 
   properties.push("a dwcFP:TaxonConcept");
   outputProperties(uri, properties);
+}
+
+/** replaces <xsl:template name="taxonNameDetails"> and <xsl:template match="taxonomicName/@*"> */
+function taxonNameDetails(taxon: Element): string[] {
+  return taxon.getAttributeNames().filter((n: string) =>
+    ![
+      "id",
+      "box",
+      "pageId",
+      "pageNumber",
+      "lastPageId",
+      "lastPageNumber",
+      "higherTaxonomySource",
+      "status",
+    ].includes(n) && !n.startsWith("_") &&
+    !n.match(/\.|authority|Authority|evidence|Evicence|lsidName/)
+  ).map((n: string) => {
+    // the xslt seems to special-case this, but output comparison suggests otherwise?
+    // if (n === "ID-CoL") {
+    //   return `rdf:seeAlso <https://www.catalogueoflife.org/data/taxon/${
+    //     normalizeSpace(taxon.getAttribute(n))
+    //   }>`;
+    // }
+    return `dwc:${n} ${STR(normalizeSpace(taxon.getAttribute(n)))}`;
+  });
 }
 
 /** outputs turtle describing the publication
