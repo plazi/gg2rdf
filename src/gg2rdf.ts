@@ -53,6 +53,8 @@ try {
   makeTreatment();
   makeTaxonConcepts();
   makePublication();
+  // TODO make cited materials
+  // TODO make cited figures
 } catch (error) {
   console.error(error);
   output(
@@ -179,9 +181,7 @@ function makeTreatment() {
   if (taxonAuthority === "INVALID") {
     // no valid authority given, fall back to taxon name
     properties.push(
-      `trt:treatsTaxonName <${
-        taxonNameBaseURI({ kingdom: taxon.getAttribute("kingdom") })
-      }/${taxonNameForURI({ taxonName: taxon })}>`,
+      `trt:treatsTaxonName ${taxonNameURI(taxon)}`,
     );
   } else {
     // we have a valid authority, go for the taxon stringconcept
@@ -261,6 +261,8 @@ function makeTreatment() {
   properties.push(`a trt:Treatment`);
 
   outputProperties(`treatment:${id}`, properties);
+
+  makeTaxonName(taxon);
 }
 
 /** outputs turtle describing the taxon concepts mentioned */
@@ -303,9 +305,7 @@ function makeTaxonConcept(taxon: Element, cTaxon: Element) {
   properties.push(...taxonNameDetails(cTaxon));
 
   properties.push(
-    `trt:hasTaxonName <${
-      taxonNameBaseURI({ kingdom: cTaxon.getAttribute("kingdom") })
-    }/${taxonNameForURI({ taxonName: cTaxon })}>`,
+    `trt:hasTaxonName ${taxonNameURI(cTaxon)}`,
   );
 
   if (cTaxon.getAttribute("authority")) {
@@ -346,10 +346,76 @@ function makeTaxonConcept(taxon: Element, cTaxon: Element) {
     );
   }
 
-  // TODO taxonName(cTaxon)
-
   properties.push("a dwcFP:TaxonConcept");
   outputProperties(uri, properties);
+
+  makeTaxonName(cTaxon);
+}
+
+/** replaces <xsl:template name="taxonName">
+ *
+ * @param rankLimit treat taxon as if it's rank was strictly above rankLimit
+ * @returns identifier of parent name
+ */
+function makeTaxonName(taxon: Element, rankLimit?: string): string {
+  const properties: string[] = [];
+  const uri = taxonNameURI(taxon, rankLimit);
+
+  // TODO there are some checks in the xslt which abort outputting a tn -- are they neccesary?
+
+  if (alreadyDoneTN.includes(uri)) return uri;
+  alreadyDoneTN.push(uri);
+
+  let ranks = [
+    "kingdom",
+    "phylum",
+    "subPhylum",
+    "class",
+    "subClass",
+    "order",
+    "subOrder",
+    "family",
+    "subFamily",
+    "tribe",
+    "subTribe",
+    "genus",
+    "subGenus",
+    "species",
+    "subSpecies",
+    "variety",
+  ].filter((r) => taxon.hasAttribute(r));
+
+  let rank = taxon.getAttribute("rank");
+
+  if (rankLimit) {
+    if (rankLimit === "kingdom") return ""; // nowhere else to go!
+    if (ranks.indexOf(rankLimit) > 0) {
+      ranks = ranks.slice(0, ranks.indexOf(rankLimit));
+      rank = ranks[ranks.length - 1];
+    }
+  }
+
+  if (!ranks.includes(rank)) {
+    ranks.push(rank);
+  }
+
+  let nextRankLimit = "";
+
+  ranks.map((n: string) => {
+    if (taxon.getAttribute(n)) {
+      properties.push(`dwc:${n} ${STR(normalizeSpace(taxon.getAttribute(n)))}`);
+      nextRankLimit = n;
+    }
+  });
+
+  properties.push(`dwc:rank ${STR(nextRankLimit)}`);
+
+  const parent = makeTaxonName(taxon, nextRankLimit); // recurse upwards until kingdom
+  if (parent) properties.push(`trt:hasParentName ${parent}`);
+
+  properties.push("a dwcFP:TaxonName");
+  outputProperties(uri, properties);
+  return uri;
 }
 
 /** replaces <xsl:template name="taxonNameDetails"> and <xsl:template match="taxonomicName/@*"> */
@@ -484,9 +550,7 @@ function taxonConceptCitation(
   ) return;
   if (cTaxonAuthority === "INVALID") {
     // no valid authority cited, fall back to taxon name
-    return `trt:citesTaxonName <${
-      taxonNameBaseURI({ kingdom: cTaxon.getAttribute("kingdom") })
-    }/${taxonNameForURI({ taxonName: cTaxon })}>`;
+    return `trt:citesTaxonName ${taxonNameURI(cTaxon)}`;
   }
   if (taxonRelation === REL.CITES) {
     // do not let a citing treatment deprecate a cited name
@@ -660,36 +724,90 @@ function taxonNameBaseURI({ kingdom }: { kingdom: string }) {
  * replaces <xsl:call-template name="taxonNameForURI"> */
 function taxonNameForURI(
   { taxonName }: { taxonName: Element | string },
+  rankLimit?: string,
 ) {
   if (typeof taxonName === "string") {
+    // unsure if this is ever called with a string?
     if (
       taxonName.includes(",") &&
       !normalizeSpace(substringBefore(taxonName, ",")).includes(" ")
     ) {
-      return normalizeSpace(substringBefore(taxonName, ",")).replaceAll(
+      return "/" + normalizeSpace(substringBefore(taxonName, ",")).replaceAll(
         " ",
         "_",
       );
     } else {
-      return normalizeSpace(substringBefore(taxonName, " ")).replaceAll(
+      return "/" + normalizeSpace(substringBefore(taxonName, " ")).replaceAll(
         " ",
         "_",
       );
     }
-  } else if (taxonName.getAttribute("genus")) {
-    const names: string[] = [
-      taxonName.getAttribute("genus"),
-      taxonName.getAttribute("subGenus"),
-      taxonName.getAttribute("species"),
-      taxonName.getAttribute("variety") || taxonName.getAttribute("subSpecies"),
-    ];
-    // the variety || subSpecies is due to a quirk of the xslt
-    // after replacement, this should proably be modified to put both if avaliable
-    return names.filter((n) => !!n).map(normalizeSpace).map((n) =>
-      n.replaceAll(" ", "_")
-    ).join("_");
+  } else {
+    let ranks = [
+      "kingdom",
+      "phylum",
+      "subPhylum",
+      "class",
+      "subClass",
+      "order",
+      "subOrder",
+      "family",
+      "subFamily",
+      "tribe",
+      "subTribe",
+      "genus",
+      "subGenus",
+      "species",
+      "subSpecies",
+      "variety",
+    ].filter((r) => taxonName.hasAttribute(r));
+
+    let rank = taxonName.getAttribute("rank");
+
+    if (rankLimit) {
+      if (rankLimit === "kingdom") return; // nowhere else to go!
+      if (ranks.indexOf(rankLimit) > 0) {
+        ranks = ranks.slice(0, ranks.indexOf(rankLimit));
+        rank = ranks[ranks.length - 1];
+      }
+    }
+    if (rank === "kingdom") return "";
+
+    if (
+      ["genus", "subGenus", "species", "variety", "subSpecies"].includes(rank)
+    ) {
+      const names: string[] = [
+        taxonName.getAttribute("genus"),
+        ranks.includes("subGenus") ? taxonName.getAttribute("subGenus") : "",
+        ranks.includes("species") ? taxonName.getAttribute("species") : "",
+        ranks.includes("subSpecies")
+          ? taxonName.getAttribute("subSpecies")
+          : "",
+        ranks.includes("variety") ? taxonName.getAttribute("variety") : "",
+      ];
+      // the variety || subSpecies is due to a quirk of the xslt
+      // after replacement, this should proably be modified to put both if avaliable
+      return "/" +
+        names.filter((n) => !!n).map(normalizeSpace).map((n) =>
+          n.replaceAll(" ", "_")
+        ).join("_");
+    } else {
+      return "/" + normalizeSpace(taxonName.getAttribute(rank)).replaceAll(
+        " ",
+        "_",
+      );
+    }
   }
-  return "";
+}
+
+/** replaces <xsl:call-template name="taxonConceptURI">
+ *
+ * @returns valid turtle uri
+ */
+function taxonNameURI(taxonName: Element, rankLimit?: string) {
+  return `<${taxonNameBaseURI({ kingdom: taxonName.getAttribute("kingdom") })}${
+    taxonNameForURI({ taxonName }, rankLimit)
+  }>`;
 }
 
 /** returns plain uri
@@ -709,7 +827,7 @@ function taxonConceptURI(
 ) {
   return `<${
     taxonConceptBaseURI({ kingdom: taxonName.getAttribute("kingdom") })
-  }/${taxonNameForURI({ taxonName })}${
+  }${taxonNameForURI({ taxonName })}${
     encodeURIComponent(normalizeSpace(taxonAuthority))
   }>`;
 }
@@ -787,6 +905,7 @@ function substringAfter(s: string, c: string) {
 }
 
 function normalizeSpace(s: string) {
+  if (!s) return "";
   // deno-lint-ignore no-control-regex
   return s.replace(/(\x20|\x09|\x0A|\x0D)+/, " ").trim();
 }
