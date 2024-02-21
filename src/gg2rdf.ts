@@ -276,18 +276,41 @@ function getJournalProperties(e: Element): string[] {
   e.querySelectorAll("MODStitleInfo > MODStitle").forEach((m: Element) =>
     result.push(`bibo:journal ${JSON.stringify("" + m.innerText)}`)
   );
-  // TODO:
   // <xsl:apply-templates select="mods:part/mods:detail"/>
+  e.querySelectorAll("MODSpart > MODSdetail").forEach((m: Element) => {
+    result.push(
+      `bibo:${m.getAttribute("type")} "${normalizeSpace(m.innerText)}"`,
+    );
+  });
   // <xsl:apply-templates select="mods:part/mods:extent/mods:start"/>
+  e.querySelectorAll("MODSpart > MODSextent > MODSstart").forEach(
+    (m: Element) => {
+      result.push(`bibo:startPage "${normalizeSpace(m.innerText)}"`);
+    },
+  );
   // <xsl:apply-templates select="mods:part/mods:extent/mods:end"/>
+  e.querySelectorAll("MODSpart > MODSextent > MODSend").forEach(
+    (m: Element) => {
+      result.push(`bibo:endPage "${normalizeSpace(m.innerText)}"`);
+    },
+  );
   result.push("a fabio:JournalArticle");
   return result;
 }
 function getBookChapterProperties(e: Element): string[] {
   const result: string[] = [];
-  // TODO
   // <xsl:apply-templates select="mods:part/mods:extent/mods:start"/>
+  e.querySelectorAll("MODSpart > MODSextent > MODSstart").forEach(
+    (m: Element) => {
+      result.push(`bibo:startPage "${normalizeSpace(m.innerText)}"`);
+    },
+  );
   // <xsl:apply-templates select="mods:part/mods:extent/mods:end"/>
+  e.querySelectorAll("MODSpart > MODSextent > MODSend").forEach(
+    (m: Element) => {
+      result.push(`bibo:endPage "${normalizeSpace(m.innerText)}"`);
+    },
+  );
   result.push("a fabio:BookSection");
   return result;
 }
