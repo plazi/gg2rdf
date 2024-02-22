@@ -47,13 +47,15 @@ console.log("document id :", id);
 const alreadyDoneTC: string[] = [];
 // don't output tn's twice
 const alreadyDoneTN: string[] = [];
+// don't output figuress twice
+const alreadyDoneFigures: string[] = [];
 
 try {
   checkForErrors();
   makeTreatment();
   makeTaxonConcepts();
   makePublication();
-  // TODO make cited figures
+  makeFigures();
 } catch (error) {
   console.error(error);
   output(
@@ -158,8 +160,7 @@ function checkForErrors() {
 
 /** outputs turtle describing the treatment
  *
- * replaces <xsl:template match="document"> and <xsl:template match="treatment"> (incomplete)
- */
+ * replaces <xsl:template match="document"> and <xsl:template match="treatment"> */
 function makeTreatment() {
   // lines of turtle properties `pred obj`
   // subject and delimiters are added at the end.
@@ -230,25 +231,13 @@ function makeTreatment() {
   ).join(", ");
   if (materials) properties.push(`dwc:basisOfRecord ${materials}`);
 
-  const figures = document.querySelectorAll("figureCitation[httpUri]").map(
-    (c: Element) => {
-      const uri = c.getAttribute("httpUri") ?? "";
-      if (uri.includes("10.5281/zenodo.")) {
-        return `<${uri.replaceAll(" ", "")}>`;
-      }
-      if (uri.includes("zenodo.")) {
-        return `<http://dx.doi.org/10.5281/zenodo.${
-          substringAfter(
-            substringBefore(uri.replaceAll(" ", ""), "/files/"),
-            "/record/",
-          )
-        }>`;
-      }
-      const doi = c.getAttribute("figureDoi") ?? "";
-      if (doi.includes("doi.org/10.")) return `<${doi.replaceAll(" ", "")}>`;
-      if (doi) return `<http://dx.doi.org/${doi.replaceAll(" ", "")}>`;
-    },
-  ).join(", ");
+  const figures = [
+    ...(new Set(
+      document.querySelectorAll(
+        "figureCitation[httpUri], figureCitation[figureDoi]",
+      ).map(getFigureUri),
+    )),
+  ].join(", ");
   if (figures) properties.push(`cito:cites ${figures}`);
 
   properties.push(`a trt:Treatment`);
@@ -256,6 +245,51 @@ function makeTreatment() {
   outputProperties(`treatment:${id}`, properties);
 
   makeTaxonName(taxon);
+}
+
+function getFigureUri(f: Element) {
+  const uri = f.getAttribute("httpUri") ?? "";
+  if (uri.includes("10.5281/zenodo.")) {
+    return `<${uri.replaceAll(" ", "")}>`;
+  }
+  if (uri.includes("zenodo.")) {
+    return `<http://dx.doi.org/10.5281/zenodo.${
+      substringAfter(
+        substringBefore(uri.replaceAll(" ", ""), "/files/"),
+        "/record/",
+      )
+    }>`;
+  }
+  const doi = f.getAttribute("figureDoi") ?? "";
+  if (doi.includes("doi.org/10.")) return `<${doi.replaceAll(" ", "")}>`;
+  if (doi) return `<http://dx.doi.org/${doi.replaceAll(" ", "")}>`;
+  throw new Error(
+    "Internal: getFigureUri called with figure that has neither @httpUri nor @figureDoi",
+  );
+}
+
+function makeFigures() {
+  document.querySelectorAll(
+    "figureCitation[httpUri], figureCitation[figureDoi]",
+  ).forEach(makeFigure);
+}
+
+/** replaces <xsl:template match="figureCitation" mode="subject"> */
+function makeFigure(f: Element) {
+  const properties: string[] = [];
+  const uri = getFigureUri(f);
+
+  if (alreadyDoneFigures.includes(uri)) return;
+  alreadyDoneFigures.push(uri);
+
+  if (f.hasAttribute("captionText")) {
+    properties.push(`dc:description ${STR(f.getAttribute("captionText"))}`);
+  }
+
+  // TODO from <fabio:hasRepresentation>
+
+  properties.push(`a fabio:Figure`);
+  outputProperties(uri, properties);
 }
 
 /** outputs turtle describing the taxon concepts mentioned */
@@ -500,7 +534,15 @@ function makePublication() {
     properties.push(`dc:date ${JSON.stringify("" + e.innerText)}`)
   );
 
-  // TODO  <xsl:apply-templates select="//figureCitation[./@httpUri and not(./@httpUri = ./preceding::figureCitation/@httpUri)]" mode="publicationObject"/>
+  // <xsl:apply-templates select="//figureCitation[./@httpUri and not(./@httpUri = ./preceding::figureCitation/@httpUri)]" mode="publicationObject"/>
+  const figures = [
+    ...(new Set(
+      document.querySelectorAll(
+        "figureCitation[httpUri], figureCitation[figureDoi]",
+      ).map(getFigureUri),
+    )),
+  ].join(", ");
+  if (figures) properties.push(`fabio:hasPart ${figures}`);
 
   const classifications = document.querySelectorAll("MODSclassification");
   classifications.forEach((c: Element) => {
