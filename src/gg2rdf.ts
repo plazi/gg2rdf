@@ -41,7 +41,7 @@ output(`@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 // this is the <document> surrounding everything. doc != document
 const doc = document.querySelector("document") as Element;
 const id = doc.getAttribute("docId");
-console.log("document id :", id);
+// console.log("document id :", id);
 
 // don't output tc's twice
 const alreadyDoneTC: string[] = [];
@@ -434,12 +434,15 @@ function makeTaxonConcept(taxon: Element, cTaxon: Element) {
 /** replaces <xsl:template match="materialsCitation[@specimenCode]" mode="subject"> */
 function makeCitedMaterial(c: Element): string {
   const properties: string[] = [];
+  const mcId = c.getAttribute("id");
   const httpUri = c.getAttribute("httpUri");
-  const uri = httpUri
-    ? `<${httpUri}>`
-    : `treatment:${id}\\/${
-      encodeURIComponent(normalizeSpace(c.getAttribute("specimenCode")))
-    }`;
+  const uri = mcId
+    ? `<https://treatment.plazi.org/id/${id}#${mcId}>`
+    : (httpUri
+      ? `<${httpUri}>`
+      : `<https://treatment.plazi.org/id/${id}${
+        encodeURIComponent(normalizeSpace(c.getAttribute("specimenCode")))
+      }>`);
 
   const addProp = (xml: string, rdf: string) => {
     if (c.hasAttribute(xml)) {
@@ -465,6 +468,8 @@ function makeCitedMaterial(c: Element): string {
   addProp("ID-GBIF-Occurrence", "trt:gbifOccurrenceId");
   addProp("ID-GBIF-Specimen", "trt:gbifSpecimenId");
   addProp("httpUri", "trt:httpUri");
+
+  if (mcId) properties.push(`trt:httpUri ${uri}`);
 
   properties.push("a dwc:MaterialCitation");
   outputProperties(uri, properties);
@@ -1018,7 +1023,7 @@ function substringBefore(s: string, c: string) {
  * and returns s if s does not contain c. */
 function substringAfter(s: string, c: string) {
   if (!s.includes(c)) return s;
-  const index = s.indexOf(c) + c.length;
+  const index = s.lastIndexOf(c) + c.length;
   return s.substring(index);
 }
 
