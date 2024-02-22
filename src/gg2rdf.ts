@@ -320,9 +320,15 @@ function makeTaxonConcepts() {
 function makeTaxonConcept(taxon: Element, cTaxon: Element) {
   const properties: string[] = [];
 
+  const rank: string = cTaxon.getAttribute("rank");
+  const cTaxonStatus: string = cTaxon.getAttribute("status") ??
+    taxon.parentNode.querySelector(
+      `taxonomicName ~ taxonomicNameLabel[rank="${rank}"]`,
+    )?.innerText ?? "ABSENT";
+
   const cTaxonAuthority = getAuthority({
     taxonName: cTaxon,
-    taxonStatus: "ABSENT",
+    taxonStatus: cTaxonStatus,
   });
   const taxonRelation = getTaxonRelation({ taxon, cTaxon });
   const cTaxonRankGroup = getTaxonRankGroup(cTaxon);
@@ -384,6 +390,38 @@ function makeTaxonConcept(taxon: Element, cTaxon: Element) {
           ),
         )
       }`,
+    );
+  } else if (taxon === cTaxon) {
+    // if taxon is the treated taxon and no explicit authority info is given on the element, fall back to document info
+    properties.push(
+      `dwc:scientificNameAuthorship ${
+        STR(
+          normalizeSpace(
+            `${doc.getAttribute("docAuthor")}, ${doc.getAttribute("docDate")}`,
+          ),
+        )
+      }`,
+    );
+  }
+  if (taxon === cTaxon && !taxon.hasAttribute("authority")) {
+    // if taxon is the treated taxon and no explicit authority info is given on the element, fall back to document info
+    // unclear why dwc:authority* are only set in this one case
+    // also unlcear why they are simplified like in the uri
+    // TODO: change this if appropriate
+    properties.push(
+      `dwc:authority ${
+        STR(
+          normalizeSpace(
+            `${authorityNameForURI(doc.getAttribute("docAuthor"))}, ${
+              doc.getAttribute("docDate")
+            }`,
+          ),
+        )
+      }`,
+      `dwc:authorityName ${
+        STR(normalizeSpace(authorityNameForURI(doc.getAttribute("docAuthor"))))
+      }`,
+      `dwc:authorityYear ${STR(doc.getAttribute("docDate"))}`,
     );
   }
 
@@ -759,46 +797,39 @@ function getAuthority(
   if (taxonStatus.includes("ABSENT")) {
     // no status at all, use whichever authority given (basionym authority first, as it tends to be cited for a reason under ICZN code)
     if (baseAuthorityName && baseAuthorityYear) {
-      return `_${
-        authorityNameForURI({ authorityName: baseAuthorityName })
-      }_${baseAuthorityYear}`;
+      return `_${authorityNameForURI(baseAuthorityName)}_${baseAuthorityYear}`;
     } else if (authorityName && authorityYear) {
-      return `_${authorityNameForURI({ authorityName })}_${authorityYear}`;
+      return `_${authorityNameForURI(authorityName)}_${authorityYear}`;
     } else return "INVALID";
   } else if (taxonStatus.includes("nom") || taxonStatus.includes("name")) {
     // newly minted replacement name for homonym or Latin grammar error, use combination or document authority
-    return `_${
-      authorityNameForURI({
-        authorityName: authorityName ?? docAuthor,
-      })
-    }_${docDate}`;
+    return `_${authorityNameForURI(authorityName ?? docAuthor)}_${docDate}`;
   } else if (taxonStatus.includes("comb") || taxonStatus.includes("stat")) {
     // new combination or status of existing epithet, use basionym authority (as that is what will be the most cited under ICZN code)
     if (baseAuthorityName && baseAuthorityYear) {
-      return `_${
-        authorityNameForURI({ authorityName: baseAuthorityName })
-      }_${baseAuthorityYear}`;
+      return `_${authorityNameForURI(baseAuthorityName)}_${baseAuthorityYear}`;
     } else return "INVALID";
   } else {
     // newly minted taxon name, use document metadata if explicit attributes missing
-    return `_${
-      authorityNameForURI({ authorityName: authorityName || docAuthor })
-    }_${authorityYear || docDate}`;
+    return `_${authorityNameForURI(authorityName || docAuthor)}_${
+      authorityYear || docDate
+    }`;
   }
 }
 
 /** replaces <xsl:call-template name="authorityNameForURI"> */
-function authorityNameForURI({ authorityName }: { authorityName: string }) {
+function authorityNameForURI(authorityName: string) {
+  authorityName = normalizeSpace(authorityName);
   authorityName = substringAfter(authorityName, ") ");
   authorityName = substringAfter(authorityName, ")");
   authorityName = substringAfter(authorityName, "] ");
   authorityName = substringAfter(authorityName, "]");
   authorityName = substringBefore(authorityName, " & ");
   authorityName = substringBefore(authorityName, " et al");
-  authorityName = substringBefore(authorityName, " , ");
-  authorityName = substringAfter(authorityName, " . ");
+  authorityName = substringBefore(authorityName, ", ");
+  authorityName = substringAfter(authorityName, ". ");
   authorityName = substringAfter(authorityName, " ");
-  return encodeURIComponent(normalizeSpace(authorityName));
+  return encodeURIComponent(authorityName);
 }
 
 /** replaces <xsl:call-template name="taxonNameBaseURI"> */
@@ -916,9 +947,7 @@ function taxonConceptURI(
 ) {
   return `<${
     taxonConceptBaseURI({ kingdom: taxonName.getAttribute("kingdom") })
-  }${taxonNameForURI({ taxonName })}${
-    encodeURIComponent(normalizeSpace(taxonAuthority))
-  }>`;
+  }${taxonNameForURI({ taxonName })}${taxonAuthority}>`;
 }
 
 /** → turtle snippet a la `"author1", "author2", ... "authorN"` */
