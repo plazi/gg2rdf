@@ -31,7 +31,9 @@ end
 
 deno run --allow-write --allow-read src/gg2rdf.ts -i {$xml} -o {$tmpDir}/test.ttl
 rapper -rq -i turtle {$tmpDir}/test.ttl | sort > {$tmpDir}/test.n3
-rapper -rq -i turtle {$ref} | sort > {$tmpDir}/ref.n3
+rapper -rq -i turtle {$ref} | sed '/file:\/\/\//d' -  | sed '/hasParentName/d' - | sort > {$tmpDir}/ref.n3
+# sed to remove all (originally) wrong links with missing baseUri
+# also ignore all changes due to added intermediary taxon names into hierarchy
 
 # all lines unique to {$tmpDir}/ref.n3
 set fails (comm -23 {$tmpDir}/ref.n3 {$tmpDir}/test.n3)
@@ -39,6 +41,7 @@ if test -n "$fails"
   echo "In $xml:"
   # printf '%s\n' $fails
   diff {$tmpDir}/ref.n3 {$tmpDir}/test.n3
+  read #wait for user acknowledgement
   exit 1
 end
 

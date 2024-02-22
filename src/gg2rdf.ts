@@ -319,9 +319,9 @@ function makeFigure(f: Element) {
   if (httpUri) {
     if (httpUri.replaceAll(" ", "").includes("10.5281/zenodo.")) {
       properties.push(
-        `fabio:hasRepresentation https://zenodo.org/record/${
-          STR(substringAfter(httpUri.replaceAll(" ", ""), "10.5281/zenodo."))
-        }/files/figure.png`,
+        `fabio:hasRepresentation <https://zenodo.org/record/${
+          substringAfter(httpUri.replaceAll(" ", ""), "10.5281/zenodo.")
+        }/files/figure.png>`,
       );
     } else {
       properties.push(
@@ -566,8 +566,10 @@ function makeTaxonName(taxon: Element, rankLimit?: string): string {
     "genus",
     "subGenus",
     "species",
+    "undef-species",
     "subSpecies",
     "variety",
+    "form",
   ].filter((r) => taxon.hasAttribute(r));
 
   let rank = taxon.getAttribute("rank");
@@ -928,8 +930,10 @@ function taxonNameForURI(
       "genus",
       "subGenus",
       "species",
+      "undef-species",
       "subSpecies",
       "variety",
+      "form",
     ].filter((r) => taxonName.hasAttribute(r));
 
     let rank = taxonName.getAttribute("rank");
@@ -944,7 +948,14 @@ function taxonNameForURI(
     if (rank === "kingdom") return "";
 
     if (
-      ["genus", "subGenus", "species", "variety", "subSpecies"].includes(rank)
+      [
+        "subGenus",
+        "species",
+        "undef-species",
+        "subSpecies",
+        "variety",
+        "form",
+      ].includes(rank)
     ) {
       const names: string[] = [
         taxonName.getAttribute("genus"),
@@ -953,10 +964,14 @@ function taxonNameForURI(
           : ranks.includes("subGenus")
           ? taxonName.getAttribute("subGenus") // only put subGenus if no species present
           : "",
+        ranks.includes("undef-species")
+          ? taxonName.getAttribute("undef-species")
+          : "",
         ranks.includes("subSpecies")
           ? taxonName.getAttribute("subSpecies")
           : "",
         ranks.includes("variety") ? taxonName.getAttribute("variety") : "",
+        ranks.includes("form") ? taxonName.getAttribute("form") : "",
       ];
       // the variety || subSpecies is due to a quirk of the xslt
       // after replacement, this should proably be modified to put both if avaliable
