@@ -29,8 +29,19 @@ class Subject {
     this.properties = {};
   }
 
+  /** sorted with comments first, and type last */
   get propNames() {
-    return Object.getOwnPropertyNames(this.properties);
+    return Object.getOwnPropertyNames(this.properties).sort((a, b) => {
+      if (a === b) return 0;
+      if (
+        a.startsWith("#") && b.startsWith("#")
+      ) return a.slice(1) < b.slice(1) ? -1 : 1;
+      if (a.startsWith("#")) return -1;
+      if (b.startsWith("#")) return 1;
+      if (a === "a") return 1;
+      if (b === "a") return -1;
+      return a < b ? -1 : 1;
+    });
   }
 
   addProperty(predicate: string, object: string) {
@@ -190,9 +201,7 @@ function checkForErrors() {
  *
  * replaces <xsl:template match="document"> and <xsl:template match="treatment"> */
 function makeTreatment() {
-  // lines of turtle properties `pred obj`
-  // subject and delimiters are added at the end.
-  const properties: string[] = [];
+  const t = new Subject(`treatment:${id}`);
 
   const taxon: Element = document.querySelector(
     'document treatment subSubSection[type="nomenclature"] taxonomicName',
@@ -208,31 +217,27 @@ function makeTreatment() {
   // add reference to subject taxon concept, using taxon name as a fallback if we're lacking a valid authority
   if (taxonAuthority === "INVALID") {
     // no valid authority given, fall back to taxon name
-    properties.push(
-      `trt:treatsTaxonName ${taxonNameURI(taxon)}`,
-    );
+    t.addProperty("trt:treatsTaxonName", taxonNameURI(taxon));
   } else {
     // we have a valid authority, go for the taxon stringconcept
     if (
       taxonStatus !== "ABSENT" ||
       taxon.parentNode.querySelector(`taxonomicName ~ taxonomicNameLabel`)
     ) {
-      properties.push(
-        `trt:definesTaxonConcept ${
-          taxonConceptURI({ taxonName: taxon, taxonAuthority })
-        }`,
+      t.addProperty(
+        `trt:definesTaxonConcept`,
+        taxonConceptURI({ taxonName: taxon, taxonAuthority }),
       );
     } else {
-      properties.push(
-        `trt:augmentsTaxonConcept ${
-          taxonConceptURI({ taxonName: taxon, taxonAuthority })
-        }`,
+      t.addProperty(
+        `trt:augmentsTaxonConcept`,
+        taxonConceptURI({ taxonName: taxon, taxonAuthority }),
       );
     }
   }
 
-  properties.push(`dc:creator ${getAuthors()}`);
-  properties.push(`trt:publishedIn ${getPublication()}`);
+  t.addProperty(`dc:creator`, getAuthors());
+  t.addProperty(`trt:publishedIn`, getPublication());
 
   // add cited taxon concepts
   document.querySelectorAll(
@@ -249,15 +254,14 @@ function makeTreatment() {
     const cTaxon = e.tagName === "taxonomicName"
       ? e
       : e.querySelector("taxonomicName");
-    const citation = taxonConceptCitation(taxon, cTaxon);
-    if (citation) properties.push(citation);
+    addTaxonConceptCitation(t, taxon, cTaxon);
   });
 
   // makeCitedMaterial returns the identifier
   const materials = document.querySelectorAll("materialsCitation").map(
     makeCitedMaterial,
   ).filter((c: string) => !!c).join(", ");
-  if (materials) properties.push(`dwc:basisOfRecord ${materials}`);
+  if (materials) t.addProperty(`dwc:basisOfRecord`, materials);
 
   const figures = [
     ...(new Set(
@@ -266,11 +270,11 @@ function makeTreatment() {
       ).map(getFigureUri),
     )),
   ].join(", ");
-  if (figures) properties.push(`cito:cites ${figures}`);
+  if (figures) t.addProperty(`cito:cites`, figures);
 
-  properties.push(`a trt:Treatment`);
+  t.addProperty(`a`, `trt:Treatment`);
 
-  outputProperties(`treatment:${id}`, properties);
+  outputSubject(t);
 
   makeTaxonName(taxon);
 }
@@ -360,22 +364,35 @@ function makeTaxonConcept(taxon: Element, cTaxon: Element) {
   const taxonRelation = getTaxonRelation({ taxon, cTaxon });
   const cTaxonRankGroup = getTaxonRankGroup(cTaxon);
 
-  // check required attributes
-  if (
-    cTaxonRankGroup === RANKS.INVALID || cTaxonAuthority === "INVALID" ||
-    taxonRelation === REL.NONE
-  ) {
-    return;
-  }
-
   const uri = taxonConceptURI({
     taxonName: cTaxon,
     taxonAuthority: cTaxonAuthority,
   });
 
+  if (cTaxonAuthority === "INVALID") {
+    console.warn(`Error: Invalid Authority for ${uri}`);
+    return;
+  }
+
   const prev = alreadyDoneTC.find((t) => t.uri === uri);
   const s = prev || new Subject(uri);
   if (!prev) alreadyDoneTC.push(s);
+
+  // check required attributes
+  if (
+    cTaxonRankGroup === RANKS.INVALID ||
+    taxonRelation === REL.NONE
+  ) {
+    if (cTaxonRankGroup === RANKS.INVALID) {
+      s.addProperty("# Error:", "Invalid Rank");
+    }
+    if (taxonRelation === REL.NONE) {
+      s.addProperty("# Error:", "Invalid taxon relation");
+    }
+    s.addProperty("a", "dwcFP:TaxonConcept");
+    makeTaxonName(cTaxon);
+    return;
+  }
 
   /** replaces <xsl:template name="taxonNameDetails"> and <xsl:template match="taxonomicName/@*"> */
   cTaxon.getAttributeNames().filter((n: string) =>
@@ -576,7 +593,7 @@ function makeTaxonName(taxon: Element, rankLimit?: string): string {
 
   if (rankLimit) {
     if (rankLimit === "kingdom") return ""; // nowhere else to go!
-    if (ranks.indexOf(rankLimit) > 0) {
+    if (ranks.indexOf(rankLimit) >= 0) {
       ranks = ranks.slice(0, ranks.indexOf(rankLimit));
       rank = ranks[ranks.length - 1];
     }
@@ -595,15 +612,17 @@ function makeTaxonName(taxon: Element, rankLimit?: string): string {
     }
   });
 
-  s.addProperty("dwc:rank", STR(nextRankLimit));
+  if (nextRankLimit) {
+    s.addProperty("dwc:rank", STR(nextRankLimit));
+  }
 
   if (nextRankLimit === "kingdom") { /* stop recursion */ }
-  else if (rankLimit !== nextRankLimit) {
+  else if (nextRankLimit && rankLimit !== nextRankLimit) {
     const parent = makeTaxonName(taxon, nextRankLimit);
-    if (parent) s.addProperty("trt:hasParentName", parent);
+    if (parent && parent !== uri) s.addProperty("trt:hasParentName", parent);
   } else {
-    console.warn("makeTaxonName reached endless loop");
-    s.addProperty("#", "Warning: makeTaxonName reached endless loop");
+    console.warn(`Warning: Could not determine parent name of ${uri}`);
+    s.addProperty("# Warning:", "Could not determine parent name");
   }
 
   s.addProperty("a", "dwcFP:TaxonName");
@@ -622,16 +641,14 @@ function makePublication() {
   const titles = [
     ...document.querySelectorAll("MODSmods>MODStitleInfo>MODStitle"),
   ]
-    .map((e: Element) => normalizeSpace(e.innerText)).join('", "');
-  if (titles) properties.push(`dc:title "${titles}"`);
+    .map((e: Element) => STR(e.innerText)).join(", ");
+  if (titles) properties.push(`dc:title ${titles}`);
 
   properties.push(`dc:creator ${getAuthors()}`);
 
   document.querySelectorAll(
     "MODSpart > MODSdate, MODSoriginInfo > MODSdateIssued",
-  ).forEach((e: Element) =>
-    properties.push(`dc:date ${JSON.stringify("" + e.innerText)}`)
-  );
+  ).forEach((e: Element) => properties.push(`dc:date ${STR(e.innerText)}`));
 
   // <xsl:apply-templates select="//figureCitation[./@httpUri and not(./@httpUri = ./preceding::figureCitation/@httpUri)]" mode="publicationObject"/>
   const figures = [
@@ -708,10 +725,11 @@ function getBookChapterProperties(e: Element): string[] {
 }
 
 /** replaces <xsl:template name="taxonConceptCitation"> */
-function taxonConceptCitation(
+function addTaxonConceptCitation(
+  t: Subject,
   taxon: Element,
   cTaxon: Element,
-): string | undefined {
+): void {
   const cTaxonAuthority = getAuthority({
     taxonName: cTaxon,
     taxonStatus: "ABSENT",
@@ -722,24 +740,47 @@ function taxonConceptCitation(
   if (
     cTaxonRankGroup === RANKS.INVALID || !cTaxon.getAttribute("kingdom") ||
     (cTaxonRankGroup === RANKS.species && !cTaxon.getAttribute("genus"))
-  ) return;
+  ) {
+    if (cTaxonAuthority === "INVALID") {
+      t.addProperty(
+        "# Warning",
+        `Not adding 'trt:citesTaxonName ${
+          taxonNameURI(cTaxon)
+        }' due to issues with rank`,
+      );
+    } else {t.addProperty(
+        "# Warning",
+        `Not adding 'trt:citesTaxonName ${
+          taxonConceptURI({
+            taxonName: cTaxon,
+            taxonAuthority: cTaxonAuthority,
+          })
+        }' due to issues with rank`,
+      );}
+    return;
+  }
   if (cTaxonAuthority === "INVALID") {
     // no valid authority cited, fall back to taxon name
-    return `trt:citesTaxonName ${taxonNameURI(cTaxon)}`;
+    t.addProperty(`trt:citesTaxonName`, taxonNameURI(cTaxon));
+    return;
   }
   if (taxonRelation === REL.CITES) {
     // do not let a citing treatment deprecate a cited name
-    return `cito:cites ${
-      taxonConceptURI({ taxonName: cTaxon, taxonAuthority: cTaxonAuthority })
-    }`;
+    t.addProperty(
+      `cito:cites`,
+      taxonConceptURI({ taxonName: cTaxon, taxonAuthority: cTaxonAuthority }),
+    );
+    return;
   }
   // do not let a taxon deprecate itself
   // skip taxon names with insufficient attributes
   if (taxonRelation === REL.SAME || taxonRelation === REL.NONE) return;
   // deprecate recombined, renamed, and synonymized names
-  return `trt:deprecates ${
-    taxonConceptURI({ taxonName: cTaxon, taxonAuthority: cTaxonAuthority })
-  }`;
+  t.addProperty(
+    `trt:deprecates`,
+    taxonConceptURI({ taxonName: cTaxon, taxonAuthority: cTaxonAuthority }),
+  );
+  return;
 }
 
 const enum REL {
@@ -823,11 +864,15 @@ const enum RANKS {
 function getTaxonRankGroup(t: Element): RANKS {
   if (t.getAttribute("species")) return RANKS.species;
   if (t.getAttribute("genus")) return RANKS.genus;
-  if (t.getAttribute("tribe")) return RANKS.tribe;
-  if (t.getAttribute("family")) return RANKS.family;
-  if (t.getAttribute("order")) return RANKS.order;
-  if (t.getAttribute("class")) return RANKS.class;
-  if (t.getAttribute("phylum")) return RANKS.phylum;
+  if (t.getAttribute("tribe") || t.getAttribute("subTribe")) return RANKS.tribe;
+  if (t.getAttribute("family") || t.getAttribute("subFamily")) {
+    return RANKS.family;
+  }
+  if (t.getAttribute("order") || t.getAttribute("subOrder")) return RANKS.order;
+  if (t.getAttribute("class") || t.getAttribute("subClass")) return RANKS.class;
+  if (t.getAttribute("phylum") || t.getAttribute("subPhylum")) {
+    return RANKS.phylum;
+  }
   if (t.getAttribute("kingdom")) return RANKS.kingdom;
   return RANKS.INVALID;
 }
@@ -1113,12 +1158,24 @@ function outputProperties(subject: string, properties: string[]) {
 
 function outputSubject(s: Subject) {
   if (s.propNames.length) {
-    output(
-      `\n${s.uri}\n    ${
-        s.propNames.map((n) => `${n} ${[...s.properties[n]].join(", ")}`).join(
-          " ;\n    ",
-        )
-      } .`,
-    );
+    if (s.propNames[s.propNames.length - 1].startsWith("#")) {
+      output(
+        `\n# No properties for ${s.uri}\n    ${
+          s.propNames.map((n) => `${n} ${[...s.properties[n]].join(", ")}`)
+            .join(
+              " ;\n    ",
+            )
+        }`,
+      );
+    } else {
+      output(
+        `\n${s.uri}\n    ${
+          s.propNames.map((n) => `${n} ${[...s.properties[n]].join(", ")}`)
+            .join(
+              " ;\n    ",
+            )
+        } .`,
+      );
+    }
   } else output(`\n# No properties for ${s.uri}`);
 }
