@@ -74,13 +74,11 @@ export function gg2rdf(inputPath: string, outputPath: string) {
   const id = doc.getAttribute("docId");
   // console.log("document id :", id);
 
-  // don't output tc/tn's twice
-  const alreadyDoneTC: Subject[] = [];
-  const alreadyDoneTN: Subject[] = [];
   // saving properties, as they might be collated from multiple ELements
-
-  // don't output figuress twice
-  const alreadyDoneFigures: string[] = [];
+  const taxonConcepts: Subject[] = [];
+  const taxonNames: Subject[] = [];
+  const figures: Subject[] = [];
+  const citedMaterials: Subject[] = [];
 
   try {
     checkForErrors();
@@ -88,7 +86,11 @@ export function gg2rdf(inputPath: string, outputPath: string) {
     makeTaxonConcepts();
     makePublication();
     makeFigures();
-    outputTNandTC();
+
+    figures.forEach(outputSubject);
+    citedMaterials.forEach(outputSubject);
+    taxonConcepts.forEach(outputSubject);
+    taxonNames.forEach(outputSubject);
   } catch (error) {
     console.error(error);
     output(
@@ -98,11 +100,6 @@ export function gg2rdf(inputPath: string, outputPath: string) {
   }
 
   // end of top-level code
-
-  function outputTNandTC() {
-    alreadyDoneTC.forEach(outputSubject);
-    alreadyDoneTN.forEach(outputSubject);
-  }
 
   /** replaces <xsl:template match="/"> (root template) */
   function checkForErrors() {
@@ -312,33 +309,34 @@ export function gg2rdf(inputPath: string, outputPath: string) {
 
   /** replaces <xsl:template match="figureCitation" mode="subject"> */
   function makeFigure(f: Element) {
-    const properties: string[] = [];
     const uri = getFigureUri(f);
 
-    if (alreadyDoneFigures.includes(uri)) return;
-    alreadyDoneFigures.push(uri);
+    const prev = figures.find((t) => t.uri === uri);
+    const s = prev || new Subject(uri);
+    if (!prev) figures.push(s);
 
     if (f.hasAttribute("captionText")) {
-      properties.push(`dc:description ${STR(f.getAttribute("captionText"))}`);
+      s.addProperty(`dc:description`, STR(f.getAttribute("captionText")));
     }
 
     const httpUri = f.getAttribute("httpUri");
     if (httpUri) {
       if (httpUri.replaceAll(" ", "").includes("10.5281/zenodo.")) {
-        properties.push(
-          `fabio:hasRepresentation <https://zenodo.org/record/${
+        s.addProperty(
+          `fabio:hasRepresentation`,
+          `<https://zenodo.org/record/${
             substringAfter(httpUri.replaceAll(" ", ""), "10.5281/zenodo.")
           }/files/figure.png>`,
         );
       } else {
-        properties.push(
-          `fabio:hasRepresentation ${STR(httpUri.replaceAll(" ", ""))}`,
+        s.addProperty(
+          `fabio:hasRepresentation`,
+          STR(httpUri.replaceAll(" ", "")),
         );
       }
     }
 
-    properties.push(`a fabio:Figure`);
-    outputProperties(uri, properties);
+    s.addProperty("a", "fabio:Figure");
   }
 
   /** outputs turtle describing the taxon concepts mentioned */
@@ -377,9 +375,9 @@ export function gg2rdf(inputPath: string, outputPath: string) {
       return;
     }
 
-    const prev = alreadyDoneTC.find((t) => t.uri === uri);
+    const prev = taxonConcepts.find((t) => t.uri === uri);
     const s = prev || new Subject(uri);
-    if (!prev) alreadyDoneTC.push(s);
+    if (!prev) taxonConcepts.push(s);
 
     // check required attributes
     if (
@@ -499,7 +497,6 @@ export function gg2rdf(inputPath: string, outputPath: string) {
 
   /** replaces <xsl:template match="materialsCitation[@specimenCode]" mode="subject"> */
   function makeCitedMaterial(c: Element): string {
-    const properties: string[] = [];
     const mcId = c.getAttribute("id");
     const httpUri = c.getAttribute("httpUri");
     const specimenCode = c.getAttribute("specimenCode");
@@ -520,9 +517,13 @@ export function gg2rdf(inputPath: string, outputPath: string) {
       return "";
     }
 
+    const prev = citedMaterials.find((t) => t.uri === uri);
+    const s = prev || new Subject(uri);
+    if (!prev) citedMaterials.push(s);
+
     const addProp = (xml: string, rdf: string) => {
       if (c.hasAttribute(xml)) {
-        properties.push(`${rdf} ${STR(c.getAttribute(xml))}`);
+        s.addProperty(rdf, STR(c.getAttribute(xml)));
       }
     };
 
@@ -546,13 +547,13 @@ export function gg2rdf(inputPath: string, outputPath: string) {
     addProp("httpUri", "trt:httpUri");
 
     if (mcId) {
-      properties.push(
-        `trt:httpUri <https://treatment.plazi.org/id/${id}#${mcId}>`,
+      s.addProperty(
+        "trt:httpUri",
+        `<https://treatment.plazi.org/id/${id}#${mcId}>`,
       );
     }
 
-    properties.push("a dwc:MaterialCitation");
-    outputProperties(uri, properties);
+    s.addProperty("a", "dwc:MaterialCitation");
     return uri;
   }
 
@@ -566,9 +567,9 @@ export function gg2rdf(inputPath: string, outputPath: string) {
 
     // TODO there are some checks in the xslt which abort outputting a tn -- are they neccesary?
 
-    const prev = alreadyDoneTN.find((t) => t.uri === uri);
+    const prev = taxonNames.find((t) => t.uri === uri);
     const s = prev || new Subject(uri);
-    if (!prev) alreadyDoneTN.push(s);
+    if (!prev) taxonNames.push(s);
 
     let ranks = [
       "kingdom",
