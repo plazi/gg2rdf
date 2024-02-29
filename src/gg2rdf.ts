@@ -53,6 +53,7 @@ try {
   makeTreatment();
   makeTaxonConcepts();
   makePublication();
+  // TODO make cited materials
   // TODO make cited figures
 } catch (error) {
   console.error(error);
@@ -224,9 +225,15 @@ function makeTreatment() {
     if (citation) properties.push(citation);
   });
 
-  // makeCitedMaterial returns the identifier
+  // xslt-TODO maybe add references to materials citations that have a specimen (HTTP) URI
   const materials = document.querySelectorAll("materialsCitation").map(
-    makeCitedMaterial,
+    (c: Element) => {
+      const uri = c.getAttribute("httpUri");
+      if (uri) return `<${uri}>`;
+      return `treatment:${id}\\/${
+        encodeURIComponent(normalizeSpace(c.getAttribute("specimenCode")))
+      }`;
+    },
   ).join(", ");
   if (materials) properties.push(`dwc:basisOfRecord ${materials}`);
 
@@ -263,7 +270,6 @@ function makeTaxonConcepts() {
   const taxon: Element = document.querySelector(
     'document treatment subSubSection[type="nomenclature"] taxonomicName',
   ); // existence asserted by checkForErrors
-  makeTaxonConcept(taxon, taxon);
   document.querySelectorAll("taxonomicName").forEach((e: Element) => {
     makeTaxonConcept(taxon, e);
   });
@@ -344,46 +350,6 @@ function makeTaxonConcept(taxon: Element, cTaxon: Element) {
   outputProperties(uri, properties);
 
   makeTaxonName(cTaxon);
-}
-
-/** replaces <xsl:template match="materialsCitation[@specimenCode]" mode="subject"> */
-function makeCitedMaterial(c: Element): string {
-  const properties: string[] = [];
-  const httpUri = c.getAttribute("httpUri");
-  const uri = httpUri
-    ? `<${httpUri}>`
-    : `treatment:${id}\\/${
-      encodeURIComponent(normalizeSpace(c.getAttribute("specimenCode")))
-    }`;
-
-  const addProp = (xml: string, rdf: string) => {
-    if (c.hasAttribute(xml)) {
-      properties.push(`${rdf} ${STR(c.getAttribute(xml))}`);
-    }
-  };
-
-  addProp("specimenCode", "dwc:catalogNumber");
-  addProp("collectionCode", "dwc:collectionCode");
-  addProp("typeStatus", "dwc:typeStatus");
-  addProp("latitude", "dwc:verbatimLatitude");
-  addProp("longitude", "dwc:verbatimLongitude");
-  addProp("elevation", "dwc:verbatimElevation");
-  addProp("collectingCountry", "dwc:countryCode");
-  addProp("collectingRegion", "dwc:stateProvince");
-  addProp("collectingMunicipality", "dwc:municipality");
-  addProp("collectingCounty", "dwc:county");
-  addProp("location", "dwc:locality");
-  addProp("locationDeviation", "dwc:verbatimLocality");
-  addProp("collectorName", "dwc:recordedBy");
-  addProp("collectingDate", "dwc:eventDate");
-  addProp("collectingMethod", "dwc:samplingProtocol");
-  addProp("ID-GBIF-Occurrence", "trt:gbifOccurrenceId");
-  addProp("ID-GBIF-Specimen", "trt:gbifSpecimenId");
-  addProp("httpUri", "trt:httpUri");
-
-  properties.push("a dwc:MaterialCitation");
-  outputProperties(uri, properties);
-  return uri;
 }
 
 /** replaces <xsl:template name="taxonName">
