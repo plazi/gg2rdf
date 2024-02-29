@@ -65,7 +65,7 @@ async function gatherJobsForFullUpdate() {
               name: "GG2RDF Service",
               email: "gg2rdf@plazi.org",
             },
-            id: `full update ${date} [${
+            id: `${date} full update [${
               (++block).toString(10).padStart(4, "0")
             }`,
             files: {
