@@ -217,12 +217,7 @@ export function gg2rdf(inputPath: string, outputPath: string) {
       t.addProperty("trt:treatsTaxonName", taxonNameURI(taxon));
     } else {
       // we have a valid authority, go for the taxon stringconcept
-      if (taxonStatus === "nomen dubium") {
-        t.addProperty(
-          `trt:deprecates`,
-          taxonConceptURI({ taxonName: taxon, taxonAuthority }),
-        );
-      } else if (
+      if (
         taxonStatus !== "ABSENT" ||
         taxon.parentNode.querySelector(`taxonomicName ~ taxonomicNameLabel`)
       ) {
@@ -909,22 +904,36 @@ export function gg2rdf(inputPath: string, outputPath: string) {
     );
     const authorityName: string = taxonName.getAttribute("authorityName");
     const authorityYear: string = taxonName.getAttribute("authorityYear");
-    let docAuthor: string = doc.getAttribute("docAuthor");
-    let docDate: string = doc.getAttribute("docDate");
-
-    if (
+    const docAuthor: string = doc.getAttribute("docAuthor");
+    const docDate: string = doc.getAttribute("docDate");
+    if (taxonStatus.includes("nom") || taxonStatus.includes("name")) {
+      // newly minted replacement name for homonym or Latin grammar error, use combination or document authority
+      return `_${authorityNameForURI(authorityName ?? docAuthor)}_${docDate}`;
+    } else if (
       taxonStatus.includes("ABSENT") || taxonStatus.includes("comb") ||
       taxonStatus.includes("stat")
     ) {
-      // in this case, don't consider docAuthor & docDate
-      docAuthor = "";
-      docDate = "";
+      // no status at all, use whichever authority given (basionym authority first, as it tends to be cited for a reason under ICZN code)
+      // new combination or status of existing epithet, use basionym authority (as that is what will be the most cited under ICZN code)
+      if (baseAuthorityName && baseAuthorityYear) {
+        return `_${
+          authorityNameForURI(baseAuthorityName)
+        }_${baseAuthorityYear}`;
+      } else if (authorityName && authorityYear) {
+        return `_${authorityNameForURI(authorityName)}_${authorityYear}`;
+      } else return "INVALID";
+    } else {
+      // newly minted taxon name, use document metadata if explicit attributes missing
+      if (baseAuthorityName && baseAuthorityYear) {
+        return `_${
+          authorityNameForURI(baseAuthorityName)
+        }_${baseAuthorityYear}`;
+      } else if (authorityName && authorityYear) {
+        return `_${authorityNameForURI(authorityName)}_${authorityYear}`;
+      } else {return `_${authorityNameForURI(authorityName || docAuthor)}_${
+          authorityYear || docDate
+        }`;}
     }
-
-    const name = baseAuthorityName || authorityName || docAuthor;
-    const year = baseAuthorityYear || authorityYear || docDate;
-    if (name && year) return `_${authorityNameForURI(name)}_${year}`;
-    return "INVALID";
   }
 
   /** replaces <xsl:call-template name="authorityNameForURI"> */
