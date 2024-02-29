@@ -21,6 +21,3 @@ rapper -rq -i turtle {$ref} | sort > {$tmpDir}/ref.n3
 
 # all lines unique to {$tmpDir}/ref.n3
 comm -23 {$tmpDir}/ref.n3 {$tmpDir}/test.n3
-
-# all changed lines
-# comm -3 {$tmpDir}/ref.n3 {$tmpDir}/test.n3
