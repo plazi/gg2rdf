@@ -42,12 +42,14 @@ async function startTask() {
 async function gatherJobsForFullUpdate() {
   isRunning = true;
   try {
-    updateLocalData("source", console.log);
+    console.log("gathering jobs for full update");
+    updateLocalData("source");
+    console.log("pull complete");
     const date = (new Date()).toISOString();
     let block = 0;
     let files: string[] = [];
     for await (
-      const walkEntry of walk(Deno.cwd(), {
+      const walkEntry of walk(`${config.workDir}/repo/source/`, {
         exts: ["xml"],
         includeDirs: false,
         includeSymlinks: false,
@@ -55,6 +57,7 @@ async function gatherJobsForFullUpdate() {
     ) {
       if (walkEntry.isFile && walkEntry.path.endsWith(".xml")) {
         files.push(walkEntry.path);
+        console.log("added", walkEntry.path);
         if (files.length >= 100) {
           queue.addJob({
             author: {
@@ -66,10 +69,14 @@ async function gatherJobsForFullUpdate() {
               modified: files,
             },
           });
+          console.log("added Job");
           files = [];
         }
+      } else {
+        console.log("skipped", walkEntry.path);
       }
     }
+    console.log(`succesfully created full-update jobs (${block} jobs)`);
   } catch (error) {
     console.error("Could not create full-update jobs\n" + error);
   } finally {
