@@ -20,27 +20,6 @@ const flags = parseArgs(Deno.args, {
 if (!flags.input) throw new Error("No input file provided");
 if (!flags.output) flags.output = flags.input + ".ttl";
 
-class Subject {
-  uri: string;
-  properties: { [key: string]: Set<string> };
-
-  constructor(uri: string) {
-    this.uri = uri;
-    this.properties = {};
-  }
-
-  get propNames() {
-    return Object.getOwnPropertyNames(this.properties);
-  }
-
-  addProperty(predicate: string, object: string) {
-    if (!Object.hasOwn(this.properties, predicate)) {
-      this.properties[predicate] = new Set();
-    }
-    this.properties[predicate].add(object);
-  }
-}
-
 const document = new DOMParser().parseFromString(
   Deno.readTextFileSync(flags.input).replaceAll(/(<\/?)mods:/g, "$1MODS"),
   "text/xml",
@@ -64,11 +43,10 @@ const doc = document.querySelector("document") as Element;
 const id = doc.getAttribute("docId");
 // console.log("document id :", id);
 
-// don't output tc/tn's twice
-const alreadyDoneTC: Subject[] = [];
-const alreadyDoneTN: Subject[] = [];
-// saving properties, as they might be collated from multiple ELements
-
+// don't output tc's twice
+const alreadyDoneTC: string[] = [];
+// don't output tn's twice
+const alreadyDoneTN: string[] = [];
 // don't output figuress twice
 const alreadyDoneFigures: string[] = [];
 
@@ -78,7 +56,6 @@ try {
   makeTaxonConcepts();
   makePublication();
   makeFigures();
-  outputTNandTC();
 } catch (error) {
   console.error(error);
   output(
@@ -88,11 +65,6 @@ try {
 }
 
 // end of top-level code
-
-function outputTNandTC() {
-  alreadyDoneTC.forEach(outputSubject);
-  alreadyDoneTN.forEach(outputSubject);
-}
 
 /** replaces <xsl:template match="/"> (root template) */
 function checkForErrors() {
@@ -256,7 +228,7 @@ function makeTreatment() {
   // makeCitedMaterial returns the identifier
   const materials = document.querySelectorAll("materialsCitation").map(
     makeCitedMaterial,
-  ).filter((c: string) => !!c).join(", ");
+  ).join(", ");
   if (materials) properties.push(`dwc:basisOfRecord ${materials}`);
 
   const figures = [
@@ -291,7 +263,6 @@ function getFigureUri(f: Element) {
   const doi = f.getAttribute("figureDoi") ?? "";
   if (doi.includes("doi.org/10.")) return `<${doi.replaceAll(" ", "")}>`;
   if (doi) return `<http://dx.doi.org/${doi.replaceAll(" ", "")}>`;
-  if (uri) return `<${uri}>`;
   throw new Error(
     "Internal: getFigureUri called with figure that has neither @httpUri nor @figureDoi",
   );
@@ -347,6 +318,8 @@ function makeTaxonConcepts() {
 
 /** outputs turtle describing the cTaxon concept */
 function makeTaxonConcept(taxon: Element, cTaxon: Element) {
+  const properties: string[] = [];
+
   const rank: string = cTaxon.getAttribute("rank");
   const cTaxonStatus: string = cTaxon.getAttribute("status") ??
     taxon.parentNode.querySelector(
@@ -373,47 +346,27 @@ function makeTaxonConcept(taxon: Element, cTaxon: Element) {
     taxonAuthority: cTaxonAuthority,
   });
 
-  const prev = alreadyDoneTC.find((t) => t.uri === uri);
-  const s = prev || new Subject(uri);
-  if (!prev) alreadyDoneTC.push(s);
+  if (alreadyDoneTC.includes(uri)) return;
+  alreadyDoneTC.push(uri);
 
-  /** replaces <xsl:template name="taxonNameDetails"> and <xsl:template match="taxonomicName/@*"> */
-  cTaxon.getAttributeNames().filter((n: string) =>
-    ![
-      "id",
-      "box",
-      "pageId",
-      "pageNumber",
-      "lastPageId",
-      "lastPageNumber",
-      "higherTaxonomySource",
-      "status",
-    ].includes(n) && !n.startsWith("_") &&
-    !n.match(/\.|authority|Authority|evidence|Evicence|lsidName/)
-  ).forEach((n: string) => {
-    // the xslt seems to special-case this, but output comparison suggests otherwise?
-    // if (n === "ID-CoL") {
-    //   return `rdf:seeAlso <https://www.catalogueoflife.org/data/taxon/${
-    //     normalizeSpace(taxon.getAttribute(n))
-    //   }>`;
-    // }
-    s.addProperty(`dwc:${n}`, STR(normalizeSpace(cTaxon.getAttribute(n))));
-  });
+  properties.push(...taxonNameDetails(cTaxon));
 
-  s.addProperty("trt:hasTaxonName", taxonNameURI(cTaxon));
+  properties.push(
+    `trt:hasTaxonName ${taxonNameURI(cTaxon)}`,
+  );
 
   if (cTaxon.getAttribute("authority")) {
-    s.addProperty(
-      "dwc:scientificNameAuthorship",
-      STR(normalizeSpace(cTaxon.getAttribute("authority"))),
+    properties.push(
+      `dwc:scientificNameAuthorship ${
+        STR(normalizeSpace(cTaxon.getAttribute("authority")))
+      }`,
     );
   } else if (
     cTaxon.getAttribute("baseAuthorityName") &&
     cTaxon.getAttribute("baseAuthorityYear")
   ) {
-    s.addProperty(
-      "dwc:scientificNameAuthorship",
-      `${
+    properties.push(
+      `dwc:scientificNameAuthorship ${
         STR(
           normalizeSpace(
             `${cTaxon.getAttribute("baseAuthorityName")}, ${
@@ -427,25 +380,27 @@ function makeTaxonConcept(taxon: Element, cTaxon: Element) {
     cTaxon.getAttribute("authorityName") &&
     cTaxon.getAttribute("authorityYear")
   ) {
-    s.addProperty(
-      "dwc:scientificNameAuthorship",
-      STR(
-        normalizeSpace(
-          `${cTaxon.getAttribute("authorityName")}, ${
-            cTaxon.getAttribute("authorityYear")
-          }`,
-        ),
-      ),
+    properties.push(
+      `dwc:scientificNameAuthorship ${
+        STR(
+          normalizeSpace(
+            `${cTaxon.getAttribute("authorityName")}, ${
+              cTaxon.getAttribute("authorityYear")
+            }`,
+          ),
+        )
+      }`,
     );
   } else if (taxon === cTaxon) {
     // if taxon is the treated taxon and no explicit authority info is given on the element, fall back to document info
-    s.addProperty(
-      "dwc:scientificNameAuthorship",
-      STR(
-        normalizeSpace(
-          `${doc.getAttribute("docAuthor")}, ${doc.getAttribute("docDate")}`,
-        ),
-      ),
+    properties.push(
+      `dwc:scientificNameAuthorship ${
+        STR(
+          normalizeSpace(
+            `${doc.getAttribute("docAuthor")}, ${doc.getAttribute("docDate")}`,
+          ),
+        )
+      }`,
     );
   }
   if (taxon === cTaxon && !taxon.hasAttribute("authority")) {
@@ -453,27 +408,26 @@ function makeTaxonConcept(taxon: Element, cTaxon: Element) {
     // unclear why dwc:authority* are only set in this one case
     // also unlcear why they are simplified like in the uri
     // TODO: change this if appropriate
-    s.addProperty(
-      `dwc:authority`,
-      STR(
-        normalizeSpace(
-          `${authorityNameForURI(doc.getAttribute("docAuthor"))}, ${
-            doc.getAttribute("docDate")
-          }`,
-        ),
-      ),
-    );
-    s.addProperty(
-      "dwc:authorityName",
-      STR(normalizeSpace(authorityNameForURI(doc.getAttribute("docAuthor")))),
-    );
-    s.addProperty(
-      "dwc:authorityYear",
-      STR(doc.getAttribute("docDate")),
+    properties.push(
+      `dwc:authority ${
+        STR(
+          normalizeSpace(
+            `${authorityNameForURI(doc.getAttribute("docAuthor"))}, ${
+              doc.getAttribute("docDate")
+            }`,
+          ),
+        )
+      }`,
+      `dwc:authorityName ${
+        STR(normalizeSpace(authorityNameForURI(doc.getAttribute("docAuthor"))))
+      }`,
+      `dwc:authorityYear ${STR(doc.getAttribute("docDate"))}`,
     );
   }
 
-  s.addProperty("a", "dwcFP:TaxonConcept");
+  properties.push("a dwcFP:TaxonConcept");
+  outputProperties(uri, properties);
+
   makeTaxonName(cTaxon);
 }
 
@@ -482,23 +436,13 @@ function makeCitedMaterial(c: Element): string {
   const properties: string[] = [];
   const mcId = c.getAttribute("id");
   const httpUri = c.getAttribute("httpUri");
-  const specimenCode = c.getAttribute("specimenCode");
-
-  // TODO remove (&& !specimenCode)
-  const uri = (mcId && !specimenCode)
-    ? `<http://tb.plazi.org/GgServer/dwcaRecords/${id}.mc.${mcId}>`
+  const uri = mcId
+    ? `<https://treatment.plazi.org/id/${id}#${mcId}>`
     : (httpUri
       ? `<${httpUri}>`
-      : `<http://treatment.plazi.org/id/${id}/${
+      : `<https://treatment.plazi.org/id/${id}${
         encodeURIComponent(normalizeSpace(c.getAttribute("specimenCode")))
       }>`);
-
-  if (!mcId && !httpUri && !specimenCode) {
-    output(
-      "# Warning: Failed to output a material citation, could not create identifier",
-    );
-    return "";
-  }
 
   const addProp = (xml: string, rdf: string) => {
     if (c.hasAttribute(xml)) {
@@ -525,11 +469,7 @@ function makeCitedMaterial(c: Element): string {
   addProp("ID-GBIF-Specimen", "trt:gbifSpecimenId");
   addProp("httpUri", "trt:httpUri");
 
-  if (mcId) {
-    properties.push(
-      `trt:httpUri <https://treatment.plazi.org/id/${id}#${mcId}>`,
-    );
-  }
+  if (mcId) properties.push(`trt:httpUri ${uri}`);
 
   properties.push("a dwc:MaterialCitation");
   outputProperties(uri, properties);
@@ -542,13 +482,13 @@ function makeCitedMaterial(c: Element): string {
  * @returns identifier of parent name
  */
 function makeTaxonName(taxon: Element, rankLimit?: string): string {
+  const properties: string[] = [];
   const uri = taxonNameURI(taxon, rankLimit);
 
   // TODO there are some checks in the xslt which abort outputting a tn -- are they neccesary?
 
-  const prev = alreadyDoneTN.find((t) => t.uri === uri);
-  const s = prev || new Subject(uri);
-  if (!prev) alreadyDoneTN.push(s);
+  if (alreadyDoneTN.includes(uri)) return uri;
+  alreadyDoneTN.push(uri);
 
   let ranks = [
     "kingdom",
@@ -558,7 +498,6 @@ function makeTaxonName(taxon: Element, rankLimit?: string): string {
     "subClass",
     "order",
     "subOrder",
-    "superFamily",
     "family",
     "subFamily",
     "tribe",
@@ -588,23 +527,44 @@ function makeTaxonName(taxon: Element, rankLimit?: string): string {
 
   ranks.map((n: string) => {
     if (taxon.getAttribute(n)) {
-      s.addProperty(`dwc:${n}`, STR(normalizeSpace(taxon.getAttribute(n))));
+      properties.push(`dwc:${n} ${STR(normalizeSpace(taxon.getAttribute(n)))}`);
       nextRankLimit = n;
     }
   });
 
-  s.addProperty("dwc:rank", STR(nextRankLimit));
+  properties.push(`dwc:rank ${STR(nextRankLimit)}`);
 
-  if (rankLimit !== nextRankLimit) {
-    const parent = makeTaxonName(taxon, nextRankLimit); // recurse upwards until kingdom
-    if (parent) s.addProperty("trt:hasParentName", parent);
-  } else {
-    console.warn("makeTaxonName reached endless loop");
-    s.addProperty("#", "Warning: makeTaxonName reached endless loop");
-  }
+  const parent = makeTaxonName(taxon, nextRankLimit); // recurse upwards until kingdom
+  if (parent) properties.push(`trt:hasParentName ${parent}`);
 
-  s.addProperty("a", "dwcFP:TaxonName");
+  properties.push("a dwcFP:TaxonName");
+  outputProperties(uri, properties);
   return uri;
+}
+
+/** replaces <xsl:template name="taxonNameDetails"> and <xsl:template match="taxonomicName/@*"> */
+function taxonNameDetails(taxon: Element): string[] {
+  return taxon.getAttributeNames().filter((n: string) =>
+    ![
+      "id",
+      "box",
+      "pageId",
+      "pageNumber",
+      "lastPageId",
+      "lastPageNumber",
+      "higherTaxonomySource",
+      "status",
+    ].includes(n) && !n.startsWith("_") &&
+    !n.match(/\.|authority|Authority|evidence|Evicence|lsidName/)
+  ).map((n: string) => {
+    // the xslt seems to special-case this, but output comparison suggests otherwise?
+    // if (n === "ID-CoL") {
+    //   return `rdf:seeAlso <https://www.catalogueoflife.org/data/taxon/${
+    //     normalizeSpace(taxon.getAttribute(n))
+    //   }>`;
+    // }
+    return `dwc:${n} ${STR(normalizeSpace(taxon.getAttribute(n)))}`;
+  });
 }
 
 /** outputs turtle describing the publication
@@ -856,13 +816,9 @@ function getAuthority(
     } else return "INVALID";
   } else {
     // newly minted taxon name, use document metadata if explicit attributes missing
-    if (baseAuthorityName && baseAuthorityYear) {
-      return `_${authorityNameForURI(baseAuthorityName)}_${baseAuthorityYear}`;
-    } else if (authorityName && authorityYear) {
-      return `_${authorityNameForURI(authorityName)}_${authorityYear}`;
-    } else {return `_${authorityNameForURI(authorityName || docAuthor)}_${
-        authorityYear || docDate
-      }`;}
+    return `_${authorityNameForURI(authorityName || docAuthor)}_${
+      authorityYear || docDate
+    }`;
   }
 }
 
@@ -920,7 +876,6 @@ function taxonNameForURI(
       "subClass",
       "order",
       "subOrder",
-      "superFamily",
       "family",
       "subFamily",
       "tribe",
@@ -948,11 +903,8 @@ function taxonNameForURI(
     ) {
       const names: string[] = [
         taxonName.getAttribute("genus"),
-        ranks.includes("species")
-          ? taxonName.getAttribute("species")
-          : ranks.includes("subGenus")
-          ? taxonName.getAttribute("subGenus") // only put subGenus if no species present
-          : "",
+        ranks.includes("subGenus") ? taxonName.getAttribute("subGenus") : "",
+        ranks.includes("species") ? taxonName.getAttribute("species") : "",
         ranks.includes("subSpecies")
           ? taxonName.getAttribute("subSpecies")
           : "",
@@ -1094,16 +1046,4 @@ function outputProperties(subject: string, properties: string[]) {
   if (properties.length) {
     output(`\n${subject}\n    ${properties.join(" ;\n    ")} .`);
   } else output(`\n# No properties for ${subject}`);
-}
-
-function outputSubject(s: Subject) {
-  if (s.propNames.length) {
-    output(
-      `\n${s.uri}\n    ${
-        s.propNames.map((n) => `${n} ${[...s.properties[n]].join(", ")}`).join(
-          " ;\n    ",
-        )
-      } .`,
-    );
-  } else output(`\n# No properties for ${s.uri}`);
 }
