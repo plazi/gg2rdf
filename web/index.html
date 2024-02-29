@@ -37,6 +37,8 @@
             <th>Job ID</th>
             <th>Status</th>
             <th>Log</th>
+            <th>From</th>
+            <th>Till</th>
         </tr>
     </table>
     <script type="module">
@@ -46,7 +48,7 @@
             const row = document.createElement("tr");
             jobsTable.appendChild(row);
             row.classList.add(jobStatus.status);
-            row.innerHTML = `<td>${jobStatus.job.id}</td><td>${jobStatus.status}</td><td><a href="${jobStatus.dir}/log.txt">${jobStatus.dir}/log.txt</a></td>`;
+            row.innerHTML = `<td>${jobStatus.job.id}</td><td>${jobStatus.status}</td><td><a href="${jobStatus.dir}/log.txt">${jobStatus.dir}/log.txt</a></td><td>${jobStatus.job.from}</td><td>${jobStatus.job.till}</td>`;
         }
     </script>
 </body>
