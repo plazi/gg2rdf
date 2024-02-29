@@ -1,10 +1,7 @@
 FROM denoland/deno:ubuntu-1.39.0
 
 RUN apt update
-RUN DEBIAN_FRONTEND=noninteractive apt install -y software-properties-common
-RUN DEBIAN_FRONTEND=noninteractive apt-add-repository -y ppa:fish-shell/release-3 
-RUN apt update
-RUN DEBIAN_FRONTEND=noninteractive apt install -y raptor2-utils openjdk-11-jdk git curl fish
+RUN DEBIAN_FRONTEND=noninteractive apt install -y raptor2-utils openjdk-11-jdk git curl
 RUN git config --system http.postBuffer 1048576000
 RUN git config --system --add safe.directory /workspaces/gg2rdf
 
