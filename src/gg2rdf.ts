@@ -286,20 +286,7 @@ function makeFigure(f: Element) {
     properties.push(`dc:description ${STR(f.getAttribute("captionText"))}`);
   }
 
-  const httpUri = f.getAttribute("httpUri");
-  if (httpUri) {
-    if (httpUri.replaceAll(" ", "").includes("10.5281/zenodo.")) {
-      properties.push(
-        `fabio:hasRepresentation https://zenodo.org/record/${
-          STR(substringAfter(httpUri.replaceAll(" ", ""), "10.5281/zenodo."))
-        }/files/figure.png`,
-      );
-    } else {
-      properties.push(
-        `fabio:hasRepresentation ${STR(httpUri.replaceAll(" ", ""))}`,
-      );
-    }
-  }
+  // TODO from <fabio:hasRepresentation>
 
   properties.push(`a fabio:Figure`);
   outputProperties(uri, properties);
