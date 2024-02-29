@@ -18,22 +18,6 @@
             ],
             "envFile": "${workspaceFolder}/.env",
             "attachSimplePort": 9229
-        },
-        {
-            "request": "launch",
-            "name": "Single transformation",
-            "type": "node",
-            "program": "${workspaceFolder}/src/gg2rdf.ts",
-            "cwd": "${workspaceFolder}",
-            "args": ["-i","example-data/000040332F2853C295734E7BD4190F05.xml","-o", "/tmp/000040332F2853C295734E7BD4190F05.ttl"],
-            "runtimeExecutable": "/usr/bin/deno",
-            "runtimeArgs": [
-                "run",
-                "--inspect-brk",
-                "--allow-all"
-            ],
-            "envFile": "${workspaceFolder}/.env",
-            "attachSimplePort": 9229
         }
     ]
 }
