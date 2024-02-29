@@ -61,7 +61,7 @@ export class JobsDataBase {
       jobDirs.push(jobDir);
     }
     return jobDirs.filter((entry) => entry.isDirectory).sort((a, b) =>
-      a.name.localeCompare(b.name)
+      b.name.localeCompare(a.name)
     ).map((jobDir) => {
       const statusFile = path.join(this.jobsDir, jobDir.name, "status.json");
       try {
