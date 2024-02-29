@@ -113,8 +113,8 @@ async function run() {
         }
       }
 
-      const gitCommands = `git config user.name ${job.author.name}
-      git config user.email ${job.author.email}
+      const gitCommands = `git config --replace-all user.name ${job.author.name}
+      git config --replace-all user.email ${job.author.email}
       git add -A
       git commit --quiet -m "committed by action runner ${config.sourceRepository}@${job.id}"
       git push --quiet ${
