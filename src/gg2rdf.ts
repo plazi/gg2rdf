@@ -11,8 +11,6 @@
 import { DOMParser } from "https://esm.sh/linkedom@0.16.8/cached";
 import { Element } from "https://esm.sh/v135/linkedom@0.16.8/types/interface/element.d.ts";
 import { parseArgs } from "https://deno.land/std@0.215.0/cli/parse_args.ts";
-import { HTTP_METHODS } from "https://deno.land/std@0.202.0/http/method.ts";
-import { mergeHeaders } from "https://deno.land/std@0.202.0/http/cookie_map.ts";
 
 const flags = parseArgs(Deno.args, {
   string: ["input", "output"],
@@ -40,7 +38,8 @@ output(`@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix treatment: <http://treatment.plazi.org/id/> .
 @prefix taxonName: <http://taxon-name.plazi.org/id/> .
 @prefix taxonConcept: <http://taxon-concept.plazi.org/id/> .
-@prefix xlink: <http://www.w3.org/1999/xlink/> .`);
+@prefix xlink: <http://www.w3.org/1999/xlink/> .
+`);
 
 // this is the <document> surrounding everything. doc != document
 const doc = document.querySelector("document") as Element;
@@ -50,7 +49,6 @@ console.log("document id :", id);
 try {
   checkForErrors();
   makeTreatment();
-  makePublication();
 } catch (error) {
   console.error("" + error);
   output(
@@ -201,81 +199,12 @@ function makeTreatment() {
     }
   }
 
+  // TODO: continue from <!-- add authors (_might_ differ from article author ...) -->
+
   properties.push(`dc:creator ${getAuthors()}`);
-  properties.push(`trt:publishedIn ${getPublication()}`);
-
-  // TODO after "add cited taxon concepts"
-  // TODO after "maybe add references to materials citations that have a specimen (HTTP) URI"
-
   properties.push(`a trt:Treatment`);
 
   outputProperties(`treatment:${id}`, properties);
-}
-
-/** outputs turtle describing the publication
- *
- * replaces <xsl:template name="publication">
- */
-function makePublication() {
-  // lines of turtle properties `pred obj`
-  // subject and delimiters are added at the end.
-  const properties: string[] = [];
-
-  const titles = [
-    ...document.querySelectorAll("MODSmods>MODStitleInfo>MODStitle"),
-  ]
-    .map((e: Element) => normalizeSpace(e.innerText)).join('", "');
-  if (titles) properties.push(`dc:title "${titles}"`);
-
-  properties.push(`dc:creator ${getAuthors()}`);
-
-  document.querySelectorAll(
-    "MODSpart > MODSdate, MODSoriginInfo > MODSdateIssued",
-  ).forEach((e: Element) =>
-    properties.push(`dc:date ${JSON.stringify("" + e.innerText)}`)
-  );
-
-  // TODO  <xsl:apply-templates select="//figureCitation[./@httpUri and not(./@httpUri = ./preceding::figureCitation/@httpUri)]" mode="publicationObject"/>
-
-  const classifications = document.querySelectorAll("MODSclassification");
-  classifications.forEach((c: Element) => {
-    if (c.innerText === "journal article") {
-      [...document.querySelectorAll('MODSrelatedItem[type="host"]')].map(
-        getJournalProperties,
-      ).flat().forEach((s) => properties.push(s));
-    }
-    if (c.innerText === "book chapter") {
-      [...document.querySelectorAll('MODSrelatedItem[type="host"]')].map(
-        getBookChapterProperties,
-      ).flat().forEach((s) => properties.push(s));
-    }
-    if (c.innerText === "book") {
-      properties.push("a fabio:Book");
-    }
-  });
-
-  outputProperties(`${getPublication()}`, properties);
-}
-
-function getJournalProperties(e: Element): string[] {
-  const result: string[] = [];
-  e.querySelectorAll("MODStitleInfo > MODStitle").forEach((m: Element) =>
-    result.push(`bibo:journal ${JSON.stringify("" + m.innerText)}`)
-  );
-  // TODO:
-	// <xsl:apply-templates select="mods:part/mods:detail"/>
-	// <xsl:apply-templates select="mods:part/mods:extent/mods:start"/>
-	// <xsl:apply-templates select="mods:part/mods:extent/mods:end"/>
-  result.push("a fabio:JournalArticle");
-  return result;
-}
-function getBookChapterProperties(e: Element): string[] {
-  const result: string[] = [];
-  // TODO
-	// <xsl:apply-templates select="mods:part/mods:extent/mods:start"/>
-	// <xsl:apply-templates select="mods:part/mods:extent/mods:end"/>
-  result.push("a fabio:BookSection");
-  return result;
 }
 
 /** replaces <xsl:call-template name="authority"> */
@@ -395,9 +324,8 @@ function taxonConceptURI(
 
 /** → turtle snippet a la `"author1", "author2", ... "authorN"` */
 function getAuthors() {
-  // xslt never uses docAuthor
-  // const docAuthor = (doc.getAttribute("docAuthor") as string).split(/;|,|&|and/)
-  //   .map((a) => STR(a.trim())).join(", ");
+  const docAuthor = (doc.getAttribute("docAuthor") as string).split(/;|,|&|and/)
+    .map((a) => STR(a.trim())).join(", ");
   // to keep author ordering (after xslt replaced):
   // const docAuthor = STR(doc.getAttribute("docAuthor"))
 
@@ -412,36 +340,9 @@ function getAuthors() {
   // to keep author ordering (after xslt replaced):
   // const modsAuthor = STR(mods.filter((m) => m.querySelector("MODSroleTerm").innerText.match(/author/i)).map((m) => (m.querySelector("MODSnamePart").innerText as string).trim()).join("; "));
 
-  // if (modsAuthor)
-  return modsAuthor;
-  // else if (docAuthor) return docAuthor;
-  // else console.error("can't determine treatment authors");
-}
-
-/** returns link to publication */
-function getPublication() {
-  const doiID: string | undefined = doc.getAttribute("ID-DOI");
-  if (!doiID) {
-    return `<http://publication.plazi.org/id/${
-      encodeURIComponent(doc.getAttribute("masterDocId"))
-    }>`;
-  }
-  if (doiID.includes("doi.org")) {
-    return escapeDoi((normalizeSpace(doiID)).replaceAll(" ", ""));
-  }
-  const docSource: string | undefined = doc.getAttribute("docSource");
-  if (docSource?.includes("doi.org")) {
-    return escapeDoi((normalizeSpace(docSource)).replaceAll(" ", ""));
-  }
-  return escapeDoi(
-    `http://dx.doi.org/${(normalizeSpace(doiID)).replaceAll(" ", "")}`,
-  );
-}
-
-function escapeDoi(url: string) {
-  return `<${encodeURI(url)}>`;
-  // TODO: check if this is enough or if more advanced escaping is neccesary
-  // <xsl:template name="escapeDoi"> is very complicated, but I dont understand why exactly
+  if (modsAuthor) return modsAuthor;
+  else if (docAuthor) return docAuthor;
+  else console.error("can't determine treatment authors");
 }
 
 function STR(s: string) {
@@ -478,7 +379,5 @@ function output(data: string) {
  * without delimiters (";" or ".")
  */
 function outputProperties(subject: string, properties: string[]) {
-  if (properties.length) {
-    output(`\n${subject}\n    ${properties.join(" ;\n    ")} .`);
-  } else output(`\n# No properties for ${subject}`);
+  output(subject + "\n  " + properties.join(" ;\n  ") + " .");
 }
