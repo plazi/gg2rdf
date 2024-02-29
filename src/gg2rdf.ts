@@ -219,17 +219,7 @@ function makeTreatment() {
     if (citation) properties.push(citation);
   });
 
-  // xslt-TODO maybe add references to materials citations that have a specimen (HTTP) URI
-  const materials = document.querySelectorAll("materialsCitation").map(
-    (c: Element) => {
-      const uri = c.getAttribute("httpUri");
-      if (uri) return `<${uri}>`;
-      return `treatment:${id}\\/${
-        encodeURIComponent(normalizeSpace(c.getAttribute("specimenCode")))
-      }`;
-    },
-  ).join(", ");
-  if (materials) properties.push(`dwc:basisOfRecord ${materials}`);
+  // TODO after "maybe add references to materials citations that have a specimen (HTTP) URI"
 
   properties.push(`a trt:Treatment`);
 
