@@ -507,13 +507,12 @@ export function gg2rdf(inputPath: string, outputPath: string) {
     const httpUri = c.getAttribute("httpUri");
     const specimenCode = c.getAttribute("specimenCode");
 
-    // TODO remove (&& !specimenCode)
-    const uri = (mcId && !specimenCode)
+    const uri = mcId
       ? `<http://tb.plazi.org/GgServer/dwcaRecords/${id}.mc.${mcId}>`
       : (httpUri
         ? `<${httpUri}>`
         : `<http://treatment.plazi.org/id/${id}/${
-          encodeURIComponent(normalizeSpace(c.getAttribute("specimenCode")))
+          encodeURIComponent(normalizeSpace(specimenCode))
         }>`);
 
     if (!mcId && !httpUri && !specimenCode) {
@@ -1025,8 +1024,6 @@ export function gg2rdf(inputPath: string, outputPath: string) {
           ranks.includes("variety") ? taxonName.getAttribute("variety") : "",
           ranks.includes("form") ? taxonName.getAttribute("form") : "",
         ];
-        // the variety || subSpecies is due to a quirk of the xslt
-        // after replacement, this should proably be modified to put both if avaliable
         return "/" +
           names.filter((n) => !!n).map(normalizeSpace).map((n) =>
             n.replaceAll(" ", "_")
@@ -1084,13 +1081,12 @@ export function gg2rdf(inputPath: string, outputPath: string) {
     const mods = document.getElementsByTagName(
       "MODSname",
     );
-    const modsAuthor = mods.filter((m) =>
-      m.querySelector("MODSroleTerm").innerText.match(/author/i)
-    ).map((m) =>
-      STR((m.querySelector("MODSnamePart").innerText as string).trim())
-    ).join(", ");
-    // to keep author ordering (after xslt replaced):
-    // const modsAuthor = STR(mods.filter((m) => m.querySelector("MODSroleTerm").innerText.match(/author/i)).map((m) => (m.querySelector("MODSnamePart").innerText as string).trim()).join("; "));
+    const modsAuthor = STR(
+      mods.filter((m) =>
+        m.querySelector("MODSroleTerm").innerText.match(/author/i)
+      ).map((m) => (m.querySelector("MODSnamePart").innerText as string).trim())
+        .join("; "),
+    );
 
     // if (modsAuthor)
     return modsAuthor;
