@@ -43,15 +43,9 @@ const doc = document.querySelector("document") as Element;
 const id = doc.getAttribute("docId");
 console.log("document id :", id);
 
-// don't output tc's twice
-const alreadyDoneTC: string[] = [];
-// don't output tn's twice
-const alreadyDoneTN: string[] = [];
-
 try {
   checkForErrors();
   makeTreatment();
-  makeTaxonConcepts();
   makePublication();
 } catch (error) {
   console.error(error);
@@ -263,95 +257,6 @@ function makeTreatment() {
   outputProperties(`treatment:${id}`, properties);
 }
 
-/** outputs turtle describing the taxon concepts mentioned */
-function makeTaxonConcepts() {
-  const taxon: Element = document.querySelector(
-    'document treatment subSubSection[type="nomenclature"] taxonomicName',
-  ); // existence asserted by checkForErrors
-  document.querySelectorAll("taxonomicName").forEach((e: Element) => {
-    makeTaxonConcept(taxon, e);
-  });
-}
-
-/** outputs turtle describing the cTaxon concept */
-function makeTaxonConcept(taxon: Element, cTaxon: Element) {
-  const properties: string[] = [];
-
-  const cTaxonAuthority = getAuthority({
-    taxonName: cTaxon,
-    taxonStatus: "ABSENT",
-  });
-  const taxonRelation = getTaxonRelation({ taxon, cTaxon });
-  const cTaxonRankGroup = getTaxonRankGroup(cTaxon);
-
-  // check required attributes
-  if (
-    cTaxonRankGroup === RANKS.INVALID || cTaxonAuthority === "INVALID" ||
-    taxonRelation === REL.NONE
-  ) {
-    return;
-  }
-
-  const uri = taxonConceptURI({
-    taxonName: cTaxon,
-    taxonAuthority: cTaxonAuthority,
-  });
-
-  if (alreadyDoneTC.includes(uri)) return;
-  alreadyDoneTC.push(uri);
-
-  // TODO taxonNameDetails(cTaxon)
-
-  properties.push(
-    `trt:hasTaxonName <${
-      taxonNameBaseURI({ kingdom: cTaxon.getAttribute("kingdom") })
-    }/${taxonNameForURI({ taxonName: cTaxon })}>`,
-  );
-
-  if (cTaxon.getAttribute("authority")) {
-    properties.push(
-      `dwc:scientificNameAuthorship ${
-        STR(normalizeSpace(cTaxon.getAttribute("authority")))
-      }`,
-    );
-  } else if (
-    cTaxon.getAttribute("baseAuthorityName") &&
-    cTaxon.getAttribute("baseAuthorityYear")
-  ) {
-    properties.push(
-      `dwc:scientificNameAuthorship ${
-        STR(
-          normalizeSpace(
-            `${cTaxon.getAttribute("baseAuthorityName")}, ${
-              cTaxon.getAttribute("baseAuthorityYear")
-            }`,
-          ),
-        )
-      }`,
-    );
-  } else if (
-    cTaxon.getAttribute("authorityName") &&
-    cTaxon.getAttribute("authorityYear")
-  ) {
-    properties.push(
-      `dwc:scientificNameAuthorship ${
-        STR(
-          normalizeSpace(
-            `${cTaxon.getAttribute("authorityName")}, ${
-              cTaxon.getAttribute("authorityYear")
-            }`,
-          ),
-        )
-      }`,
-    );
-  }
-
-  // TODO taxonName(cTaxon)
-
-  properties.push("a dwcFP:TaxonConcept");
-  outputProperties(uri, properties);
-}
-
 /** outputs turtle describing the publication
  *
  * replaces <xsl:template name="publication">
@@ -489,11 +394,12 @@ const enum REL {
 function getTaxonRelation(
   { taxon, cTaxon }: { taxon: Element; cTaxon: Element },
 ) {
-  const authorityMatch = (cTaxon.hasAttribute("authorityYear") &&
-    cTaxon.getAttribute("authorityYear") ===
-      taxon.getAttribute("authorityYear") &&
-    cTaxon.getAttribute("authorityName") ===
-      taxon.getAttribute("authorityName")) ||
+  const authorityMatch =
+    (cTaxon.hasAttribute("authorityYear") &&
+      cTaxon.getAttribute("authorityYear") ===
+        taxon.getAttribute("authorityYear") &&
+      cTaxon.getAttribute("authorityName") ===
+        taxon.getAttribute("authorityName")) ||
     (cTaxon.hasAttribute("baseAuthorityYear") &&
       cTaxon.getAttribute("baseAuthorityYear") ===
         taxon.getAttribute("baseAuthorityYear") &&
