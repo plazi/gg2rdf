@@ -78,7 +78,7 @@ const webhookHandler = async (request: Request) => {
     }
     if (pathname === "/full_update") {
       console.log("· got full_update request");
-      // TODO
+      worker.postMessage("FULLUPDATE");
       return new Response("Not Implemented", {
         status: Status.NotImplemented,
         statusText: STATUS_TEXT[Status.NotImplemented],

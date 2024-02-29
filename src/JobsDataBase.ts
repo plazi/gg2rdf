@@ -5,11 +5,16 @@ import * as path from "https://deno.land/std@0.209.0/path/mod.ts";
 
 export type Job = {
   id: string;
-  from: string;
-  till: string;
+  from?: string;
+  till?: string;
   author: {
     "name": string;
     "email": string;
+  };
+  files?: {
+    // only used for transform_all
+    modified?: string[];
+    removed?: string[];
   };
 };
 
