@@ -3,7 +3,6 @@ import { Element } from "https://esm.sh/v135/linkedom@0.16.8/types/interface/ele
 
 class Subject {
   properties: { [key: string]: Set<string> } = {};
-  /** @param uri The uri between '<' and '>' or a  prefixed name*/
   constructor(public uri: string) {}
 
   /** sorted with comments first, and type last */
