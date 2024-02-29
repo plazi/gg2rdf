@@ -18,7 +18,8 @@ This webserver also exposes the follwing paths:
 - `/update?from=[from-commit-id]&till=[till-commit-id]`: send a `POST` here to
   update all files modified since from-commit-id up till-commit-id or HEAD if
   not specified
-- `/full_update`: send a `POST` here to run the full_update script.
+- `/full_update`: send a `POST` here to run the full_update script. Note that
+  this will not delete any files (yet).
 
 ## Usage
 
