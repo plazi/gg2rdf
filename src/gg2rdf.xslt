@@ -485,7 +485,6 @@
 		<!-- xsl:apply-templates select=".//treatmentCitation[./@httpUri]" mode="subject"/ -->
 		<!-- xsl:message>TREATMENT CITATIONS DONE</xsl:message -->
 
-<!-- TODO from here -->
 		<!-- add taxon concept if we have a valid authority -->
 		<xsl:if test="$taxonAuthority != 'INVALID'">
 			<rdf:Description>

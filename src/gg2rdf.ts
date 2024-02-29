@@ -216,6 +216,7 @@ function makeTreatment() {
       ? e
       : e.querySelector("taxonomicName");
     const citation = taxonConceptCitation(taxon, cTaxon);
+    console.log("found taxon citation; " + e.tagName, citation);
     if (citation) properties.push(citation);
   });
 
@@ -394,14 +395,11 @@ const enum REL {
 function getTaxonRelation(
   { taxon, cTaxon }: { taxon: Element; cTaxon: Element },
 ) {
-  const authorityMatch =
-    (cTaxon.hasAttribute("authorityYear") &&
-      cTaxon.getAttribute("authorityYear") ===
-        taxon.getAttribute("authorityYear") &&
-      cTaxon.getAttribute("authorityName") ===
-        taxon.getAttribute("authorityName")) ||
-    (cTaxon.hasAttribute("baseAuthorityYear") &&
-      cTaxon.getAttribute("baseAuthorityYear") ===
+  const authorityMatch = (cTaxon.getAttribute("authorityYear") ===
+      taxon.getAttribute("authorityYear") &&
+    cTaxon.getAttribute("authorityName") ===
+      taxon.getAttribute("authorityName")) ||
+    (cTaxon.getAttribute("baseAuthorityYear") ===
         taxon.getAttribute("baseAuthorityYear") &&
       cTaxon.getAttribute("baseAuthorityName") ===
         taxon.getAttribute("baseAuthorityName"));
