@@ -408,18 +408,12 @@ export function gg2rdf(inputPath: string, outputPath: string) {
       !n.match(/\.|authority|Authority|evidence|Evicence|lsidName/)
     ).forEach((n: string) => {
       // the xslt seems to special-case this, but output comparison suggests otherwise?
-      // this is because it was only changed recently, so the change was not immediately obvious.
-      // see https://github.com/plazi/gg2rdf/issues/10
-      if (n === "ID-CoL") {
-        s.addProperty(
-          "rdf:seeAlso",
-          `<https://www.catalogueoflife.org/data/taxon/${
-            normalizeSpace(taxon.getAttribute(n))
-          }>`,
-        );
-      } else {
-        s.addProperty(`dwc:${n}`, STR(normalizeSpace(cTaxon.getAttribute(n))));
-      }
+      // if (n === "ID-CoL") {
+      //   return `rdf:seeAlso <https://www.catalogueoflife.org/data/taxon/${
+      //     normalizeSpace(taxon.getAttribute(n))
+      //   }>`;
+      // }
+      s.addProperty(`dwc:${n}`, STR(normalizeSpace(cTaxon.getAttribute(n))));
     });
 
     s.addProperty("trt:hasTaxonName", taxonNameURI(cTaxon));
