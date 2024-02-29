@@ -1,7 +1,5 @@
 #!/usr/bin/fish
 
-# This is an example fish script to run local transformations
-
 # argv: [path to xml file]
 # usage:
 # find {$xmlDir} -type f -name '*.xml' -exec ./test_noxslt.fish '{}' \;
