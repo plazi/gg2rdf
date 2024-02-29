@@ -1,10 +1,3 @@
-/* NOTES
-- only functions named `make...` output turtle as a side-effect.
-- all output is to be handled by `output(...)` or `outputSubject(...)`.
-- `output(...)` should not be assumed to run synchronous,
-  and all data passed to it should still be valid under reordering of calls.
-*/
-
 import { DOMParser, parseArgs } from "./deps.ts";
 import { Element } from "https://esm.sh/v135/linkedom@0.16.8/types/interface/element.d.ts";
 
