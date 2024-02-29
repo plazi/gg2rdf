@@ -595,9 +595,8 @@ function makeTaxonName(taxon: Element, rankLimit?: string): string {
 
   s.addProperty("dwc:rank", STR(nextRankLimit));
 
-  if (nextRankLimit === "kingdom") { /* stop recursion */ }
-  else if (rankLimit !== nextRankLimit) {
-    const parent = makeTaxonName(taxon, nextRankLimit);
+  if (rankLimit !== nextRankLimit) {
+    const parent = makeTaxonName(taxon, nextRankLimit); // recurse upwards until kingdom
     if (parent) s.addProperty("trt:hasParentName", parent);
   } else {
     console.warn("makeTaxonName reached endless loop");
@@ -840,19 +839,20 @@ function getAuthority(
   const authorityYear: string = taxonName.getAttribute("authorityYear");
   const docAuthor: string = doc.getAttribute("docAuthor");
   const docDate: string = doc.getAttribute("docDate");
-  if (taxonStatus.includes("nom") || taxonStatus.includes("name")) {
-    // newly minted replacement name for homonym or Latin grammar error, use combination or document authority
-    return `_${authorityNameForURI(authorityName ?? docAuthor)}_${docDate}`;
-  } else if (
-    taxonStatus.includes("ABSENT") || taxonStatus.includes("comb") ||
-    taxonStatus.includes("stat")
-  ) {
+  if (taxonStatus.includes("ABSENT")) {
     // no status at all, use whichever authority given (basionym authority first, as it tends to be cited for a reason under ICZN code)
-    // new combination or status of existing epithet, use basionym authority (as that is what will be the most cited under ICZN code)
     if (baseAuthorityName && baseAuthorityYear) {
       return `_${authorityNameForURI(baseAuthorityName)}_${baseAuthorityYear}`;
     } else if (authorityName && authorityYear) {
       return `_${authorityNameForURI(authorityName)}_${authorityYear}`;
+    } else return "INVALID";
+  } else if (taxonStatus.includes("nom") || taxonStatus.includes("name")) {
+    // newly minted replacement name for homonym or Latin grammar error, use combination or document authority
+    return `_${authorityNameForURI(authorityName ?? docAuthor)}_${docDate}`;
+  } else if (taxonStatus.includes("comb") || taxonStatus.includes("stat")) {
+    // new combination or status of existing epithet, use basionym authority (as that is what will be the most cited under ICZN code)
+    if (baseAuthorityName && baseAuthorityYear) {
+      return `_${authorityNameForURI(baseAuthorityName)}_${baseAuthorityYear}`;
     } else return "INVALID";
   } else {
     // newly minted taxon name, use document metadata if explicit attributes missing
@@ -894,7 +894,7 @@ function taxonNameBaseURI({ kingdom }: { kingdom: string }) {
 function taxonNameForURI(
   { taxonName }: { taxonName: Element | string },
   rankLimit?: string,
-): string {
+) {
   if (typeof taxonName === "string") {
     // unsure if this is ever called with a string?
     if (
@@ -935,7 +935,7 @@ function taxonNameForURI(
     let rank = taxonName.getAttribute("rank");
 
     if (rankLimit) {
-      if (rankLimit === "kingdom") return ""; // nowhere else to go!
+      if (rankLimit === "kingdom") return; // nowhere else to go!
       if (ranks.indexOf(rankLimit) > 0) {
         ranks = ranks.slice(0, ranks.indexOf(rankLimit));
         rank = ranks[ranks.length - 1];
