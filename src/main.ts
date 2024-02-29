@@ -79,9 +79,9 @@ const webhookHandler = async (request: Request) => {
     if (pathname === "/full_update") {
       console.log("· got full_update request");
       worker.postMessage("FULLUPDATE");
-      return new Response("Not Implemented", {
-        status: Status.NotImplemented,
-        statusText: STATUS_TEXT[Status.NotImplemented],
+      return new Response(undefined, {
+        status: Status.Accepted,
+        statusText: STATUS_TEXT[Status.Accepted],
       });
     } else {
       if (WEBHOOK_SECRET && !(await verifySignature(request))) {

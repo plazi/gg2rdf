@@ -78,7 +78,7 @@ async function gatherJobsForFullUpdate() {
   }
 }
 
-async function run() {
+function run() {
   while (queue.pendingJobs().length > 0) {
     const jobStatus = queue.pendingJobs()[0];
     const job = jobStatus.job;
