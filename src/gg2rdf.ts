@@ -233,10 +233,6 @@ export function gg2rdf(inputPath: string, outputPath: string) {
       }
     }
 
-    if (doc.hasAttribute("docTitle")) {
-      t.addProperty("dc:title", doc.getAttribute("docTitle"));
-    }
-
     t.addProperty(`dc:creator`, getAuthors());
     t.addProperty(`trt:publishedIn`, getPublication());
 
