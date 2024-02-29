@@ -1,6 +1,5 @@
 FROM denoland/deno:ubuntu-1.39.0
 
-# Install cron
 RUN apt update
 RUN DEBIAN_FRONTEND=noninteractive apt install -y raptor2-utils openjdk-11-jdk git curl
 RUN git config --system http.postBuffer 1048576000

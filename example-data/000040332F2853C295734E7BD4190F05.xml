@@ -1,0 +1,310 @@
+<document ID-DOI="http://dx.doi.org/10.3897/zookeys.1054.67004" ID-GBIF-Dataset="93eed325-417e-4061-9de3-9bb906e9cf15" ID-PMC="PMC8357763" ID-Pensoft-Pub="1313-2970-1054-185" ID-Pensoft-UUID="1AB43EC0D4D95B228A0C5F954AF15F66" ID-PubMed="34393569" ID-ZooBank="FD154A70683940688A695A0C66ECBC28" ModsDocID="1313-2970-1054-185" checkinTime="1628149780309" checkinUser="pensoft" docAuthor="Zheng, Yan-Li, Bourgoin, Thierry, Chen 1, Lin YangXiang-Sheng, Luo, Xu-Qiang &amp; Luo, Guang-Jie" docDate="2021" docId="000040332F2853C295734E7BD4190F05" docLanguage="en" docName="ZooKeys 1054: 185-200" docOrigin="ZooKeys 1054" docPubDate="2021-08-04" docSource="http://dx.doi.org/10.3897/zookeys.1054.67004" docTitle="Saigona baiseensis Zheng &amp; Chen 2021, sp. nov." docType="treatment" docUuid="BC9FDBB3-4918-4E0C-B875-D242F91DE8AA" docUuidSource="ZooBank" docVersion="4" id="1AB43EC0D4D95B228A0C5F954AF15F66" lastPageNumber="185" masterDocId="1AB43EC0D4D95B228A0C5F954AF15F66" masterDocTitle="Two new species of the genus Saigona Matsumura (Hemiptera, Fulgoromorpha, Dictyopharidae) from China" masterLastPageNumber="200" masterPageNumber="185" pageNumber="185" updateTime="1668150810303" updateUser="ExternalLinkService">
+<mods:mods xmlns:mods="http://www.loc.gov/mods/v3">
+<mods:titleInfo>
+<mods:title>Two new species of the genus Saigona Matsumura (Hemiptera, Fulgoromorpha, Dictyopharidae) from China</mods:title>
+</mods:titleInfo>
+<mods:name type="personal">
+<mods:role>
+<mods:roleTerm>Author</mods:roleTerm>
+</mods:role>
+<mods:namePart>Zheng, Yan-Li</mods:namePart>
+<mods:nameIdentifier type="ORCID">https://orcid.org/0000-0002-6964-5988</mods:nameIdentifier>
+<mods:affiliation>Institute of Entomology, Guizhou University, The Provincial Key Laboratory for Agricultural Pest Management of Mountainous Region , Guiyang, Guizhou, 550025, China &amp; School of Geography and Resources, Guizhou Education University, Guiyang, Guizhou, 550018, China &amp; Guizhou Provincial Key Laboratory of Geographic State Monitoring, Guiyang, 550018, China &amp; Institute of Environmental Resources and Disaster, Guizhou Education University, Guiyang, Guizhou, 550018, China</mods:affiliation>
+</mods:name>
+<mods:name type="personal">
+<mods:role>
+<mods:roleTerm>Author</mods:roleTerm>
+</mods:role>
+<mods:namePart>Bourgoin, Thierry</mods:namePart>
+<mods:nameIdentifier type="ORCID">https://orcid.org/0000-0001-9277-2478</mods:nameIdentifier>
+<mods:affiliation>Institut Systematique, Evolution, Biodiversite (ISYEB), UMR 7205 MNHN-CNRS-Sorbonne Universite-EPHE-Uni Antilles, Museum National d'Histoire Naturelle, 75005, Paris, France</mods:affiliation>
+</mods:name>
+<mods:name type="personal">
+<mods:role>
+<mods:roleTerm>Author</mods:roleTerm>
+</mods:role>
+<mods:namePart>Chen 1, Lin YangXiang-Sheng</mods:namePart>
+<mods:affiliation>Institute of Entomology, Guizhou University, The Provincial Key Laboratory for Agricultural Pest Management of Mountainous Region, Guiyang, Guizhou, 550025, China</mods:affiliation>
+</mods:name>
+<mods:name type="personal">
+<mods:role>
+<mods:roleTerm>Author</mods:roleTerm>
+</mods:role>
+<mods:namePart>Luo, Xu-Qiang</mods:namePart>
+<mods:affiliation>School of Geography and Resources, Guizhou Education University, Guiyang, Guizhou, 550018, China &amp; Guizhou Provincial Key Laboratory of Geographic State Monitoring, Guiyang, 550018, China &amp; Institute of Environmental Resources and Disaster, Guizhou Education University, Guiyang, Guizhou, 550018, China</mods:affiliation>
+</mods:name>
+<mods:name type="personal">
+<mods:role>
+<mods:roleTerm>Author</mods:roleTerm>
+</mods:role>
+<mods:namePart>Luo, Guang-Jie</mods:namePart>
+<mods:affiliation>School of Geography and Resources, Guizhou Education University, Guiyang, Guizhou, 550018, China &amp; Guizhou Provincial Key Laboratory of Geographic State Monitoring, Guiyang, 550018, China &amp; Institute of Environmental Resources and Disaster, Guizhou Education University, Guiyang, Guizhou, 550018, China</mods:affiliation>
+</mods:name>
+<mods:typeOfResource>text</mods:typeOfResource>
+<mods:relatedItem type="host">
+<mods:titleInfo>
+<mods:title>ZooKeys</mods:title>
+</mods:titleInfo>
+<mods:part>
+<mods:date>2021</mods:date>
+<mods:detail type="pubDate">
+<mods:number>2021-08-04</mods:number>
+</mods:detail>
+<mods:detail type="volume">
+<mods:number>1054</mods:number>
+</mods:detail>
+<mods:extent unit="page">
+<mods:start>185</mods:start>
+<mods:end>200</mods:end>
+</mods:extent>
+</mods:part>
+</mods:relatedItem>
+<mods:location>
+<mods:url>http://dx.doi.org/10.3897/zookeys.1054.67004</mods:url>
+</mods:location>
+<mods:classification>journal article</mods:classification>
+<mods:identifier type="DOI">http://dx.doi.org/10.3897/zookeys.1054.67004</mods:identifier>
+<mods:identifier type="Pensoft-Pub">1313-2970-1054-185</mods:identifier>
+<mods:identifier type="ZooBank">FD154A70683940688A695A0C66ECBC28</mods:identifier>
+<mods:identifier type="Pensoft-UUID">1AB43EC0D4D95B228A0C5F954AF15F66</mods:identifier>
+</mods:mods>
+<treatment ID-GBIF-Taxon="183922040" LSID="urn:lsid:zoobank.org:act:BC9FDBB3-4918-4E0C-B875-D242F91DE8AA" httpUri="http://treatment.plazi.org/id/000040332F2853C295734E7BD4190F05" lastPageNumber="185" pageId="0" pageNumber="185">
+<subSubSection pageId="0" pageNumber="185" type="nomenclature">
+<paragraph pageId="0" pageNumber="185">
+<taxonomicName LSID="http://zoobank.org/BC9FDBB3-4918-4E0C-B875-D242F91DE8AA" authority="Zheng &amp; Chen" authorityName="Zheng &amp; Chen" authorityYear="2021" class="Insecta" family="Dictyopharidae" genus="Saigona" higherTaxonomySource="CoL" kingdom="Animalia" lsidName="Saigona baiseensis" order="Hemiptera" pageId="0" pageNumber="185" phylum="Arthropoda" rank="species" species="baiseensis" status="sp. nov.">Saigona baiseensis Zheng &amp; Chen</taxonomicName>
+<taxonomicNameLabel pageId="0" pageNumber="185">sp. nov.</taxonomicNameLabel>
+</paragraph>
+</subSubSection>
+<subSubSection pageId="0" pageNumber="185" type="description">
+<paragraph pageId="0" pageNumber="185">
+<figureCitation captionStart="Figure 1" captionStartId="F1" captionText="Figure 1. Taxonomic history of the genus Saigona Matsumura, 1010 (uploaded from Bourgoin 2021). For each synonymized genus, their protonyms are in blue boxes, and the current valid name of the genus is in green. Red vertical arrows illustrate synonymy and the red cross the status revivisco of the genus Leprota Melichar, 1912." figureDoi="10.3897/zookeys.1054.67004.figure1" httpUri="https://binary.pensoft.net/fig/574422" pageId="0" pageNumber="185">Figures 1</figureCitation>
+<figureCitation captionStart="Figures 2–5" captionStartId="F2" captionText="Figures 2 - 5. Saigona baiseensis Zheng &amp; Chen sp. nov. 2 male, holotype, dorsal view 3 male, head and thorax, dorsal view 4 male, head, frons and clypeus, lateral view 5 male, head and pronotum, lateral view. Scale bars: 2 mm (2 - 5)." figureDoi="10.3897/zookeys.1054.67004.figures2-5" httpUri="https://binary.pensoft.net/fig/574423" pageId="0" pageNumber="185">, 2-5</figureCitation>
+<figureCitation captionStart="Figures 6–13" captionStartId="F3" captionText="Figures 6 - 13. Saigona baiseensis Zheng &amp; Chen, sp. nov. 6 forewing 7 hindwing 8 genitalia, lateral view 9 pygofer and gonostyli, ventral view 10 pygofer and anal tube, dorsal view 11 aedeagus, lateral view 12 aedeagus, ventral view 13 aedeagus, dorsal view. Scale bars: 2 mm (6 - 10), 0.5 mm (11 - 13)." figureDoi="10.3897/zookeys.1054.67004.figures6-13" httpUri="https://binary.pensoft.net/fig/574424" pageId="0" pageNumber="185">, 6-13</figureCitation>
+<figureCitation captionStart="Figures 14–18" captionStartId="F4" captionText="Figures 14 - 18. Saigona baiseensis Zheng &amp; Chen, sp. nov. 14 genitalia of female, ventral view 15 genitalia of female, dorsal view 16 anterior connective lamina of gonapophysis VIII (lateral view) 17 gonapophysis IX (ventral view) 18 gonoplacs (lateral view). Scale bars: 1 mm (14, 15), 0.5 mm (16 - 18). Gp, gonoplacs; Gx VIII, gonocoxae VIII; GxL, gonocoxae VIII with endogonocoxal lobe; GxP, gonocoxae VIII with endogonocoxal process; PCL, posterior connective lamina of gonapophysis IX; GpL, posterior lobe of the gonoplac; ACL, anterior connective lamina of gonapophyses." figureDoi="10.3897/zookeys.1054.67004.figures14-18" httpUri="https://binary.pensoft.net/fig/574425" pageId="0" pageNumber="185">, 14-18</figureCitation>
+<figureCitation captionStart="Figures 19–22" captionStartId="F5" captionText="Figures 19 - 22. Saigona maculata Zheng &amp; Chen sp. nov. 19 male, holotype, dorsal view 20 male, head and thorax, dorsal view 21 male, frons and clypeus, ventral view 22 male, head and pronotum, lateral view. Scale bars: 2 mm (19 - 22)." figureDoi="10.3897/zookeys.1054.67004.figures19-22" httpUri="https://binary.pensoft.net/fig/574426" pageId="0" pageNumber="185">, 19-20</figureCitation>
+</paragraph>
+</subSubSection>
+<subSubSection pageId="0" pageNumber="185" type="type locality">
+<paragraph pageId="0" pageNumber="185">Type locality.</paragraph>
+<paragraph pageId="0" pageNumber="185">Tianlangping Baise, Guangxi Zhuang Autonomous Region, China.</paragraph>
+</subSubSection>
+<subSubSection pageId="0" pageNumber="185" type="diagnosis">
+<paragraph pageId="0" pageNumber="185">Diagnosis.</paragraph>
+<paragraph pageId="0" pageNumber="185">
+This species can be distinguished from other 
+<taxonomicName authorityName="Matsumura" authorityYear="1910" class="Insecta" family="Dictyopharidae" genus="Saigona" higherTaxonomySource="CoL" kingdom="Animalia" lsidName="Saigona" order="Hemiptera" pageId="0" pageNumber="185" phylum="Arthropoda" rank="genus">
+<emphasis italics="true" pageId="0" pageNumber="185">Saigona</emphasis>
+</taxonomicName>
+species by the combination of the following diagnostic characters: (1) pygofer large and broad in lateral view, posterior margin with a blunt dorsal process; (2) aedeagus with phallobasal conjunctival processes unequal in length; (3) phallobase narrow and long, curved dorsally, with 2 apical membranous dorsal apical lobes (Fig. 
+<figureCitation captionStart="Figures 6–13" captionStartId="F3" captionText="Figures 6 - 13. Saigona baiseensis Zheng &amp; Chen, sp. nov. 6 forewing 7 hindwing 8 genitalia, lateral view 9 pygofer and gonostyli, ventral view 10 pygofer and anal tube, dorsal view 11 aedeagus, lateral view 12 aedeagus, ventral view 13 aedeagus, dorsal view. Scale bars: 2 mm (6 - 10), 0.5 mm (11 - 13)." figureDoi="10.3897/zookeys.1054.67004.figures6-13" httpUri="https://binary.pensoft.net/fig/574424" pageId="0" pageNumber="185">12</figureCitation>
+), dorsal round and large; ventral lobes (Fig. 
+<figureCitation captionStart="Figures 6–13" captionStartId="F3" captionText="Figures 6 - 13. Saigona baiseensis Zheng &amp; Chen, sp. nov. 6 forewing 7 hindwing 8 genitalia, lateral view 9 pygofer and gonostyli, ventral view 10 pygofer and anal tube, dorsal view 11 aedeagus, lateral view 12 aedeagus, ventral view 13 aedeagus, dorsal view. Scale bars: 2 mm (6 - 10), 0.5 mm (11 - 13)." figureDoi="10.3897/zookeys.1054.67004.figures6-13" httpUri="https://binary.pensoft.net/fig/574424" pageId="0" pageNumber="185">13</figureCitation>
+) small and slender, with another small membranous lobe on it.
+</paragraph>
+</subSubSection>
+<subSubSection pageId="0" pageNumber="185" type="description">
+<paragraph pageId="0" pageNumber="185">Description.</paragraph>
+<paragraph pageId="0" pageNumber="185">
+<emphasis bold="true" pageId="0" pageNumber="185">
+<emphasis italics="true" pageId="0" pageNumber="185">Measurement</emphasis>
+.
+</emphasis>
+♂, BL: 17.4-18.9 mm; HL: 1.5-1.6 mm; HW: 1.4-1.5 mm; FWL: 11.3-13.2 mm. ♀, BL: 18.9-20.2 mm; HL: 1.6-1.7 mm; HW: 1.4-1.5 mm; FWL: 13.2-14.6 mm.
+</paragraph>
+<paragraph pageId="0" pageNumber="185">
+<emphasis bold="true" pageId="0" pageNumber="185">
+<emphasis italics="true" pageId="0" pageNumber="185">Coloration</emphasis>
+.
+</emphasis>
+General color dark, marked with fuscous and ochraceous (Figs 
+<figureCitation captionStart="Figures 2–5" captionStartId="F2" captionText="Figures 2 - 5. Saigona baiseensis Zheng &amp; Chen sp. nov. 2 male, holotype, dorsal view 3 male, head and thorax, dorsal view 4 male, head, frons and clypeus, lateral view 5 male, head and pronotum, lateral view. Scale bars: 2 mm (2 - 5)." figureDoi="10.3897/zookeys.1054.67004.figures2-5" httpUri="https://binary.pensoft.net/fig/574423" pageId="0" pageNumber="185">2-5</figureCitation>
+). Vertex brown with median carina very faint, lateral margins dark. Genae dark, yellow ventroposteriorly near antennae (Fig. 
+<figureCitation captionStart="Figures 2–5" captionStartId="F2" captionText="Figures 2 - 5. Saigona baiseensis Zheng &amp; Chen sp. nov. 2 male, holotype, dorsal view 3 male, head and thorax, dorsal view 4 male, head, frons and clypeus, lateral view 5 male, head and pronotum, lateral view. Scale bars: 2 mm (2 - 5)." figureDoi="10.3897/zookeys.1054.67004.figures2-5" httpUri="https://binary.pensoft.net/fig/574423" pageId="0" pageNumber="185">4</figureCitation>
+). Eyes dark brown, lateral ocelli yellowish, antenna brown and areas surrounding ocellus and antenna beneath eye yellowish. Frons dark brown with yellowish speckles (Fig. 
+<figureCitation captionStart="Figures 2–5" captionStartId="F2" captionText="Figures 2 - 5. Saigona baiseensis Zheng &amp; Chen sp. nov. 2 male, holotype, dorsal view 3 male, head and thorax, dorsal view 4 male, head, frons and clypeus, lateral view 5 male, head and pronotum, lateral view. Scale bars: 2 mm (2 - 5)." figureDoi="10.3897/zookeys.1054.67004.figures2-5" httpUri="https://binary.pensoft.net/fig/574423" pageId="0" pageNumber="185">3</figureCitation>
+). Postclypeus and anteclypeus pale brown. Pronotum dark with scattered white speckles; mesonotum dark, with broad median longitudinal yellowish stripe. Ventral thorax and fore femur dark, other areas yellow. Legs ochraceous except coxae which are dark. Forewing venation brown and pterostigma dark. Abdomen dark with scattered white speckles and median longitudinal yellowish stripe. Male genitalia black.
+</paragraph>
+<caption doi="10.3897/zookeys.1054.67004.figures2-5" httpUri="https://binary.pensoft.net/fig/574423" pageId="0" pageNumber="185" start="Figures 2–5" startId="F2">
+<paragraph pageId="0" pageNumber="185">
+<emphasis bold="true" pageId="0" pageNumber="185">Figures 2-5.</emphasis>
+<taxonomicName authorityName="Zheng &amp; Chen" authorityYear="2021" class="Insecta" family="Dictyopharidae" genus="Saigona" higherTaxonomySource="CoL" kingdom="Animalia" lsidName="Saigona baiseensis" order="Hemiptera" pageId="0" pageNumber="185" phylum="Arthropoda" rank="species" species="baiseensis">
+<emphasis italics="true" pageId="0" pageNumber="185">Saigona baiseensis</emphasis>
+</taxonomicName>
+Zheng &amp; Chen sp. nov. 
+<emphasis bold="true" pageId="0" pageNumber="185">2</emphasis>
+male, holotype, dorsal view 
+<emphasis bold="true" pageId="0" pageNumber="185">3</emphasis>
+male, head and thorax, dorsal view 
+<emphasis bold="true" pageId="0" pageNumber="185">4</emphasis>
+male, head, frons and clypeus, lateral view 
+<emphasis bold="true" pageId="0" pageNumber="185">5</emphasis>
+male, head and pronotum, lateral view. Scale bars: 2 mm (
+<emphasis bold="true" pageId="0" pageNumber="185">2-5</emphasis>
+).
+</paragraph>
+</caption>
+<paragraph pageId="0" pageNumber="185">
+<emphasis bold="true" pageId="0" pageNumber="185">
+<emphasis italics="true" pageId="0" pageNumber="185">Head and thorax</emphasis>
+.
+</emphasis>
+Head (Figs 
+<figureCitation captionStart="Figures 2–5" captionStartId="F2" captionText="Figures 2 - 5. Saigona baiseensis Zheng &amp; Chen sp. nov. 2 male, holotype, dorsal view 3 male, head and thorax, dorsal view 4 male, head, frons and clypeus, lateral view 5 male, head and pronotum, lateral view. Scale bars: 2 mm (2 - 5)." figureDoi="10.3897/zookeys.1054.67004.figures2-5" httpUri="https://binary.pensoft.net/fig/574423" pageId="0" pageNumber="185">2-5</figureCitation>
+) longer than pronotum and mesonotum combined (1.45:1). Vertex (Fig. 
+<figureCitation captionStart="Figures 2–5" captionStartId="F2" captionText="Figures 2 - 5. Saigona baiseensis Zheng &amp; Chen sp. nov. 2 male, holotype, dorsal view 3 male, head and thorax, dorsal view 4 male, head, frons and clypeus, lateral view 5 male, head and pronotum, lateral view. Scale bars: 2 mm (2 - 5)." figureDoi="10.3897/zookeys.1054.67004.figures2-5" httpUri="https://binary.pensoft.net/fig/574423" pageId="0" pageNumber="185">3</figureCitation>
+) with median carina very faint, only conspicuous at apex and base; lateral carinate margins sinuate. Frons (Fig. 
+<figureCitation captionStart="Figures 2–5" captionStartId="F2" captionText="Figures 2 - 5. Saigona baiseensis Zheng &amp; Chen sp. nov. 2 male, holotype, dorsal view 3 male, head and thorax, dorsal view 4 male, head, frons and clypeus, lateral view 5 male, head and pronotum, lateral view. Scale bars: 2 mm (2 - 5)." figureDoi="10.3897/zookeys.1054.67004.figures2-5" httpUri="https://binary.pensoft.net/fig/574423" pageId="0" pageNumber="185">3</figureCitation>
+) with lateral carinae reaching to front of eyes. Pronotum (Figs 
+<figureCitation captionStart="Figures 2–5" captionStartId="F2" captionText="Figures 2 - 5. Saigona baiseensis Zheng &amp; Chen sp. nov. 2 male, holotype, dorsal view 3 male, head and thorax, dorsal view 4 male, head, frons and clypeus, lateral view 5 male, head and pronotum, lateral view. Scale bars: 2 mm (2 - 5)." figureDoi="10.3897/zookeys.1054.67004.figures2-5" httpUri="https://binary.pensoft.net/fig/574423" pageId="0" pageNumber="185">2</figureCitation>
+, 
+<figureCitation captionStart="Figures 2–5" captionStartId="F2" captionText="Figures 2 - 5. Saigona baiseensis Zheng &amp; Chen sp. nov. 2 male, holotype, dorsal view 3 male, head and thorax, dorsal view 4 male, head, frons and clypeus, lateral view 5 male, head and pronotum, lateral view. Scale bars: 2 mm (2 - 5)." figureDoi="10.3897/zookeys.1054.67004.figures2-5" httpUri="https://binary.pensoft.net/fig/574423" pageId="0" pageNumber="185">3</figureCitation>
+, 
+<figureCitation captionStart="Figures 2–5" captionStartId="F2" captionText="Figures 2 - 5. Saigona baiseensis Zheng &amp; Chen sp. nov. 2 male, holotype, dorsal view 3 male, head and thorax, dorsal view 4 male, head, frons and clypeus, lateral view 5 male, head and pronotum, lateral view. Scale bars: 2 mm (2 - 5)." figureDoi="10.3897/zookeys.1054.67004.figures2-5" httpUri="https://binary.pensoft.net/fig/574423" pageId="0" pageNumber="185">5</figureCitation>
+) with median carina distinct, lateral carinae very faint. Mesonotum (Figs 
+<figureCitation captionStart="Figure 1" captionStartId="F1" captionText="Figure 1. Taxonomic history of the genus Saigona Matsumura, 1010 (uploaded from Bourgoin 2021). For each synonymized genus, their protonyms are in blue boxes, and the current valid name of the genus is in green. Red vertical arrows illustrate synonymy and the red cross the status revivisco of the genus Leprota Melichar, 1912." figureDoi="10.3897/zookeys.1054.67004.figure1" httpUri="https://binary.pensoft.net/fig/574422" pageId="0" pageNumber="185">1</figureCitation>
+, 
+<figureCitation captionStart="Figures 2–5" captionStartId="F2" captionText="Figures 2 - 5. Saigona baiseensis Zheng &amp; Chen sp. nov. 2 male, holotype, dorsal view 3 male, head and thorax, dorsal view 4 male, head, frons and clypeus, lateral view 5 male, head and pronotum, lateral view. Scale bars: 2 mm (2 - 5)." figureDoi="10.3897/zookeys.1054.67004.figures2-5" httpUri="https://binary.pensoft.net/fig/574423" pageId="0" pageNumber="185">2</figureCitation>
+) tricarinate on disc, lateral carinae curved towards median carinate at the front. Fore wings (Figs 
+<figureCitation captionStart="Figures 2–5" captionStartId="F2" captionText="Figures 2 - 5. Saigona baiseensis Zheng &amp; Chen sp. nov. 2 male, holotype, dorsal view 3 male, head and thorax, dorsal view 4 male, head, frons and clypeus, lateral view 5 male, head and pronotum, lateral view. Scale bars: 2 mm (2 - 5)." figureDoi="10.3897/zookeys.1054.67004.figures2-5" httpUri="https://binary.pensoft.net/fig/574423" pageId="0" pageNumber="185">2</figureCitation>
+, 
+<figureCitation captionStart="Figures 6–13" captionStartId="F3" captionText="Figures 6 - 13. Saigona baiseensis Zheng &amp; Chen, sp. nov. 6 forewing 7 hindwing 8 genitalia, lateral view 9 pygofer and gonostyli, ventral view 10 pygofer and anal tube, dorsal view 11 aedeagus, lateral view 12 aedeagus, ventral view 13 aedeagus, dorsal view. Scale bars: 2 mm (6 - 10), 0.5 mm (11 - 13)." figureDoi="10.3897/zookeys.1054.67004.figures6-13" httpUri="https://binary.pensoft.net/fig/574424" pageId="0" pageNumber="185">6</figureCitation>
+) hyaline with ScP+R, MP and Cu branched apically, longer than widest part, with length to maximum width ratio of 3.0; stigma distinct, with 3 or 4 cells, veins with numerous fuscous setae. costal margin distinctly expanded into a narrow, sclerotized costal area, without transverse veins; ScP+R branched apically; MP bifurcating into MP1+2 and MP3+4 at basal 3/5 and beyond CuA; CuA forked near middle of forewing; 13 apical marginal cells between RP and CuA; Pcu and A1 fusing at apical 2/5 of clavus. Hindwings (Fig. 
+<figureCitation captionStart="Figures 6–13" captionStartId="F3" captionText="Figures 6 - 13. Saigona baiseensis Zheng &amp; Chen, sp. nov. 6 forewing 7 hindwing 8 genitalia, lateral view 9 pygofer and gonostyli, ventral view 10 pygofer and anal tube, dorsal view 11 aedeagus, lateral view 12 aedeagus, ventral view 13 aedeagus, dorsal view. Scale bars: 2 mm (6 - 10), 0.5 mm (11 - 13)." figureDoi="10.3897/zookeys.1054.67004.figures6-13" httpUri="https://binary.pensoft.net/fig/574424" pageId="0" pageNumber="185">7</figureCitation>
+) well developed, legs moderately elongate, fore femora flattened and dilated; hind tibiae with 5 or 6 lateral black-tipped spines and 8 apical black-tipped teeth, spinal formula 8/(10-12)/(10-12).
+</paragraph>
+<paragraph pageId="0" pageNumber="185">
+<emphasis bold="true" pageId="0" pageNumber="185">
+Male 
+<emphasis italics="true" pageId="0" pageNumber="185">genitalia</emphasis>
+.
+</emphasis>
+Pygofer (Figs 
+<figureCitation captionStart="Figures 6–13" captionStartId="F3" captionText="Figures 6 - 13. Saigona baiseensis Zheng &amp; Chen, sp. nov. 6 forewing 7 hindwing 8 genitalia, lateral view 9 pygofer and gonostyli, ventral view 10 pygofer and anal tube, dorsal view 11 aedeagus, lateral view 12 aedeagus, ventral view 13 aedeagus, dorsal view. Scale bars: 2 mm (6 - 10), 0.5 mm (11 - 13)." figureDoi="10.3897/zookeys.1054.67004.figures6-13" httpUri="https://binary.pensoft.net/fig/574424" pageId="0" pageNumber="185">8-10</figureCitation>
+) large and broad in lateral view, posterior margin with a rounded lobe at level of venter of anal tube. Gonostyli (Figs 
+<figureCitation captionStart="Figures 6–13" captionStartId="F3" captionText="Figures 6 - 13. Saigona baiseensis Zheng &amp; Chen, sp. nov. 6 forewing 7 hindwing 8 genitalia, lateral view 9 pygofer and gonostyli, ventral view 10 pygofer and anal tube, dorsal view 11 aedeagus, lateral view 12 aedeagus, ventral view 13 aedeagus, dorsal view. Scale bars: 2 mm (6 - 10), 0.5 mm (11 - 13)." figureDoi="10.3897/zookeys.1054.67004.figures6-13" httpUri="https://binary.pensoft.net/fig/574424" pageId="0" pageNumber="185">8</figureCitation>
+, 
+<figureCitation captionStart="Figures 6–13" captionStartId="F3" captionText="Figures 6 - 13. Saigona baiseensis Zheng &amp; Chen, sp. nov. 6 forewing 7 hindwing 8 genitalia, lateral view 9 pygofer and gonostyli, ventral view 10 pygofer and anal tube, dorsal view 11 aedeagus, lateral view 12 aedeagus, ventral view 13 aedeagus, dorsal view. Scale bars: 2 mm (6 - 10), 0.5 mm (11 - 13)." figureDoi="10.3897/zookeys.1054.67004.figures6-13" httpUri="https://binary.pensoft.net/fig/574424" pageId="0" pageNumber="185">9</figureCitation>
+) relatively large and broad, apex sharply rounded, protruded posteriorly in lateral view on the outer surface of the gonostyli (Fig. 
+<figureCitation captionStart="Figures 6–13" captionStartId="F3" captionText="Figures 6 - 13. Saigona baiseensis Zheng &amp; Chen, sp. nov. 6 forewing 7 hindwing 8 genitalia, lateral view 9 pygofer and gonostyli, ventral view 10 pygofer and anal tube, dorsal view 11 aedeagus, lateral view 12 aedeagus, ventral view 13 aedeagus, dorsal view. Scale bars: 2 mm (6 - 10), 0.5 mm (11 - 13)." figureDoi="10.3897/zookeys.1054.67004.figures6-13" httpUri="https://binary.pensoft.net/fig/574424" pageId="0" pageNumber="185">8</figureCitation>
+). Aedeagus (Fig. 
+<figureCitation captionStart="Figures 6–13" captionStartId="F3" captionText="Figures 6 - 13. Saigona baiseensis Zheng &amp; Chen, sp. nov. 6 forewing 7 hindwing 8 genitalia, lateral view 9 pygofer and gonostyli, ventral view 10 pygofer and anal tube, dorsal view 11 aedeagus, lateral view 12 aedeagus, ventral view 13 aedeagus, dorsal view. Scale bars: 2 mm (6 - 10), 0.5 mm (11 - 13)." figureDoi="10.3897/zookeys.1054.67004.figures6-13" httpUri="https://binary.pensoft.net/fig/574424" pageId="0" pageNumber="185">11</figureCitation>
+) with phallobasal conjunctival processes unequal in length, left one obviously longer than right one; phallobase narrow and long, curved dorsally, with 2 apical membranous dorsal apical lobes (Fig. 
+<figureCitation captionStart="Figures 6–13" captionStartId="F3" captionText="Figures 6 - 13. Saigona baiseensis Zheng &amp; Chen, sp. nov. 6 forewing 7 hindwing 8 genitalia, lateral view 9 pygofer and gonostyli, ventral view 10 pygofer and anal tube, dorsal view 11 aedeagus, lateral view 12 aedeagus, ventral view 13 aedeagus, dorsal view. Scale bars: 2 mm (6 - 10), 0.5 mm (11 - 13)." figureDoi="10.3897/zookeys.1054.67004.figures6-13" httpUri="https://binary.pensoft.net/fig/574424" pageId="0" pageNumber="185">12</figureCitation>
+) dorsal round and large; ventral lobes (Fig. 
+<figureCitation captionStart="Figures 6–13" captionStartId="F3" captionText="Figures 6 - 13. Saigona baiseensis Zheng &amp; Chen, sp. nov. 6 forewing 7 hindwing 8 genitalia, lateral view 9 pygofer and gonostyli, ventral view 10 pygofer and anal tube, dorsal view 11 aedeagus, lateral view 12 aedeagus, ventral view 13 aedeagus, dorsal view. Scale bars: 2 mm (6 - 10), 0.5 mm (11 - 13)." figureDoi="10.3897/zookeys.1054.67004.figures6-13" httpUri="https://binary.pensoft.net/fig/574424" pageId="0" pageNumber="185">13</figureCitation>
+) small and slender, with another small membranous lobe on it. Segment X large in lateral view (Fig. 
+<figureCitation captionStart="Figures 6–13" captionStartId="F3" captionText="Figures 6 - 13. Saigona baiseensis Zheng &amp; Chen, sp. nov. 6 forewing 7 hindwing 8 genitalia, lateral view 9 pygofer and gonostyli, ventral view 10 pygofer and anal tube, dorsal view 11 aedeagus, lateral view 12 aedeagus, ventral view 13 aedeagus, dorsal view. Scale bars: 2 mm (6 - 10), 0.5 mm (11 - 13)." figureDoi="10.3897/zookeys.1054.67004.figures6-13" httpUri="https://binary.pensoft.net/fig/574424" pageId="0" pageNumber="185">8</figureCitation>
+), large, long, ovoid in dorsal view (Fig. 
+<figureCitation captionStart="Figures 6–13" captionStartId="F3" captionText="Figures 6 - 13. Saigona baiseensis Zheng &amp; Chen, sp. nov. 6 forewing 7 hindwing 8 genitalia, lateral view 9 pygofer and gonostyli, ventral view 10 pygofer and anal tube, dorsal view 11 aedeagus, lateral view 12 aedeagus, ventral view 13 aedeagus, dorsal view. Scale bars: 2 mm (6 - 10), 0.5 mm (11 - 13)." figureDoi="10.3897/zookeys.1054.67004.figures6-13" httpUri="https://binary.pensoft.net/fig/574424" pageId="0" pageNumber="185">10</figureCitation>
+), ratio of length to width at middle about 1.5.
+</paragraph>
+<caption doi="10.3897/zookeys.1054.67004.figures6-13" httpUri="https://binary.pensoft.net/fig/574424" pageId="0" pageNumber="185" start="Figures 6–13" startId="F3">
+<paragraph pageId="0" pageNumber="185">
+<emphasis bold="true" pageId="0" pageNumber="185">Figures 6-13.</emphasis>
+<taxonomicName authorityName="Zheng &amp; Chen" authorityYear="2021" class="Insecta" family="Dictyopharidae" genus="Saigona" higherTaxonomySource="CoL" kingdom="Animalia" lsidName="Saigona baiseensis" order="Hemiptera" pageId="0" pageNumber="185" phylum="Arthropoda" rank="species" species="baiseensis">
+<emphasis italics="true" pageId="0" pageNumber="185">Saigona baiseensis</emphasis>
+</taxonomicName>
+Zheng &amp; Chen, sp. nov. 
+<emphasis bold="true" pageId="0" pageNumber="185">6</emphasis>
+forewing 
+<emphasis bold="true" pageId="0" pageNumber="185">7</emphasis>
+hindwing 
+<emphasis bold="true" pageId="0" pageNumber="185">8</emphasis>
+genitalia, lateral view 
+<emphasis bold="true" pageId="0" pageNumber="185">9</emphasis>
+pygofer and gonostyli, ventral view 
+<emphasis bold="true" pageId="0" pageNumber="185">10</emphasis>
+pygofer and anal tube, dorsal view 
+<emphasis bold="true" pageId="0" pageNumber="185">11</emphasis>
+aedeagus, lateral view 
+<emphasis bold="true" pageId="0" pageNumber="185">12</emphasis>
+aedeagus, ventral view 
+<emphasis bold="true" pageId="0" pageNumber="185">13</emphasis>
+aedeagus, dorsal view. Scale bars: 2 mm (
+<emphasis bold="true" pageId="0" pageNumber="185">6-10</emphasis>
+), 0.5 mm (
+<emphasis bold="true" pageId="0" pageNumber="185">11-13</emphasis>
+).
+</paragraph>
+</caption>
+<paragraph pageId="0" pageNumber="185">
+<emphasis bold="true" pageId="0" pageNumber="185">
+Female 
+<emphasis italics="true" pageId="0" pageNumber="185">genitalia</emphasis>
+</emphasis>
+(Figs 
+<figureCitation captionStart="Figures 14–18" captionStartId="F4" captionText="Figures 14 - 18. Saigona baiseensis Zheng &amp; Chen, sp. nov. 14 genitalia of female, ventral view 15 genitalia of female, dorsal view 16 anterior connective lamina of gonapophysis VIII (lateral view) 17 gonapophysis IX (ventral view) 18 gonoplacs (lateral view). Scale bars: 1 mm (14, 15), 0.5 mm (16 - 18). Gp, gonoplacs; Gx VIII, gonocoxae VIII; GxL, gonocoxae VIII with endogonocoxal lobe; GxP, gonocoxae VIII with endogonocoxal process; PCL, posterior connective lamina of gonapophysis IX; GpL, posterior lobe of the gonoplac; ACL, anterior connective lamina of gonapophyses." figureDoi="10.3897/zookeys.1054.67004.figures14-18" httpUri="https://binary.pensoft.net/fig/574425" pageId="0" pageNumber="185">14</figureCitation>
+, 
+<figureCitation captionStart="Figures 14–18" captionStartId="F4" captionText="Figures 14 - 18. Saigona baiseensis Zheng &amp; Chen, sp. nov. 14 genitalia of female, ventral view 15 genitalia of female, dorsal view 16 anterior connective lamina of gonapophysis VIII (lateral view) 17 gonapophysis IX (ventral view) 18 gonoplacs (lateral view). Scale bars: 1 mm (14, 15), 0.5 mm (16 - 18). Gp, gonoplacs; Gx VIII, gonocoxae VIII; GxL, gonocoxae VIII with endogonocoxal lobe; GxP, gonocoxae VIII with endogonocoxal process; PCL, posterior connective lamina of gonapophysis IX; GpL, posterior lobe of the gonoplac; ACL, anterior connective lamina of gonapophyses." figureDoi="10.3897/zookeys.1054.67004.figures14-18" httpUri="https://binary.pensoft.net/fig/574425" pageId="0" pageNumber="185">16</figureCitation>
+) with gonocoxae VIII with GxP membranous and flattened (Fig. 
+<figureCitation captionStart="Figures 14–18" captionStartId="F4" captionText="Figures 14 - 18. Saigona baiseensis Zheng &amp; Chen, sp. nov. 14 genitalia of female, ventral view 15 genitalia of female, dorsal view 16 anterior connective lamina of gonapophysis VIII (lateral view) 17 gonapophysis IX (ventral view) 18 gonoplacs (lateral view). Scale bars: 1 mm (14, 15), 0.5 mm (16 - 18). Gp, gonoplacs; Gx VIII, gonocoxae VIII; GxL, gonocoxae VIII with endogonocoxal lobe; GxP, gonocoxae VIII with endogonocoxal process; PCL, posterior connective lamina of gonapophysis IX; GpL, posterior lobe of the gonoplac; ACL, anterior connective lamina of gonapophyses." figureDoi="10.3897/zookeys.1054.67004.figures14-18" httpUri="https://binary.pensoft.net/fig/574425" pageId="0" pageNumber="185">16</figureCitation>
+). Gonopophyses VIII with anterior connective lamina of gonapophyses (ACL) moderately sclerotized with 7 unevenly sized teeth in lateral view. (Fig. 
+<figureCitation captionStart="Figures 14–18" captionStartId="F4" captionText="Figures 14 - 18. Saigona baiseensis Zheng &amp; Chen, sp. nov. 14 genitalia of female, ventral view 15 genitalia of female, dorsal view 16 anterior connective lamina of gonapophysis VIII (lateral view) 17 gonapophysis IX (ventral view) 18 gonoplacs (lateral view). Scale bars: 1 mm (14, 15), 0.5 mm (16 - 18). Gp, gonoplacs; Gx VIII, gonocoxae VIII; GxL, gonocoxae VIII with endogonocoxal lobe; GxP, gonocoxae VIII with endogonocoxal process; PCL, posterior connective lamina of gonapophysis IX; GpL, posterior lobe of the gonoplac; ACL, anterior connective lamina of gonapophyses." figureDoi="10.3897/zookeys.1054.67004.figures14-18" httpUri="https://binary.pensoft.net/fig/574425" pageId="0" pageNumber="185">16</figureCitation>
+). Gonopophyses IX (Fig. 
+<figureCitation captionStart="Figures 14–18" captionStartId="F4" captionText="Figures 14 - 18. Saigona baiseensis Zheng &amp; Chen, sp. nov. 14 genitalia of female, ventral view 15 genitalia of female, dorsal view 16 anterior connective lamina of gonapophysis VIII (lateral view) 17 gonapophysis IX (ventral view) 18 gonoplacs (lateral view). Scale bars: 1 mm (14, 15), 0.5 mm (16 - 18). Gp, gonoplacs; Gx VIII, gonocoxae VIII; GxL, gonocoxae VIII with endogonocoxal lobe; GxP, gonocoxae VIII with endogonocoxal process; PCL, posterior connective lamina of gonapophysis IX; GpL, posterior lobe of the gonoplac; ACL, anterior connective lamina of gonapophyses." figureDoi="10.3897/zookeys.1054.67004.figures14-18" httpUri="https://binary.pensoft.net/fig/574425" pageId="0" pageNumber="185">17</figureCitation>
+) with posterior connective lamina of gonapophysis IX (PCL) triangular, symmetrical in ventral view, connected at base and separated from 1/3 base. Gonoplacs (Fig. 
+<figureCitation captionStart="Figures 14–18" captionStartId="F4" captionText="Figures 14 - 18. Saigona baiseensis Zheng &amp; Chen, sp. nov. 14 genitalia of female, ventral view 15 genitalia of female, dorsal view 16 anterior connective lamina of gonapophysis VIII (lateral view) 17 gonapophysis IX (ventral view) 18 gonoplacs (lateral view). Scale bars: 1 mm (14, 15), 0.5 mm (16 - 18). Gp, gonoplacs; Gx VIII, gonocoxae VIII; GxL, gonocoxae VIII with endogonocoxal lobe; GxP, gonocoxae VIII with endogonocoxal process; PCL, posterior connective lamina of gonapophysis IX; GpL, posterior lobe of the gonoplac; ACL, anterior connective lamina of gonapophyses." figureDoi="10.3897/zookeys.1054.67004.figures14-18" httpUri="https://binary.pensoft.net/fig/574425" pageId="0" pageNumber="185">18</figureCitation>
+) with 2 sclerotized lobes: gonoplacs (Gp), with 3 or 4 long spines at apex, and posterior lobe of the gonoplac (GpL) with membranous structure at top. Segment X in dorsal view relatively round and large, with ratio of length to width at middle about 0.8 (Fig. 
+<figureCitation captionStart="Figures 14–18" captionStartId="F4" captionText="Figures 14 - 18. Saigona baiseensis Zheng &amp; Chen, sp. nov. 14 genitalia of female, ventral view 15 genitalia of female, dorsal view 16 anterior connective lamina of gonapophysis VIII (lateral view) 17 gonapophysis IX (ventral view) 18 gonoplacs (lateral view). Scale bars: 1 mm (14, 15), 0.5 mm (16 - 18). Gp, gonoplacs; Gx VIII, gonocoxae VIII; GxL, gonocoxae VIII with endogonocoxal lobe; GxP, gonocoxae VIII with endogonocoxal process; PCL, posterior connective lamina of gonapophysis IX; GpL, posterior lobe of the gonoplac; ACL, anterior connective lamina of gonapophyses." figureDoi="10.3897/zookeys.1054.67004.figures14-18" httpUri="https://binary.pensoft.net/fig/574425" pageId="0" pageNumber="185">15</figureCitation>
+).
+</paragraph>
+<caption doi="10.3897/zookeys.1054.67004.figures14-18" httpUri="https://binary.pensoft.net/fig/574425" pageId="0" pageNumber="185" start="Figures 14–18" startId="F4">
+<paragraph pageId="0" pageNumber="185">
+<emphasis bold="true" pageId="0" pageNumber="185">Figures 14-18.</emphasis>
+<taxonomicName authorityName="Zheng &amp; Chen" authorityYear="2021" class="Insecta" family="Dictyopharidae" genus="Saigona" higherTaxonomySource="CoL" kingdom="Animalia" lsidName="Saigona baiseensis" order="Hemiptera" pageId="0" pageNumber="185" phylum="Arthropoda" rank="species" species="baiseensis">
+<emphasis italics="true" pageId="0" pageNumber="185">Saigona baiseensis</emphasis>
+</taxonomicName>
+Zheng &amp; Chen, sp. nov. 
+<emphasis bold="true" pageId="0" pageNumber="185">14</emphasis>
+genitalia of female, ventral view 
+<emphasis bold="true" pageId="0" pageNumber="185">15</emphasis>
+genitalia of female, dorsal view 
+<emphasis bold="true" pageId="0" pageNumber="185">16</emphasis>
+anterior connective lamina of gonapophysis VIII (lateral view) 
+<emphasis bold="true" pageId="0" pageNumber="185">17</emphasis>
+gonapophysis IX (ventral view) 
+<emphasis bold="true" pageId="0" pageNumber="185">18</emphasis>
+gonoplacs (lateral view). Scale bars: 1 mm (
+<emphasis bold="true" pageId="0" pageNumber="185">14, 15</emphasis>
+), 0.5 mm (
+<emphasis bold="true" pageId="0" pageNumber="185">16-18</emphasis>
+). Gp, gonoplacs; Gx VIII, gonocoxae VIII; GxL, gonocoxae VIII with endogonocoxal lobe; GxP, gonocoxae VIII with endogonocoxal process; PCL, posterior connective lamina of gonapophysis IX; GpL, posterior lobe of the gonoplac; ACL, anterior connective lamina of gonapophyses.
+</paragraph>
+</caption>
+</subSubSection>
+<subSubSection pageId="0" pageNumber="185" type="type material">
+<paragraph pageId="0" pageNumber="185">Type material.</paragraph>
+<paragraph pageId="0" pageNumber="185">
+<emphasis bold="true" italics="true" pageId="0" pageNumber="185">Holotype</emphasis>
+♂, Tianlangping Baise, Guangxi Zhuang Autonomous Region, 24 Apr. 2012, Weicheng Yang. 
+<emphasis bold="true" italics="true" pageId="0" pageNumber="185">Paratypes</emphasis>
+, 8♂♂2♀♀, same to holotype, Weibin Zheng, Zaihua Yang, Jiankun Long.
+</paragraph>
+</subSubSection>
+<subSubSection pageId="0" pageNumber="185" type="etymology">
+<paragraph pageId="0" pageNumber="185">Etymology.</paragraph>
+<paragraph pageId="0" pageNumber="185">This new species is named for the type locality, Baise City, Guangxi, China.</paragraph>
+</subSubSection>
+<subSubSection pageId="0" pageNumber="185" type="distribution">
+<paragraph pageId="0" pageNumber="185">Distribution.</paragraph>
+<paragraph pageId="0" pageNumber="185">China (Guangxi).</paragraph>
+</subSubSection>
+<subSubSection pageId="0" pageNumber="185" type="remarks">
+<paragraph pageId="0" pageNumber="185">Remarks.</paragraph>
+<paragraph pageId="0" pageNumber="185">
+This species is similar to 
+<taxonomicName lsidName="S. fulgoroides" pageId="0" pageNumber="185" rank="species" species="fulgoroides">
+<emphasis italics="true" pageId="0" pageNumber="185">S. fulgoroides</emphasis>
+</taxonomicName>
+(Walker, 1858) (
+<bibRefCitation DOI="https://doi.org/10.11646/zootaxa.1333.1.2" author="Liang, AP" journalOrPublisher="Zootaxa" pageId="0" pageNumber="185" pagination="25 - 54" refId="B18" refString="Liang, AP, Song, ZS, 2006. Revision of the Oriental and eastern Palaearctic planthopper genus Saigona Matsumura, 1910 (Hemiptera: Fulgoroidea: Dictyopharidae), with descriptions of five new species. Zootaxa 1333: 25 - 54, DOI: https://doi.org/10.11646/zootaxa.1333.1.2" title="Revision of the Oriental and eastern Palaearctic planthopper genus Saigona Matsumura, 1910 (Hemiptera: Fulgoroidea: Dictyopharidae), with descriptions of five new species." url="https://doi.org/10.11646/zootaxa.1333.1.2" volume="1333" year="2006">Liang and Song 2006</bibRefCitation>
+: figs 20, 23-25) but can be distinguished by the large, broad pygofer (in lateral view) with its posterior margin bearing a somewhat blunt process dorsally (vs sharp, dorsoposteriorly directed process near apex in 
+<taxonomicName lsidName="S. fulgoroides" pageId="0" pageNumber="185" rank="species" species="fulgoroides">
+<emphasis italics="true" pageId="0" pageNumber="185">S. fulgoroides</emphasis>
+</taxonomicName>
+); the aedeagus has a conjun
+</paragraph>
+</subSubSection>
+</treatment>
+</document>
+ 
