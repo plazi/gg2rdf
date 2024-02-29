@@ -4,12 +4,11 @@
 * The jobs are accepted as messages and stored on disk, when the worker is started uncompleted jobs are picked up and exxecuted.
 
 */
-import { path } from "./deps.ts";
+import * as path from "https://deno.land/std@0.209.0/path/mod.ts";
 import { config } from "../config/config.ts";
 import { createBadge } from "./log.ts";
 import { type Job, JobsDataBase } from "./JobsDataBase.ts";
 import { getModifiedAfter, updateLocalData } from "./repoActions.ts";
-import { gg2rdf } from "./gg2rdf.ts";
 
 const GHTOKEN = Deno.env.get("GHTOKEN");
 
@@ -58,21 +57,85 @@ async function run() {
       for (const file of modified) {
         if (file.endsWith(".xml")) {
           Deno.mkdirSync(
+            config.workDir + "/tmprdf/" + file.slice(0, file.lastIndexOf("/")),
+            {
+              recursive: true,
+            },
+          );
+          const p = new Deno.Command("java", {
+            args: [
+              "-jar",
+              path.fromFileUrl(import.meta.resolve("./saxon-he-10.8.jar")),
+              `-s:${file}`,
+              `-o:${config.workDir}/tmprdf/${file.slice(0, -4)}.rdf`,
+              `-xsl:${path.fromFileUrl(import.meta.resolve("./gg2rdf.xslt"))}`,
+            ],
+            cwd: config.workDir + "/repo/source",
+          });
+          const { success, stdout, stderr } = await p.output();
+          if (!success) {
+            log("saxon failed:");
+          } else {
+            log("saxon succesful:");
+          }
+          log("STDOUT:");
+          log(new TextDecoder().decode(stdout));
+          log("STDERR:");
+          log(new TextDecoder().decode(stderr));
+          if (!success) {
+            throw new Error("Saxon failed");
+          }
+        }
+      }
+
+      // convert modified files to ttl
+      for (const file of modified) {
+        if (file.endsWith(".xml")) {
+          Deno.mkdirSync(
             config.workDir + "/tmpttl/" + file.slice(0, file.lastIndexOf("/")),
             {
               recursive: true,
             },
           );
-          try {
-            gg2rdf(
-              `${config.workDir}/repo/source/${file}`,
-              `${config.workDir}/tmpttl/${file.slice(0, -4)}.ttl`,
-            );
-            log("gg2rdf succesful");
-          } catch (error) {
-            log("gg2rdf failed:");
-            log(error);
-            throw new Error("gg2rdf failed");
+          const p = new Deno.Command("rapper", {
+            args: [
+              "-e",
+              "-w",
+              "-q",
+              `${file.slice(0, -4)}.rdf`,
+              "--output",
+              "turtle",
+            ],
+            cwd: config.workDir + "/tmprdf",
+            stdin: "piped",
+            stdout: "piped",
+            stderr: "piped",
+          });
+          const child = p.spawn();
+
+          // open a file and pipe the subprocess output to it.
+          child.stdout.pipeTo(
+            Deno.openSync(`${config.workDir}/tmpttl/${file.slice(0, -4)}.ttl`, {
+              write: true,
+              create: true,
+            }).writable,
+          );
+
+          child.stderr.pipeTo(
+            Deno.openSync(path.join(jobStatus.dir, "log.txt"), {
+              append: true,
+              write: true,
+              create: true,
+            }).writable,
+          );
+
+          // manually close stdin
+          child.stdin.close();
+
+          const status = await child.status;
+          if (!status.success) {
+            log(`Rapper failed on ${file.slice(0, -4)}.rdf`);
+            throw new Error("Rapper failed");
           }
         }
       }
@@ -106,9 +169,7 @@ async function run() {
           try {
             Deno.removeSync(ttlFile);
           } catch (e) {
-            log(
-              `Failed to remove file ${ttlFile}. Possbly the xml file was removed before it was transformed. \n${e}`,
-            );
+            log(`Failed to remove file ${ttlFile}. Possbly the xml file was removed before it was trnsformed. \n${e}`);
           }
         }
       }
