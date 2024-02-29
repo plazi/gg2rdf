@@ -44,9 +44,9 @@ async function gatherJobsForFullUpdate() {
   try {
     console.log("gathering jobs for full update");
     updateLocalData("source");
-    console.log("pull complete");
     const date = (new Date()).toISOString();
     let block = 0;
+    const jobs: Job[] = [];
     let files: string[] = [];
     for await (
       const walkEntry of walk(`${config.workDir}/repo/source/`, {
@@ -56,26 +56,32 @@ async function gatherJobsForFullUpdate() {
       })
     ) {
       if (walkEntry.isFile && walkEntry.path.endsWith(".xml")) {
-        files.push(walkEntry.path);
-        console.log("added", walkEntry.path);
-        if (files.length >= 100) {
-          queue.addJob({
+        files.push(
+          walkEntry.path.replace(`${config.workDir}/repo/source/`, ""),
+        );
+        if (files.length >= 500) {
+          jobs.push({
             author: {
               name: "GG2RDF Service",
               email: "gg2rdf@plazi.org",
             },
-            id: `full update ${date} [${block++}]`,
+            id: `full update ${date} [${
+              (++block).toString(10).padStart(4, "0")
+            }`,
             files: {
               modified: files,
             },
           });
-          console.log("added Job");
           files = [];
         }
       } else {
         console.log("skipped", walkEntry.path);
       }
     }
+    jobs.forEach((j) => {
+      j.id += ` of ${block.toString(10).padStart(4, "0")}]`;
+      queue.addJob(j);
+    });
     console.log(`succesfully created full-update jobs (${block} jobs)`);
   } catch (error) {
     console.error("Could not create full-update jobs\n" + error);
@@ -95,7 +101,7 @@ function run() {
       });
     };
     try {
-      log("Starting transformation" + JSON.stringify(job, undefined, 2));
+      log("Starting transformation\n" + JSON.stringify(job, undefined, 2));
 
       let modified: string[] = [];
       let removed: string[] = [];

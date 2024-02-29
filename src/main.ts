@@ -33,7 +33,14 @@ const WEBHOOK_SECRET: string | undefined = Deno.env.get("WEBHOOK_SECRET");
 await Deno.mkdir(`${config.workDir}/repo`, { recursive: true });
 await Deno.mkdir(`${config.workDir}/tmprdf`, { recursive: true });
 await Deno.mkdir(`${config.workDir}/tmpttl`, { recursive: true });
-await createBadge("Unknown");
+
+const db = new JobsDataBase(`${config.workDir}/jobs`);
+const latest =
+  db.allJobs().find((j) => j.status === "completed" || j.status === "failed")
+    ?.status || "Unknown";
+if (latest === "failed") createBadge("Failed");
+else if (latest === "completed") createBadge("OK");
+else createBadge("Unknown");
 
 const worker = new Worker(
   new URL("./action_worker.ts", import.meta.url).href,
@@ -136,7 +143,6 @@ const webhookHandler = async (request: Request) => {
     response.headers.set("Content-Type", "image/svg+xml");
     return response;
   } else if (pathname === "/jobs.json") {
-    const db = new JobsDataBase(`${config.workDir}/jobs`);
     const json = JSON.stringify(db.allJobs(), undefined, 2);
     const response = new Response(json);
     response.headers.set("Content-Type", "application/json");
