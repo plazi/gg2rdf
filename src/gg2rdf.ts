@@ -199,7 +199,7 @@ export function gg2rdf(inputPath: string, outputPath: string) {
     }
     if (errors.length) {
       throw new Error(
-        "Cannot produce RDF due to data errors:\n - " +
+        "Cannot produce RDF XML due to data errors:\n - " +
           errors.join("\n - "),
       );
     }
