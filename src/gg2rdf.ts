@@ -41,7 +41,7 @@ if (import.meta.main) {
   gg2rdf(flags.input, flags.output);
 }
 
-export function gg2rdf(inputPath: string, outputPath: string) {
+export function gg2rdf(inputPath: string, outputPath: string, log: (msg: string) => void = console.log) {
   const document = new DOMParser().parseFromString(
     Deno.readTextFileSync(inputPath).replaceAll(/(<\/?)mods:/g, "$1MODS"),
     "text/xml",
@@ -63,7 +63,7 @@ export function gg2rdf(inputPath: string, outputPath: string) {
   // this is the <document> surrounding everything. doc != document
   const doc = document.querySelector("document") as Element;
   const id = doc.getAttribute("docId");
-  // console.log("document id :", id);
+  log(`starting gg2rdf on document id: ${id}`);
 
   // saving properties, as they might be collated from multiple ELements
   const taxonConcepts: Subject[] = [];
@@ -83,7 +83,7 @@ export function gg2rdf(inputPath: string, outputPath: string) {
     taxonConcepts.forEach(outputSubject);
     taxonNames.forEach(outputSubject);
   } catch (error) {
-    console.error(error);
+    log(error);
     output(
       "# There was some Error in gg2rdf\n" +
         ("# " + error).replace(/\n/g, "\n# "),
@@ -171,7 +171,7 @@ export function gg2rdf(inputPath: string, outputPath: string) {
         );
       }
       if (!taxon.getAttribute("kingdom")) {
-        console.warn(
+        log(
           "Warning: treatment taxon is missing ancestor kingdom, defaulting to 'Animalia'",
         );
         output(
@@ -371,7 +371,7 @@ export function gg2rdf(inputPath: string, outputPath: string) {
     });
 
     if (cTaxonAuthority === "INVALID") {
-      console.warn(`Error: Invalid Authority for ${uri}`);
+      log(`Error: Invalid Authority for ${uri}`);
       return;
     }
 
@@ -630,7 +630,7 @@ export function gg2rdf(inputPath: string, outputPath: string) {
       const parent = makeTaxonName(taxon, nextRankLimit);
       if (parent && parent !== uri) s.addProperty("trt:hasParentName", parent);
     } else {
-      console.warn(`Warning: Could not determine parent name of ${uri}`);
+      log(`Warning: Could not determine parent name of ${uri}`);
       s.addProperty("# Warning:", "Could not determine parent name");
     }
 

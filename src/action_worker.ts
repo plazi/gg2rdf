@@ -67,8 +67,9 @@ async function run() {
             gg2rdf(
               `${config.workDir}/repo/source/${file}`,
               `${config.workDir}/tmpttl/${file.slice(0, -4)}.ttl`,
+              log,
             );
-            log("gg2rdf succesful");
+            log("gg2rdf successful");
           } catch (error) {
             log("gg2rdf failed:");
             log(error);
