@@ -12,8 +12,13 @@ import { DOMParser, parseArgs } from "./deps.ts";
 import { Element } from "https://esm.sh/v135/linkedom@0.16.8/types/interface/element.d.ts";
 
 class Subject {
-  properties: { [key: string]: Set<string> } = {};
-  constructor(public uri: string) {}
+  uri: string;
+  properties: { [key: string]: Set<string> };
+
+  constructor(uri: string) {
+    this.uri = uri;
+    this.properties = {};
+  }
 
   /** sorted with comments first, and type last */
   get propNames() {
@@ -47,6 +52,7 @@ if (import.meta.main) {
 
   if (!flags.input) throw new Error("No input file provided");
   if (!flags.output) flags.output = flags.input + ".ttl";
+  console.log("aha");
   gg2rdf(flags.input, flags.output);
 }
 
