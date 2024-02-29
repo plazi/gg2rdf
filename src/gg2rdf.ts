@@ -1,11 +1,13 @@
 /* NOTES
 - only functions named `make...` output turtle as a side-effect.
-- all output is to be handled by `output(...)` or `outputSubject(...)`.
-- `output(...)` should not be assumed to run synchronous,
+- all output is to be handled by `output(...)` or `outputProperties`.
+  This function should not be assumed to run synchronous,
   and all data passed to it should still be valid under reordering of calls.
+- before replacing xslt, we should make a test run and compare the rdf for differences.
+  Thus the initial goal should be to match xslt 1:1,
+  only incorporating improvements after we have confirmed that it is equivalent.
 */
 
-import a from "https://esm.sh/v135/uhyphen@0.2.0/denonext/uhyphen.mjs";
 import { DOMParser, parseArgs } from "./deps.ts";
 import { Element } from "https://esm.sh/v135/linkedom@0.16.8/types/interface/element.d.ts";
 
@@ -638,19 +640,19 @@ export function gg2rdf(inputPath: string, outputPath: string) {
   function makePublication() {
     // lines of turtle properties `pred obj`
     // subject and delimiters are added at the end.
-    const s = new Subject(getPublication());
+    const properties: string[] = [];
 
     const titles = [
       ...document.querySelectorAll("MODSmods>MODStitleInfo>MODStitle"),
     ]
       .map((e: Element) => STR(e.innerText)).join(", ");
-    if (titles) s.addProperty(`dc:title`, titles);
+    if (titles) properties.push(`dc:title ${titles}`);
 
-    s.addProperty(`dc:creator`, getAuthors());
+    properties.push(`dc:creator ${getAuthors()}`);
 
     document.querySelectorAll(
       "MODSpart > MODSdate, MODSoriginInfo > MODSdateIssued",
-    ).forEach((e: Element) => s.addProperty(`dc:date`, STR(e.innerText)));
+    ).forEach((e: Element) => properties.push(`dc:date ${STR(e.innerText)}`));
 
     // <xsl:apply-templates select="//figureCitation[./@httpUri and not(./@httpUri = ./preceding::figureCitation/@httpUri)]" mode="publicationObject"/>
     const figures = [
@@ -660,67 +662,70 @@ export function gg2rdf(inputPath: string, outputPath: string) {
         ).map(getFigureUri),
       )),
     ].join(", ");
-    if (figures) s.addProperty(`fabio:hasPart`, figures);
+    if (figures) properties.push(`fabio:hasPart ${figures}`);
 
     const classifications = document.querySelectorAll("MODSclassification");
     classifications.forEach((c: Element) => {
       if (c.innerText === "journal article") {
         [...document.querySelectorAll('MODSrelatedItem[type="host"]')].map(
-          (a) => getJournalProperties(a, s),
-        );
+          getJournalProperties,
+        ).flat().forEach((s) => properties.push(s));
       }
       if (c.innerText === "book chapter") {
         [...document.querySelectorAll('MODSrelatedItem[type="host"]')].map(
-          (a) => getBookChapterProperties(a, s),
-        );
+          getBookChapterProperties,
+        ).flat().forEach((s) => properties.push(s));
       }
       if (c.innerText === "book") {
-        s.addProperty("a", "fabio:Book");
+        properties.push("a fabio:Book");
       }
     });
 
-    outputSubject(s);
+    outputProperties(`${getPublication()}`, properties);
   }
 
-  function getJournalProperties(e: Element, s: Subject) {
+  function getJournalProperties(e: Element): string[] {
+    const result: string[] = [];
     e.querySelectorAll("MODStitleInfo > MODStitle").forEach((m: Element) =>
-      s.addProperty(`bibo:journal`, STR(m.innerText))
+      result.push(`bibo:journal ${JSON.stringify("" + m.innerText)}`)
     );
     // <xsl:apply-templates select="mods:part/mods:detail"/>
     e.querySelectorAll("MODSpart > MODSdetail").forEach((m: Element) => {
-      s.addProperty(
-        `bibo:${m.getAttribute("type")}`,
-        `"${normalizeSpace(m.innerText)}"`,
+      result.push(
+        `bibo:${m.getAttribute("type")} "${normalizeSpace(m.innerText)}"`,
       );
     });
     // <xsl:apply-templates select="mods:part/mods:extent/mods:start"/>
     e.querySelectorAll("MODSpart > MODSextent > MODSstart").forEach(
       (m: Element) => {
-        s.addProperty(`bibo:startPage`, `"${normalizeSpace(m.innerText)}"`);
+        result.push(`bibo:startPage "${normalizeSpace(m.innerText)}"`);
       },
     );
     // <xsl:apply-templates select="mods:part/mods:extent/mods:end"/>
     e.querySelectorAll("MODSpart > MODSextent > MODSend").forEach(
       (m: Element) => {
-        s.addProperty(`bibo:endPage`, `"${normalizeSpace(m.innerText)}"`);
+        result.push(`bibo:endPage "${normalizeSpace(m.innerText)}"`);
       },
     );
-    s.addProperty("a", "fabio:JournalArticle");
+    result.push("a fabio:JournalArticle");
+    return result;
   }
-  function getBookChapterProperties(e: Element, s: Subject) {
+  function getBookChapterProperties(e: Element): string[] {
+    const result: string[] = [];
     // <xsl:apply-templates select="mods:part/mods:extent/mods:start"/>
     e.querySelectorAll("MODSpart > MODSextent > MODSstart").forEach(
       (m: Element) => {
-        s.addProperty(`bibo:startPage`, `"${normalizeSpace(m.innerText)}"`);
+        result.push(`bibo:startPage "${normalizeSpace(m.innerText)}"`);
       },
     );
     // <xsl:apply-templates select="mods:part/mods:extent/mods:end"/>
     e.querySelectorAll("MODSpart > MODSextent > MODSend").forEach(
       (m: Element) => {
-        s.addProperty(`bibo:endPage`, `"${normalizeSpace(m.innerText)}"`);
+        result.push(`bibo:endPage "${normalizeSpace(m.innerText)}"`);
       },
     );
-    s.addProperty("a", "fabio:BookSection");
+    result.push("a fabio:BookSection");
+    return result;
   }
 
   /** replaces <xsl:template name="taxonConceptCitation"> */
@@ -1161,6 +1166,15 @@ export function gg2rdf(inputPath: string, outputPath: string) {
    * i.e. full triples, always ending with `.` */
   function output(data: string) {
     Deno.writeTextFileSync(outputPath, data + "\n", { append: true });
+  }
+
+  /** the second argument is a list of `predicate object` strings;
+   * without delimiters (";" or ".")
+   */
+  function outputProperties(subject: string, properties: string[]) {
+    if (properties.length) {
+      output(`\n${subject}\n    ${properties.join(" ;\n    ")} .`);
+    } else output(`\n# No properties for ${subject}`);
   }
 
   function outputSubject(s: Subject) {
