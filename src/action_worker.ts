@@ -81,20 +81,29 @@ async function run() {
 
       for (const file of modified) {
         if (file.endsWith(".xml")) {
-          Deno.mkdirSync(
-            `${config.workDir}/repo/target/${
-              file.slice(0, file.lastIndexOf("/"))
-            }`,
-            {
-              recursive: true,
-            },
-          );
-          Deno.renameSync(
-            `${config.workDir}/tmpttl/${file.slice(0, -4)}.ttl`,
-            `${config.workDir}/repo/target/${file.slice(0, -4)}.ttl`,
-          );
-          // TODO check if newer?
-          // TODO errors
+          try {
+            Deno.mkdirSync(
+              `${config.workDir}/repo/target/${
+                file.slice(0, file.lastIndexOf("/"))
+              }`,
+              {
+                recursive: true,
+              },
+            );
+            Deno.renameSync(
+              `${config.workDir}/tmpttl/${file.slice(0, -4)}.ttl`,
+              `${config.workDir}/repo/target/${file.slice(0, -4)}.ttl`,
+            );
+            // TODO check if newer?
+          } catch (e) {
+            console.log(
+              `Failed to move ${config.workDir}/tmpttl/${
+                file.slice(0, -4)
+              }.ttl to ${config.workDir}/repo/target/${
+                file.slice(0, -4)
+              }.ttl: \n${e}`,
+            );
+          }
         }
       }
 
@@ -150,6 +159,7 @@ async function run() {
       queue.setStatus(job, "failed");
       log("FAILED TRANSFORMATION");
       log(error);
+      if (error.stack) log(error.stack);
       createBadge("Failed");
     }
   }
