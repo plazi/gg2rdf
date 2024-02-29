@@ -5,6 +5,7 @@
   and all data passed to it should still be valid under reordering of calls.
 */
 
+import a from "https://esm.sh/v135/uhyphen@0.2.0/denonext/uhyphen.mjs";
 import { DOMParser, parseArgs } from "./deps.ts";
 import { Element } from "https://esm.sh/v135/linkedom@0.16.8/types/interface/element.d.ts";
 
