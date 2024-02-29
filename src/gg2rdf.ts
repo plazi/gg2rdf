@@ -330,65 +330,15 @@ function taxonConceptCitation(
 enum REL {
   CITES,
   SAME,
-  NONE,
-  DEPRECATES,
+  NONE, // depr etc?
 }
 
 /** replaces <xsl:template name="taxonRelation"> */
 function getTaxonRelation(
   { taxon, cTaxon }: { taxon: Element; cTaxon: Element },
 ) {
-  const authorityMatch = (cTaxon.getAttribute("authorityYear") ===
-      taxon.getAttribute("authorityYear") &&
-    cTaxon.getAttribute("authorityName") ===
-      taxon.getAttribute("authorityName")) ||
-    (cTaxon.getAttribute("baseAuthorityYear") ===
-        taxon.getAttribute("baseAuthorityYear") &&
-      cTaxon.getAttribute("baseAuthorityName") ===
-        taxon.getAttribute("baseAuthorityName"));
-  const taxonRankGroup = getTaxonRankGroup(taxon);
-  const cTaxonRankGroup = getTaxonRankGroup(cTaxon);
-  if (taxonRankGroup === RANKS.INVALID || cTaxonRankGroup === RANKS.INVALID) {
-    // don't let taxon with invalid rank deprecate any other taxon
-    // catch cited taxon with invalid rank
-    return REL.NONE;
-  }
-  // make sure to not deprecate across rank groups
-  if (taxonRankGroup !== cTaxonRankGroup) return REL.CITES;
-  if (!taxon.getAttribute("genus") || !cTaxon.getAttribute("genus")) {
-    // exclude deprecation above genus for now
-    return REL.CITES;
-  }
-  if (
-    cTaxon.getAttribute("rank") === "genus" &&
-    taxon.getAttribute("rank") !== "genus" &&
-    cTaxon.getAttribute("genus") === taxon.getAttribute("genus")
-  ) {
-    // make sure to not deprecate own parent genus (subGenus is same rank group)
-    return REL.CITES;
-  }
-  if (
-    cTaxon.getAttribute("rank") === "species" &&
-    taxon.getAttribute("rank") !== "species" &&
-    cTaxon.getAttribute("genus") === taxon.getAttribute("genus") &&
-    cTaxon.getAttribute("species") === taxon.getAttribute("species")
-  ) {
-    // make sure to not deprecate own parent species (subSpecies and variety are same rank group)
-    return REL.CITES;
-  }
-  if (
-    authorityMatch &&
-    cTaxon.getAttribute("rank") === taxon.getAttribute("rank") &&
-    cTaxon.getAttribute("genus") === taxon.getAttribute("genus") &&
-    cTaxon.getAttribute("subGenus") === taxon.getAttribute("subGenus") &&
-    cTaxon.getAttribute("species") === taxon.getAttribute("species") &&
-    cTaxon.getAttribute("subSpecies") === taxon.getAttribute("subSpecies") &&
-    cTaxon.getAttribute("variety") === taxon.getAttribute("variety")
-  ) {
-    // catch genuine citations of previous treatments
-    return REL.SAME;
-  }
-  return REL.DEPRECATES;
+  // TODO
+  return REL.NONE;
 }
 
 enum RANKS {
