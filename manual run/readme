@@ -1,5 +1,3 @@
-# this is outdated, do not use
-
 Run the ./main-on-all-wrapper.sh skript to convert everything in pwd/xml to ttl (placed into pwd/ttl)
 
 `pwd`/xml must exist & contain xml data
