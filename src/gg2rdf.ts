@@ -48,7 +48,7 @@ try {
   makeTreatment();
   makePublication();
 } catch (error) {
-  console.error(error);
+  console.error("" + error);
   output(
     "# There was some Error in gg2rdf\n" +
       ("# " + error).replace(/\n/g, "\n# "),
@@ -202,7 +202,7 @@ function makeTreatment() {
 
   // add cited taxon concepts
   document.querySelectorAll(
-    "subSubSection[type='reference_group'] treatmentCitationGroup, subSubSection[type='reference_group'] treatmentCitation, subSubSection[type='reference_group'] taxonomicName",
+    "subSubSection:has(>[type='reference_group']) treatmentCitationGroup, subSubSection:has(>[type='reference_group']) treatmentCitation, subSubSection:has(>[type='reference_group']) taxonomicName",
   ).forEach((e: Element) => {
     if (
       (e.tagName === "treatmentCitation" &&
@@ -216,7 +216,6 @@ function makeTreatment() {
       ? e
       : e.querySelector("taxonomicName");
     const citation = taxonConceptCitation(taxon, cTaxon);
-    console.log("found taxon citation; " + e.tagName, citation);
     if (citation) properties.push(citation);
   });
 
@@ -365,9 +364,7 @@ function taxonConceptCitation(
   ) return;
   if (cTaxonAuthority === "INVALID") {
     // no valid authority cited, fall back to taxon name
-    return `trt:citesTaxonName <${
-      taxonNameBaseURI({ kingdom: cTaxon.getAttribute("kingdom") })
-    }/${taxonNameForURI({ taxonName: cTaxon })}>`;
+    return `trt:citesTaxonName <${taxonNameForURI({ taxonName: cTaxon })}>`;
   }
   if (taxonRelation === REL.CITES) {
     // do not let a citing treatment deprecate a cited name
@@ -384,7 +381,7 @@ function taxonConceptCitation(
   }`;
 }
 
-const enum REL {
+enum REL {
   CITES,
   SAME,
   NONE,
@@ -448,7 +445,7 @@ function getTaxonRelation(
   return REL.DEPRECATES;
 }
 
-const enum RANKS {
+enum RANKS {
   INVALID,
   kingdom,
   phylum,
