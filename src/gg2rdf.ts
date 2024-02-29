@@ -261,17 +261,17 @@ function getJournalProperties(e: Element): string[] {
     result.push(`bibo:journal ${JSON.stringify("" + m.innerText)}`)
   );
   // TODO:
-  // <xsl:apply-templates select="mods:part/mods:detail"/>
-  // <xsl:apply-templates select="mods:part/mods:extent/mods:start"/>
-  // <xsl:apply-templates select="mods:part/mods:extent/mods:end"/>
+	// <xsl:apply-templates select="mods:part/mods:detail"/>
+	// <xsl:apply-templates select="mods:part/mods:extent/mods:start"/>
+	// <xsl:apply-templates select="mods:part/mods:extent/mods:end"/>
   result.push("a fabio:JournalArticle");
   return result;
 }
 function getBookChapterProperties(e: Element): string[] {
   const result: string[] = [];
   // TODO
-  // <xsl:apply-templates select="mods:part/mods:extent/mods:start"/>
-  // <xsl:apply-templates select="mods:part/mods:extent/mods:end"/>
+	// <xsl:apply-templates select="mods:part/mods:extent/mods:start"/>
+	// <xsl:apply-templates select="mods:part/mods:extent/mods:end"/>
   result.push("a fabio:BookSection");
   return result;
 }
@@ -416,9 +416,7 @@ function getAuthors() {
   // else console.error("can't determine treatment authors");
 }
 
-/** returns link to publication
- *
- * NOTE: the xslt uses two slight variations of this, but i consider that a bug */
+/** returns link to publication */
 function getPublication() {
   const doiID: string | undefined = doc.getAttribute("ID-DOI");
   if (!doiID) {
