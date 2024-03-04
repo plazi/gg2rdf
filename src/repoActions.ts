@@ -86,6 +86,7 @@ export function getModifiedAfter(
     args: [
       "diff",
       "--name-status",
+      "--no-renames", // handle renames as a deletion and an addition
       fromCommit,
       tillCommit,
     ],
@@ -102,6 +103,14 @@ export function getModifiedAfter(
   const typedFiles = new TextDecoder().decode(stdout).split("\n").filter((s) =>
     s.length > 0
   ).map((s) => s.split(/(\s+)/).filter((p) => p.trim().length > 0));
+  const weirdFiles = typedFiles.filter((t) =>
+    t[0] !== "A" && t[0] !== "M" && t[0] !== "D"
+  );
+  if (weirdFiles.length) {
+    log(`Unclear how to handle these files:\n - ${
+      weirdFiles.map((t) => t.join).join("\n - ")
+    }`);
+  }
   return ({
     added: typedFiles.filter((t) => t[0] === "A").map((t) => t[1]),
     modified: typedFiles.filter((t) => t[0] === "M").map((t) => t[1]),
