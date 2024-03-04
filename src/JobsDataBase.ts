@@ -5,11 +5,16 @@ import * as path from "https://deno.land/std@0.209.0/path/mod.ts";
 
 export type Job = {
   id: string;
-  from: string;
-  till: string;
+  from?: string;
+  till?: string;
   author: {
     "name": string;
     "email": string;
+  };
+  files?: {
+    // only used for transform_all
+    modified?: string[];
+    removed?: string[];
   };
 };
 
@@ -55,13 +60,13 @@ export class JobsDataBase {
     );
   }
 
-  allJobs(): JobStatus[] {
+  allJobs(oldestFirst = false): JobStatus[] {
     const jobDirs = [];
     for (const jobDir of Deno.readDirSync(this.jobsDir)) {
       jobDirs.push(jobDir);
     }
     return jobDirs.filter((entry) => entry.isDirectory).sort((a, b) =>
-      b.name.localeCompare(a.name)
+      oldestFirst ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
     ).map((jobDir) => {
       const statusFile = path.join(this.jobsDir, jobDir.name, "status.json");
       try {
@@ -93,6 +98,6 @@ export class JobsDataBase {
     }).filter(notEmpty);
   }
   pendingJobs() {
-    return this.allJobs().filter((js) => js.status === "pending");
+    return this.allJobs(true).filter((js) => js.status === "pending");
   }
 }

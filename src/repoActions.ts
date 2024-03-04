@@ -49,8 +49,9 @@ const cloneRepo = (which: "source" | "target", log = console.log) => {
 // Function to update local data
 export function updateLocalData(
   which: "source" | "target",
-  log = console.log,
+  log: (msg: string) => void = console.log,
 ) {
+  log("starting git pull...");
   Deno.mkdirSync(`${config.workDir}/repo/${which}/.git`, { recursive: true });
   const p = new Deno.Command("git", {
     args: ["pull"],

@@ -33,7 +33,14 @@ const WEBHOOK_SECRET: string | undefined = Deno.env.get("WEBHOOK_SECRET");
 await Deno.mkdir(`${config.workDir}/repo`, { recursive: true });
 await Deno.mkdir(`${config.workDir}/tmprdf`, { recursive: true });
 await Deno.mkdir(`${config.workDir}/tmpttl`, { recursive: true });
-await createBadge("Unknown");
+
+const db = new JobsDataBase(`${config.workDir}/jobs`);
+const latest =
+  db.allJobs().find((j) => j.status === "completed" || j.status === "failed")
+    ?.status || "Unknown";
+if (latest === "failed") createBadge("Failed");
+else if (latest === "completed") createBadge("OK");
+else createBadge("Unknown");
 
 const worker = new Worker(
   new URL("./action_worker.ts", import.meta.url).href,
@@ -78,10 +85,10 @@ const webhookHandler = async (request: Request) => {
     }
     if (pathname === "/full_update") {
       console.log("· got full_update request");
-      // TODO
-      return new Response("Not Implemented", {
-        status: Status.NotImplemented,
-        statusText: STATUS_TEXT[Status.NotImplemented],
+      worker.postMessage("FULLUPDATE");
+      return new Response(undefined, {
+        status: Status.Accepted,
+        statusText: STATUS_TEXT[Status.Accepted],
       });
     } else {
       if (WEBHOOK_SECRET && !(await verifySignature(request))) {
@@ -136,7 +143,6 @@ const webhookHandler = async (request: Request) => {
     response.headers.set("Content-Type", "image/svg+xml");
     return response;
   } else if (pathname === "/jobs.json") {
-    const db = new JobsDataBase(`${config.workDir}/jobs`);
     const json = JSON.stringify(db.allJobs(), undefined, 2);
     const response = new Response(json);
     response.headers.set("Content-Type", "application/json");

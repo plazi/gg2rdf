@@ -4,7 +4,7 @@
 * The jobs are accepted as messages and stored on disk, when the worker is started uncompleted jobs are picked up and exxecuted.
 
 */
-import { path } from "./deps.ts";
+import { path, walk } from "./deps.ts";
 import { config } from "../config/config.ts";
 import { createBadge } from "./log.ts";
 import { type Job, JobsDataBase } from "./JobsDataBase.ts";
@@ -20,10 +20,14 @@ let isRunning = false;
 await startTask();
 
 self.onmessage = (evt) => {
-  const job = evt.data as Job;
-  queue.addJob(job);
-  if (!isRunning) startTask();
-  else console.log("Already running");
+  const job = evt.data as Job | "FULLUPDATE";
+  if (job === "FULLUPDATE") {
+    gatherJobsForFullUpdate();
+  } else {
+    queue.addJob(job);
+    if (!isRunning) startTask();
+    else console.log("Already running");
+  }
 };
 
 async function startTask() {
@@ -35,7 +39,59 @@ async function startTask() {
   }
 }
 
-async function run() {
+async function gatherJobsForFullUpdate() {
+  isRunning = true;
+  try {
+    console.log("gathering jobs for full update");
+    updateLocalData("source");
+    const date = (new Date()).toISOString();
+    let block = 0;
+    const jobs: Job[] = [];
+    let files: string[] = [];
+    for await (
+      const walkEntry of walk(`${config.workDir}/repo/source/`, {
+        exts: ["xml"],
+        includeDirs: false,
+        includeSymlinks: false,
+      })
+    ) {
+      if (walkEntry.isFile && walkEntry.path.endsWith(".xml")) {
+        files.push(
+          walkEntry.path.replace(`${config.workDir}/repo/source/`, ""),
+        );
+        if (files.length >= 500) {
+          jobs.push({
+            author: {
+              name: "GG2RDF Service",
+              email: "gg2rdf@plazi.org",
+            },
+            id: `${date} full update [${
+              (++block).toString(10).padStart(4, "0")
+            }`,
+            files: {
+              modified: files,
+            },
+          });
+          files = [];
+        }
+      } else {
+        console.log("skipped", walkEntry.path);
+      }
+    }
+    jobs.forEach((j) => {
+      j.id += ` of ${block.toString(10).padStart(4, "0")}]`;
+      queue.addJob(j);
+    });
+    console.log(`succesfully created full-update jobs (${block} jobs)`);
+  } catch (error) {
+    console.error("Could not create full-update jobs\n" + error);
+  } finally {
+    isRunning = false;
+    startTask();
+  }
+}
+
+function run() {
   while (queue.pendingJobs().length > 0) {
     const jobStatus = queue.pendingJobs()[0];
     const job = jobStatus.job;
@@ -45,12 +101,28 @@ async function run() {
       });
     };
     try {
-      log("Starting transformation" + JSON.stringify(job, undefined, 2));
+      log("Starting transformation\n" + JSON.stringify(job, undefined, 2));
 
-      const files = getModifiedAfter(job.from, job.till, log);
+      let modified: string[] = [];
+      let removed: string[] = [];
+      let message = "";
 
-      const modified = [...files.added, ...files.modified];
-      const removed = files.removed;
+      if (job.files) {
+        modified = job.files.modified || [];
+        removed = job.files.removed || [];
+        message =
+          `committed by action runner ${config.sourceRepository} ${job.id}`;
+      } else if (job.from) {
+        const files = getModifiedAfter(job.from, job.till, log);
+        modified = [...files.added, ...files.modified];
+        removed = files.removed;
+        message =
+          `committed by action runner ${config.sourceRepository}@${job.id}`;
+      } else {
+        throw new Error(
+          "Could not start job, neither explicit file list nor from-commit specified",
+        );
+      }
 
       updateLocalData("source", log);
 
@@ -126,7 +198,7 @@ async function run() {
       const gitCommands = `git config --replace-all user.name ${job.author.name}
       git config --replace-all user.email ${job.author.email}
       git add -A
-      git commit --quiet -m "committed by action runner ${config.sourceRepository}@${job.id}"
+      git commit --quiet -m "${message}"
       git push --quiet ${
         config.targetRepositoryUri.replace(
           "https://",
