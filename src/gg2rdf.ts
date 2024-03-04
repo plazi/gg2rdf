@@ -63,6 +63,10 @@ export function gg2rdf(inputPath: string, outputPath: string, log: (msg: string)
 
   // this is the <document> surrounding everything. doc != document
   const doc = document.querySelector("document") as Element;
+  if (!doc) {
+    log(`Error: missing <document> in ${inputPath}.`);
+    output("# Could not create RDF due to missing <document>");
+  }
   const id = doc.getAttribute("docId");
   log(`starting gg2rdf on document id: ${id}`);
 
@@ -255,7 +259,10 @@ export function gg2rdf(inputPath: string, outputPath: string, log: (msg: string)
       const cTaxon = e.tagName === "taxonomicName"
         ? e
         : e.querySelector("taxonomicName");
-      addTaxonConceptCitation(t, taxon, cTaxon);
+      if (cTaxon) addTaxonConceptCitation(t, taxon, cTaxon);
+      else {
+        log(`${e.tagName} found without taxonomicName`);
+      }
     });
 
     // makeCitedMaterial returns the identifier
@@ -1079,13 +1086,13 @@ export function gg2rdf(inputPath: string, outputPath: string, log: (msg: string)
     // to keep author ordering (after xslt replaced):
     // const docAuthor = STR(doc.getAttribute("docAuthor"))
 
-    const mods = document.getElementsByTagName(
-      "MODSname",
-    );
+    const mods = document.querySelectorAll("MODSname") as Element[];
     const modsAuthor = STR(
       mods.filter((m) =>
-        m.querySelector("MODSroleTerm").innerText.match(/author/i)
-      ).map((m) => (m.querySelector("MODSnamePart").innerText as string).trim())
+        (m.querySelector("MODSroleTerm")?.innerText as string)?.match(/author/i)
+      ).map((m) =>
+        (m.querySelector("MODSnamePart")?.innerText as string).trim()
+      )
         .join("; "),
     );
 
