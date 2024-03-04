@@ -50,6 +50,7 @@ export function gg2rdf(inputPath: string, outputPath: string, log: (msg: string)
   Deno.writeTextFileSync(outputPath!, ""); // clear prexisting file
 
   output(`@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix bibo: <http://purl.org/ontology/bibo/> .
 @prefix cito: <http://purl.org/spar/cito/> .
 @prefix dc: <http://purl.org/dc/elements/1.1/> .
@@ -414,7 +415,7 @@ export function gg2rdf(inputPath: string, outputPath: string, log: (msg: string)
       // see https://github.com/plazi/gg2rdf/issues/10
       if (n === "ID-CoL") {
         s.addProperty(
-          "rdf:seeAlso",
+          "rdfs:seeAlso",
           `<https://www.catalogueoflife.org/data/taxon/${
             normalizeSpace(taxon.getAttribute(n))
           }>`,
