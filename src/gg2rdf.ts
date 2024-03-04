@@ -41,7 +41,11 @@ if (import.meta.main) {
   gg2rdf(flags.input, flags.output);
 }
 
-export function gg2rdf(inputPath: string, outputPath: string, log: (msg: string) => void = console.log) {
+export function gg2rdf(
+  inputPath: string,
+  outputPath: string,
+  log: (msg: string) => void = console.log,
+) {
   const document = new DOMParser().parseFromString(
     Deno.readTextFileSync(inputPath).replaceAll(/(<\/?)mods:/g, "$1MODS"),
     "text/xml",
@@ -290,20 +294,26 @@ export function gg2rdf(inputPath: string, outputPath: string, log: (msg: string)
   function getFigureUri(f: Element) {
     const uri = f.getAttribute("httpUri") ?? "";
     if (uri.includes("10.5281/zenodo.")) {
-      return `<${uri.replaceAll(" ", "")}>`;
+      return `<${encodeURI(uri.replaceAll(" ", ""))}>`;
     }
     if (uri.includes("zenodo.")) {
-      return `<http://dx.doi.org/10.5281/zenodo.${
-        substringAfter(
-          substringBefore(uri.replaceAll(" ", ""), "/files/"),
-          "/record/",
-        )
+      return `<${
+        encodeURI(`http://dx.doi.org/10.5281/zenodo.${
+          substringAfter(
+            substringBefore(uri.replaceAll(" ", ""), "/files/"),
+            "/record/",
+          )
+        }`)
       }>`;
     }
     const doi = f.getAttribute("figureDoi") ?? "";
-    if (doi.includes("doi.org/10.")) return `<${doi.replaceAll(" ", "")}>`;
-    if (doi) return `<http://dx.doi.org/${doi.replaceAll(" ", "")}>`;
-    if (uri) return `<${uri}>`;
+    if (doi.includes("doi.org/10.")) {
+      return `<${encodeURI(doi.replaceAll(" ", ""))}>`;
+    }
+    if (doi) {
+      return `<${encodeURI(`http://dx.doi.org/${doi.replaceAll(" ", "")}`)}>`;
+    }
+    if (uri) return `<${encodeURI(uri.replaceAll(" ", ""))}>`;
     throw new Error(
       "Internal: getFigureUri called with figure that has neither @httpUri nor @figureDoi",
     );
@@ -332,9 +342,13 @@ export function gg2rdf(inputPath: string, outputPath: string, log: (msg: string)
       if (httpUri.replaceAll(" ", "").includes("10.5281/zenodo.")) {
         s.addProperty(
           `fabio:hasRepresentation`,
-          `<https://zenodo.org/record/${
-            substringAfter(httpUri.replaceAll(" ", ""), "10.5281/zenodo.")
-          }/files/figure.png>`,
+          `<${
+            encodeURI(
+              `https://zenodo.org/record/${
+                substringAfter(httpUri.replaceAll(" ", ""), "10.5281/zenodo.")
+              }/files/figure.png`,
+            )
+          }>`,
         );
       } else {
         s.addProperty(
@@ -423,8 +437,12 @@ export function gg2rdf(inputPath: string, outputPath: string, log: (msg: string)
       if (n === "ID-CoL") {
         s.addProperty(
           "rdfs:seeAlso",
-          `<https://www.catalogueoflife.org/data/taxon/${
-            normalizeSpace(taxon.getAttribute(n))
+          `<${
+            encodeURI(
+              `https://www.catalogueoflife.org/data/taxon/${
+                normalizeSpace(taxon.getAttribute(n))
+              }`,
+            )
           }>`,
         );
       } else {
@@ -518,7 +536,7 @@ export function gg2rdf(inputPath: string, outputPath: string, log: (msg: string)
     const uri = mcId
       ? `<http://tb.plazi.org/GgServer/dwcaRecords/${id}.mc.${mcId}>`
       : (httpUri
-        ? `<${httpUri}>`
+        ? `<${encodeURI(httpUri.replaceAll(" ", ""))}>`
         : `<http://treatment.plazi.org/id/${id}/${
           encodeURIComponent(normalizeSpace(specimenCode))
         }>`);
@@ -557,8 +575,13 @@ export function gg2rdf(inputPath: string, outputPath: string, log: (msg: string)
     addProp("collectingMethod", "dwc:samplingProtocol");
     addProp("ID-GBIF-Occurrence", "trt:gbifOccurrenceId");
     addProp("ID-GBIF-Specimen", "trt:gbifSpecimenId");
-    addProp("httpUri", "trt:httpUri");
 
+    if (httpUri) {
+      s.addProperty(
+        "trt:httpUri",
+        `<${encodeURI(httpUri.replaceAll(" ", ""))}>`,
+      );
+    }
     if (mcId) {
       s.addProperty(
         "trt:httpUri",
@@ -1051,8 +1074,11 @@ export function gg2rdf(inputPath: string, outputPath: string, log: (msg: string)
    */
   function taxonNameURI(taxonName: Element, rankLimit?: string) {
     return `<${
-      taxonNameBaseURI({ kingdom: taxonName.getAttribute("kingdom") })
-    }${taxonNameForURI({ taxonName }, rankLimit)}>`;
+      encodeURI(
+        taxonNameBaseURI({ kingdom: taxonName.getAttribute("kingdom") }) +
+          taxonNameForURI({ taxonName }, rankLimit),
+      )
+    }>`;
   }
 
   /** returns plain uri
@@ -1074,8 +1100,11 @@ export function gg2rdf(inputPath: string, outputPath: string, log: (msg: string)
     },
   ) {
     return `<${
-      taxonConceptBaseURI({ kingdom: taxonName.getAttribute("kingdom") })
-    }${taxonNameForURI({ taxonName })}${taxonAuthority}>`;
+      encodeURI(
+        taxonConceptBaseURI({ kingdom: taxonName.getAttribute("kingdom") }) +
+          taxonNameForURI({ taxonName }) + taxonAuthority,
+      )
+    }>`;
   }
 
   /** → turtle snippet a la `"author1", "author2", ... "authorN"` */
