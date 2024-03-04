@@ -17,23 +17,22 @@ const queue = new JobsDataBase(`${config.workDir}/jobs`);
 
 let isRunning = false;
 
-await startTask();
+startTask();
 
 self.onmessage = (evt) => {
   const job = evt.data as Job | "FULLUPDATE";
   if (job === "FULLUPDATE") {
     gatherJobsForFullUpdate();
   } else {
-    queue.addJob(job);
     if (!isRunning) startTask();
     else console.log("Already running");
   }
 };
 
-async function startTask() {
+function startTask() {
   isRunning = true;
   try {
-    await run();
+    run();
   } finally {
     isRunning = false;
   }
