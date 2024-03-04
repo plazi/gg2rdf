@@ -116,8 +116,13 @@ function run() {
         const files = getModifiedAfter(job.from, job.till, log);
         modified = [...files.added, ...files.modified];
         removed = files.removed;
-        message =
-          `committed by action runner ${config.sourceRepository}@${job.id}`;
+        if (files.till && files.till !== "HEAD") {
+          message =
+            `committed by action runner ${config.sourceRepository}@${files.till}`;
+        } else {
+          message =
+            `committed by action runner ${config.sourceRepository}@${job.id}`;
+        }
       } else {
         throw new Error(
           "Could not start job, neither explicit file list nor from-commit specified",

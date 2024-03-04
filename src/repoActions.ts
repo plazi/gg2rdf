@@ -6,6 +6,7 @@ export type ChangeSummary = {
   added: string[];
   removed: string[];
   modified: string[];
+  till: string;
 };
 
 const emptyDataDir = (which: "source" | "target") => {
@@ -100,6 +101,20 @@ export function getModifiedAfter(
   if (!success) {
     throw new Error("Abort.");
   }
+  if (tillCommit === "HEAD") {
+    const p = new Deno.Command("git", {
+      args: [
+        "rev-parse",
+        "HEAD",
+      ],
+      cwd: `${config.workDir}/repo/source`,
+    });
+    const { success, stdout } = p.outputSync();
+    if (success) {
+      tillCommit = new TextDecoder().decode(stdout).trim();
+      log("HEAD is: " + tillCommit);
+    }
+  }
   const typedFiles = new TextDecoder().decode(stdout).split("\n").filter((s) =>
     s.length > 0
   ).map((s) => s.split(/(\s+)/).filter((p) => p.trim().length > 0));
@@ -107,13 +122,16 @@ export function getModifiedAfter(
     t[0] !== "A" && t[0] !== "M" && t[0] !== "D"
   );
   if (weirdFiles.length) {
-    log(`Unclear how to handle these files:\n - ${
-      weirdFiles.map((t) => t.join).join("\n - ")
-    }`);
+    log(
+      `Unclear how to handle these files:\n - ${
+        weirdFiles.map((t) => t.join).join("\n - ")
+      }`,
+    );
   }
   return ({
     added: typedFiles.filter((t) => t[0] === "A").map((t) => t[1]),
     modified: typedFiles.filter((t) => t[0] === "M").map((t) => t[1]),
     removed: typedFiles.filter((t) => t[0] === "D").map((t) => t[1]),
+    till: tillCommit,
   });
 }
