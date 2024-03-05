@@ -48,7 +48,7 @@ export class JobsDataBase {
     );
   }
 
-  setStatus(job: Job, status: "failed" | "completed") {
+  setStatus(job: Job, status: "failed" | "completed" | "pending") {
     const jobStatus: JobStatus = {
       job,
       status,
