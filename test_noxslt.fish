@@ -16,13 +16,13 @@ set tmpDir "../plazi-playground/noxslt"
 
 # these have been manually determined to be non-errors
 # i.e. changes that seem to (if anything) fix something
-set ignore $xmlDir"/00/00/87/000087F6E327FF95FD8CFB7FFAE4FA7B.xml" $xmlDir"/00/01/95/0001958C9E2ECB0BE45661F079449558.xml"
+# set ignore $xmlDir"/00/00/87/000087F6E327FF95FD8CFB7FFAE4FA7B.xml" $xmlDir"/00/01/95/0001958C9E2ECB0BE45661F079449558.xml"
 
 set xml {$argv[1]}
 
-if contains $xml $ignore
-   exit 0
-end
+# if contains $xml $ignore
+#    exit 0
+# end
 
 set ref (string replace {$xmlDir} {$ttlReferenceDir} (path change-extension ttl $xml))
 
@@ -33,7 +33,7 @@ end
 
 deno run --allow-write --allow-read src/gg2rdf.ts -i {$xml} -o {$tmpDir}/test.ttl
 rapper -rq -i turtle {$tmpDir}/test.ttl | sort > {$tmpDir}/test.n3
-rapper -rq -i turtle {$ref} | sed '/file:\/\/\//d' -  | sed '/hasParentName/d' - | sort > {$tmpDir}/ref.n3
+rapper -rq -i turtle {$ref} | sed '/file:\/\/\//d' -  | sed '/hasParentName|creator|ID-CoL/d' - | sort > {$tmpDir}/ref.n3
 # sed to remove all (originally) wrong links with missing baseUri
 # also ignore all changes due to added intermediary taxon names into hierarchy
 

@@ -83,14 +83,12 @@ export function gg2rdf(
   try {
     checkForErrors();
     makeTreatment();
-    makeTaxonConcepts();
     makePublication();
-    makeFigures();
 
-    figures.forEach(outputSubject);
-    citedMaterials.forEach(outputSubject);
     taxonConcepts.forEach(outputSubject);
     taxonNames.forEach(outputSubject);
+    figures.forEach(outputSubject);
+    citedMaterials.forEach(outputSubject);
   } catch (error) {
     log(error);
     output(
@@ -211,32 +209,23 @@ export function gg2rdf(
         `taxonomicName ~ taxonomicNameLabel[rank="${rank}"]`,
       )?.innerText ?? "ABSENT";
 
-    const taxonAuthority = getAuthority({ taxonName: taxon, taxonStatus });
+    const taxonConcept = makeTaxonConcept(taxon, taxon);
 
     // add reference to subject taxon concept, using taxon name as a fallback if we're lacking a valid authority
-    if (taxonAuthority === "INVALID") {
+    if (!taxonConcept.ok) {
       // no valid authority given, fall back to taxon name
       t.addProperty("trt:treatsTaxonName", taxonNameURI(taxon));
     } else {
       // we have a valid authority, go for the taxon stringconcept
       if (taxonStatus === "nomen dubium") {
-        t.addProperty(
-          `trt:deprecates`,
-          taxonConceptURI({ taxonName: taxon, taxonAuthority }),
-        );
+        t.addProperty(`trt:deprecates`, taxonConcept.uri);
       } else if (
         taxonStatus !== "ABSENT" ||
         taxon.parentNode.querySelector(`taxonomicName ~ taxonomicNameLabel`)
       ) {
-        t.addProperty(
-          `trt:definesTaxonConcept`,
-          taxonConceptURI({ taxonName: taxon, taxonAuthority }),
-        );
+        t.addProperty(`trt:definesTaxonConcept`, taxonConcept.uri);
       } else {
-        t.addProperty(
-          `trt:augmentsTaxonConcept`,
-          taxonConceptURI({ taxonName: taxon, taxonAuthority }),
-        );
+        t.addProperty(`trt:augmentsTaxonConcept`, taxonConcept.uri);
       }
     }
 
@@ -279,7 +268,7 @@ export function gg2rdf(
       ...(new Set(
         document.querySelectorAll(
           "figureCitation[httpUri], figureCitation[figureDoi]",
-        ).map(getFigureUri),
+        ).map(makeFigure),
       )),
     ].join(", ");
     if (figures) t.addProperty(`cito:cites`, figures);
@@ -319,14 +308,10 @@ export function gg2rdf(
     );
   }
 
-  function makeFigures() {
-    document.querySelectorAll(
-      "figureCitation[httpUri], figureCitation[figureDoi]",
-    ).forEach(makeFigure);
-  }
-
-  /** replaces <xsl:template match="figureCitation" mode="subject"> */
-  function makeFigure(f: Element) {
+  /** replaces <xsl:template match="figureCitation" mode="subject">
+   * @returns figure url
+   */
+  function makeFigure(f: Element): string {
     const uri = getFigureUri(f);
 
     const prev = figures.find((t) => t.uri === uri);
@@ -359,21 +344,18 @@ export function gg2rdf(
     }
 
     s.addProperty("a", "fabio:Figure");
+    return uri;
   }
 
-  /** outputs turtle describing the taxon concepts mentioned */
-  function makeTaxonConcepts() {
-    const taxon: Element = document.querySelector(
-      'document treatment subSubSection[type="nomenclature"] taxonomicName',
-    ); // existence asserted by checkForErrors
-    makeTaxonConcept(taxon, taxon);
-    document.querySelectorAll("taxonomicName").forEach((e: Element) => {
-      makeTaxonConcept(taxon, e);
-    });
-  }
-
-  /** outputs turtle describing the cTaxon concept */
-  function makeTaxonConcept(taxon: Element, cTaxon: Element) {
+  /** outputs turtle describing the cTaxon concept
+   * @returns object with
+   * - ok: could create taxon-concept
+   * - uri: uri of taxon-concept or taxon-name if invalid authority
+   */
+  function makeTaxonConcept(
+    taxon: Element,
+    cTaxon: Element,
+  ): { ok: boolean; uri: string } {
     const rank: string = cTaxon.getAttribute("rank");
     const cTaxonStatus: string = cTaxon.getAttribute("status") ??
       taxon.parentNode.querySelector(
@@ -387,15 +369,16 @@ export function gg2rdf(
     const taxonRelation = getTaxonRelation({ taxon, cTaxon });
     const cTaxonRankGroup = getTaxonRankGroup(cTaxon);
 
+    if (cTaxonAuthority === "INVALID") {
+      const uri = taxonNameURI(cTaxon);
+      log(`Warning: Invalid Authority for ${uri}`);
+      return { ok: false, uri };
+    }
+
     const uri = taxonConceptURI({
       taxonName: cTaxon,
       taxonAuthority: cTaxonAuthority,
     });
-
-    if (cTaxonAuthority === "INVALID") {
-      log(`Error: Invalid Authority for ${uri}`);
-      return;
-    }
 
     const prev = taxonConcepts.find((t) => t.uri === uri);
     const s = prev || new Subject(uri);
@@ -414,7 +397,7 @@ export function gg2rdf(
       }
       s.addProperty("a", "dwcFP:TaxonConcept");
       makeTaxonName(cTaxon);
-      return;
+      return { ok: true, uri };
     }
 
     /** replaces <xsl:template name="taxonNameDetails"> and <xsl:template match="taxonomicName/@*"> */
@@ -525,6 +508,7 @@ export function gg2rdf(
 
     s.addProperty("a", "dwcFP:TaxonConcept");
     makeTaxonName(cTaxon);
+    return { ok: true, uri };
   }
 
   /** replaces <xsl:template match="materialsCitation[@specimenCode]" mode="subject"> */
@@ -695,7 +679,7 @@ export function gg2rdf(
       ...(new Set(
         document.querySelectorAll(
           "figureCitation[httpUri], figureCitation[figureDoi]",
-        ).map(getFigureUri),
+        ).map(makeFigure),
       )),
     ].join(", ");
     if (figures) s.addProperty(`fabio:hasPart`, figures);
@@ -799,24 +783,29 @@ export function gg2rdf(
     if (cTaxonAuthority === "INVALID") {
       // no valid authority cited, fall back to taxon name
       t.addProperty(`trt:citesTaxonName`, taxonNameURI(cTaxon));
+      makeTaxonName(cTaxon);
       return;
     }
     if (taxonRelation === REL.CITES) {
       // do not let a citing treatment deprecate a cited name
-      t.addProperty(
-        `cito:cites`,
-        taxonConceptURI({ taxonName: cTaxon, taxonAuthority: cTaxonAuthority }),
-      );
+      const taxonConcept = makeTaxonConcept(taxon, cTaxon);
+      if (taxonConcept.ok) {
+        t.addProperty(`cito:cites`, taxonConcept.uri);
+      } else {
+        t.addProperty(`trt:citesTaxonName`, taxonNameURI(cTaxon));
+      }
       return;
     }
     // do not let a taxon deprecate itself
     // skip taxon names with insufficient attributes
     if (taxonRelation === REL.SAME || taxonRelation === REL.NONE) return;
     // deprecate recombined, renamed, and synonymized names
-    t.addProperty(
-      `trt:deprecates`,
-      taxonConceptURI({ taxonName: cTaxon, taxonAuthority: cTaxonAuthority }),
-    );
+    const taxonConcept = makeTaxonConcept(taxon, cTaxon);
+    if (taxonConcept.ok) {
+      t.addProperty(`trt:deprecates`, taxonConcept.uri);
+    } else {
+      t.addProperty(`trt:citesTaxonName`, taxonNameURI(cTaxon));
+    }
     return;
   }
 
