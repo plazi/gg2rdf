@@ -71,7 +71,7 @@ export function gg2rdf(
     log(`Error: missing <document> in ${inputPath}.`);
     output("# Could not create RDF due to missing <document>");
   }
-  const id = doc.getAttribute("docId");
+  const id = partialURI(doc.getAttribute("docId") || "") || "MISSING_ID";
   log(`starting gg2rdf on document id: ${id}`);
 
   // saving properties, as they might be collated from multiple ELements
@@ -283,33 +283,31 @@ export function gg2rdf(
   function getFigureUri(f: Element) {
     const uri = f.getAttribute("httpUri") ?? "";
     if (uri.includes("10.5281/zenodo.")) {
-      return `<${encodeURI(uri.replaceAll(" ", ""))}>`;
+      return URI(uri);
     }
     if (uri.includes("zenodo.")) {
-      return `<${
-        encodeURI(`http://dx.doi.org/10.5281/zenodo.${
-          substringAfter(
-            substringBefore(uri.replaceAll(" ", ""), "/files/"),
-            "/record/",
-          )
-        }`)
-      }>`;
+      return URI(`http://dx.doi.org/10.5281/zenodo.${
+        substringAfter(
+          substringBefore(uri.replaceAll(" ", ""), "/files/"),
+          "/record/",
+        )
+      }`);
     }
     const doi = f.getAttribute("figureDoi") ?? "";
     if (doi.includes("doi.org/10.")) {
-      return `<${encodeURI(doi.replaceAll(" ", ""))}>`;
+      return URI(doi);
     }
     if (doi) {
-      return `<${encodeURI(`http://dx.doi.org/${doi.replaceAll(" ", "")}`)}>`;
+      return URI(`http://dx.doi.org/${doi}`);
     }
-    if (uri) return `<${encodeURI(uri.replaceAll(" ", ""))}>`;
+    if (uri) return URI(uri);
     throw new Error(
       "Internal: getFigureUri called with figure that has neither @httpUri nor @figureDoi",
     );
   }
 
   /** replaces <xsl:template match="figureCitation" mode="subject">
-   * @returns figure url
+   * @returns figure uri
    */
   function makeFigure(f: Element): string {
     const uri = getFigureUri(f);
@@ -322,24 +320,22 @@ export function gg2rdf(
       s.addProperty(`dc:description`, STR(f.getAttribute("captionText")));
     }
 
-    const httpUri = f.getAttribute("httpUri");
+    const httpUri = (f.getAttribute("httpUri") as string || "").replaceAll(
+      " ",
+      "",
+    );
     if (httpUri) {
-      if (httpUri.replaceAll(" ", "").includes("10.5281/zenodo.")) {
+      if (httpUri.includes("10.5281/zenodo.")) {
         s.addProperty(
           `fabio:hasRepresentation`,
-          `<${
-            encodeURI(
-              `https://zenodo.org/record/${
-                substringAfter(httpUri.replaceAll(" ", ""), "10.5281/zenodo.")
-              }/files/figure.png`,
-            )
-          }>`,
+          URI(
+            `https://zenodo.org/record/${
+              substringAfter(httpUri, "10.5281/zenodo.")
+            }/files/figure.png`,
+          ),
         );
       } else {
-        s.addProperty(
-          `fabio:hasRepresentation`,
-          STR(httpUri.replaceAll(" ", "")),
-        );
+        s.addProperty(`fabio:hasRepresentation`, URI(httpUri));
       }
     }
 
@@ -420,13 +416,11 @@ export function gg2rdf(
       if (n === "ID-CoL") {
         s.addProperty(
           "rdfs:seeAlso",
-          `<${
-            encodeURI(
-              `https://www.catalogueoflife.org/data/taxon/${
-                normalizeSpace(taxon.getAttribute(n))
-              }`,
-            )
-          }>`,
+          URI(
+            `https://www.catalogueoflife.org/data/taxon/${
+              normalizeSpace(taxon.getAttribute(n))
+            }`,
+          ),
         );
       } else {
         s.addProperty(`dwc:${n}`, STR(normalizeSpace(cTaxon.getAttribute(n))));
@@ -518,12 +512,11 @@ export function gg2rdf(
     const specimenCode = c.getAttribute("specimenCode");
 
     const uri = mcId
-      ? `<http://tb.plazi.org/GgServer/dwcaRecords/${id}.mc.${mcId}>`
-      : (httpUri
-        ? `<${encodeURI(httpUri.replaceAll(" ", ""))}>`
-        : `<http://treatment.plazi.org/id/${id}/${
-          encodeURIComponent(normalizeSpace(specimenCode))
-        }>`);
+      ? URI(`http://tb.plazi.org/GgServer/dwcaRecords/${id}.mc.${mcId}`)
+      : (httpUri ? URI(httpUri) : URI(
+        `http://treatment.plazi.org/id/${id}/${partialURI(specimenCode)}`,
+        "_",
+      ));
 
     if (!mcId && !httpUri && !specimenCode) {
       output(
@@ -561,15 +554,12 @@ export function gg2rdf(
     addProp("ID-GBIF-Specimen", "trt:gbifSpecimenId");
 
     if (httpUri) {
-      s.addProperty(
-        "trt:httpUri",
-        `<${encodeURI(httpUri.replaceAll(" ", ""))}>`,
-      );
+      s.addProperty("trt:httpUri", URI(httpUri));
     }
     if (mcId) {
       s.addProperty(
         "trt:httpUri",
-        `<https://treatment.plazi.org/id/${id}#${mcId}>`,
+        URI(`https://treatment.plazi.org/id/${id}#${mcId}`),
       );
     }
 
@@ -935,7 +925,9 @@ export function gg2rdf(
 
     const name = baseAuthorityName || authorityName || docAuthor;
     const year = baseAuthorityYear || authorityYear || docDate;
-    if (name && year) return `_${authorityNameForURI(name)}_${year}`;
+    if (name && year) {
+      return `_${authorityNameForURI(name)}_${partialURI(year)}`;
+    }
     return "INVALID";
   }
 
@@ -951,13 +943,13 @@ export function gg2rdf(
     authorityName = substringBefore(authorityName, ", ");
     authorityName = substringAfter(authorityName, ". ");
     authorityName = substringAfter(authorityName, " ");
-    return encodeURIComponent(authorityName);
+    return partialURI(authorityName);
   }
 
   /** replaces <xsl:call-template name="taxonNameBaseURI"> */
   function taxonNameBaseURI({ kingdom }: { kingdom: string }) {
     return `http://taxon-name.plazi.org/id/${
-      kingdom ? encodeURIComponent(kingdom.replaceAll(" ", "_")) : "Animalia"
+      kingdom ? partialURI(kingdom) : "Animalia"
     }`;
   }
 
@@ -970,19 +962,14 @@ export function gg2rdf(
   ): string {
     if (typeof taxonName === "string") {
       // unsure if this is ever called with a string?
+      const tn = normalizeSpace(taxonName);
       if (
-        taxonName.includes(",") &&
-        !normalizeSpace(substringBefore(taxonName, ",")).includes(" ")
+        tn.includes(",") &&
+        !substringBefore(tn, ",").includes(" ")
       ) {
-        return "/" + normalizeSpace(substringBefore(taxonName, ",")).replaceAll(
-          " ",
-          "_",
-        );
+        return "/" + partialURI(substringBefore(tn, ","));
       } else {
-        return "/" + normalizeSpace(substringBefore(taxonName, " ")).replaceAll(
-          " ",
-          "_",
-        );
+        return "/" + partialURI(substringBefore(tn, " "));
       }
     } else {
       let ranks = [
@@ -1044,15 +1031,9 @@ export function gg2rdf(
           ranks.includes("variety") ? taxonName.getAttribute("variety") : "",
           ranks.includes("form") ? taxonName.getAttribute("form") : "",
         ];
-        return "/" +
-          names.filter((n) => !!n).map(normalizeSpace).map((n) =>
-            n.replaceAll(" ", "_")
-          ).join("_");
+        return "/" + partialURI(names.filter((n) => !!n).join("_"));
       } else {
-        return "/" + normalizeSpace(taxonName.getAttribute(rank)).replaceAll(
-          " ",
-          "_",
-        );
+        return "/" + partialURI(normalizeSpace(taxonName.getAttribute(rank)));
       }
     }
   }
@@ -1062,12 +1043,11 @@ export function gg2rdf(
    * @returns valid turtle uri
    */
   function taxonNameURI(taxonName: Element, rankLimit?: string) {
-    return `<${
-      encodeURI(
-        taxonNameBaseURI({ kingdom: taxonName.getAttribute("kingdom") }) +
-          taxonNameForURI({ taxonName }, rankLimit),
-      )
-    }>`;
+    return URI(
+      taxonNameBaseURI({ kingdom: taxonName.getAttribute("kingdom") }) +
+        taxonNameForURI({ taxonName }, rankLimit),
+      "_",
+    );
   }
 
   /** returns plain uri
@@ -1075,7 +1055,7 @@ export function gg2rdf(
    * replaces <xsl:call-template name="taxonConceptBaseURI"> */
   function taxonConceptBaseURI({ kingdom }: { kingdom: string }) {
     return `http://taxon-concept.plazi.org/id/${
-      kingdom ? encodeURIComponent(kingdom.replaceAll(" ", "_")) : "Animalia"
+      kingdom ? partialURI(kingdom) : "Animalia"
     }`;
   }
 
@@ -1088,12 +1068,10 @@ export function gg2rdf(
       taxonAuthority: string;
     },
   ) {
-    return `<${
-      encodeURI(
-        taxonConceptBaseURI({ kingdom: taxonName.getAttribute("kingdom") }) +
-          taxonNameForURI({ taxonName }) + taxonAuthority,
-      )
-    }>`;
+    return URI(
+      taxonConceptBaseURI({ kingdom: taxonName.getAttribute("kingdom") }) +
+        taxonNameForURI({ taxonName }) + taxonAuthority,
+    );
   }
 
   /** → turtle snippet a la `"author1", "author2", ... "authorN"` */
@@ -1126,30 +1104,41 @@ export function gg2rdf(
   function getPublication() {
     const doiID: string | undefined = doc.getAttribute("ID-DOI");
     if (!doiID) {
-      return `<http://publication.plazi.org/id/${
-        encodeURIComponent(doc.getAttribute("masterDocId"))
-      }>`;
+      return URI(
+        `http://publication.plazi.org/id/${
+          partialURI(doc.getAttribute("masterDocId"))
+        }`,
+      );
     }
     if (doiID.includes("doi.org")) {
-      return escapeDoi((normalizeSpace(doiID)).replaceAll(" ", ""));
+      return escapeDoi(doiID);
     }
     const docSource: string | undefined = doc.getAttribute("docSource");
     if (docSource?.includes("doi.org")) {
-      return escapeDoi((normalizeSpace(docSource)).replaceAll(" ", ""));
+      return escapeDoi(docSource);
     }
-    return escapeDoi(
-      `http://dx.doi.org/${(normalizeSpace(doiID)).replaceAll(" ", "")}`,
-    );
+    return escapeDoi(`http://dx.doi.org/${doiID}`);
   }
 
-  function escapeDoi(url: string) {
-    return `<${encodeURI(url)}>`;
+  function escapeDoi(uri: string) {
+    return URI(uri);
     // TODO: check if this is enough or if more advanced escaping is neccesary
     // <xsl:template name="escapeDoi"> is very complicated, but I dont understand why exactly
   }
 
   function STR(s: string) {
     return `"${s.replace(/"/g, `\\"`).replace(/\n/g, "\\n")}"`;
+  }
+
+  /** removes reserved uri characters from `s`, to be later passed to URI */
+  function partialURI(s: string) {
+    if (!s) return "";
+    return s.replace(/[;\/\?:@&=\+\$,#]+/g, " ");
+  }
+
+  function URI(uri: string, replaceSpace = "") {
+    if (!uri) return "[]"; // unique blank node
+    return `<${encodeURI(uri.trim().replace(/\s+/g, replaceSpace))}>`;
   }
 
   /** returns the part of s before c, not including c
@@ -1169,8 +1158,7 @@ export function gg2rdf(
 
   function normalizeSpace(s: string) {
     if (!s) return "";
-    // deno-lint-ignore no-control-regex
-    return s.replace(/(\x20|\x09|\x0A|\x0D)+/, " ").trim();
+    return s.replace(/\s+/, " ").trim();
   }
 
   /** this function should only be called with valid turtle segments,

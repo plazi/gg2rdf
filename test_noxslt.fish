@@ -33,7 +33,7 @@ end
 
 deno run --allow-write --allow-read src/gg2rdf.ts -i {$xml} -o {$tmpDir}/test.ttl
 rapper -rq -i turtle {$tmpDir}/test.ttl | sort > {$tmpDir}/test.n3
-rapper -rq -i turtle {$ref} | sed '/file:\/\/\//d' -  | sed '/hasParentName|creator|ID-CoL/d' - | sort > {$tmpDir}/ref.n3
+rapper -rq -i turtle {$ref} | sed '/file:\/\/\//d' -  | sed '/hasParentName|creator|ID-CoL/d' - | sed '/hasRepresentation/d' - | sort > {$tmpDir}/ref.n3
 # sed to remove all (originally) wrong links with missing baseUri
 # also ignore all changes due to added intermediary taxon names into hierarchy
 
