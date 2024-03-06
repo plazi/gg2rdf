@@ -626,8 +626,12 @@ export function gg2rdf(
     let nextRankLimit = "";
 
     ranks.map((n: string) => {
-      if (taxon.getAttribute(n)) {
-        s.addProperty(`dwc:${n}`, STR(normalizeSpace(taxon.getAttribute(n))));
+      const attr = taxon.getAttribute(n);
+      if (attr) {
+        s.addProperty(`dwc:${n}`, STR(normalizeSpace(attr)));
+        if ((attr + "").includes(".")) {
+          s.addProperty("# Warning:", `abbreviated ${n} ${STR(attr)}`);
+        }
         nextRankLimit = n;
       }
     });
