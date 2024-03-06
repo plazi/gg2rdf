@@ -961,86 +961,73 @@ export function gg2rdf(
    *
    * replaces <xsl:call-template name="taxonNameForURI"> */
   function taxonNameForURI(
-    { taxonName }: { taxonName: Element | string },
+    taxonName: Element,
     rankLimit?: string,
   ): string {
-    if (typeof taxonName === "string") {
-      // unsure if this is ever called with a string?
-      const tn = normalizeSpace(taxonName);
-      if (
-        tn.includes(",") &&
-        !substringBefore(tn, ",").includes(" ")
-      ) {
-        return "/" + partialURI(substringBefore(tn, ","));
-      } else {
-        return "/" + partialURI(substringBefore(tn, " "));
+    let ranks = [
+      "kingdom",
+      "phylum",
+      "subPhylum",
+      "class",
+      "subClass",
+      "order",
+      "subOrder",
+      "superFamily",
+      "family",
+      "subFamily",
+      "tribe",
+      "subTribe",
+      "genus",
+      "subGenus",
+      "species",
+      "undef-species",
+      "subSpecies",
+      "variety",
+      "form",
+    ].filter((r) => taxonName.hasAttribute(r));
+
+    let rank = taxonName.getAttribute("rank");
+
+    if (rankLimit) {
+      if (rankLimit === "kingdom") return ""; // nowhere else to go!
+      if (ranks.indexOf(rankLimit) > 0) {
+        ranks = ranks.slice(0, ranks.indexOf(rankLimit));
+        rank = ranks[ranks.length - 1];
       }
-    } else {
-      let ranks = [
-        "kingdom",
-        "phylum",
-        "subPhylum",
-        "class",
-        "subClass",
-        "order",
-        "subOrder",
-        "superFamily",
-        "family",
-        "subFamily",
-        "tribe",
-        "subTribe",
-        "genus",
+    }
+    if (rank === "kingdom") return "";
+
+    if (
+      [
         "subGenus",
         "species",
         "undef-species",
         "subSpecies",
         "variety",
         "form",
-      ].filter((r) => taxonName.hasAttribute(r));
-
-      let rank = taxonName.getAttribute("rank");
-
-      if (rankLimit) {
-        if (rankLimit === "kingdom") return ""; // nowhere else to go!
-        if (ranks.indexOf(rankLimit) > 0) {
-          ranks = ranks.slice(0, ranks.indexOf(rankLimit));
-          rank = ranks[ranks.length - 1];
-        }
-      }
-      if (rank === "kingdom") return "";
-
-      if (
-        [
-          "subGenus",
-          "species",
-          "undef-species",
-          "subSpecies",
-          "variety",
-          "form",
-        ].includes(rank)
-      ) {
-        const names: string[] = [
-          taxonName.getAttribute("genus"),
-          ranks.includes("species")
-            ? taxonName.getAttribute("species")
-            : ranks.includes("subGenus")
-            ? taxonName.getAttribute("subGenus") // only put subGenus if no species present
-            : "",
-          ranks.includes("undef-species")
-            ? taxonName.getAttribute("undef-species")
-            : "",
-          ranks.includes("subSpecies")
-            ? taxonName.getAttribute("subSpecies")
-            : "",
-          ranks.includes("variety") ? taxonName.getAttribute("variety") : "",
-          ranks.includes("form") ? taxonName.getAttribute("form") : "",
-        ];
-        return "/" +
-          partialURI(names.filter((n) => !!n).join("_").replaceAll(".", ""));
-      } else {
-        return "/" +
-          partialURI(taxonName.getAttribute(rank).replaceAll(".", ""));
-      }
+      ].includes(rank)
+    ) {
+      const names: string[] = [
+        taxonName.getAttribute("genus"),
+        ranks.includes("species")
+          ? taxonName.getAttribute("species")
+          : ranks.includes("subGenus")
+          ? taxonName.getAttribute("subGenus") // only put subGenus if no species present
+          : "",
+        ranks.includes("undef-species")
+          ? taxonName.getAttribute("undef-species")
+          : "",
+        ranks.includes("subSpecies")
+          ? taxonName.getAttribute("subSpecies")
+          : "",
+        ranks.includes("variety") ? taxonName.getAttribute("variety") : "",
+        ranks.includes("form") ? taxonName.getAttribute("form") : "",
+      ];
+      return "/" +
+        partialURI(names.filter((n) => !!n).join("_").replaceAll(".", ""));
+    } else {
+      return "/" +
+        partialURI(taxonName.getAttribute(rank).replaceAll(".", ""));
     }
   }
 
@@ -1051,7 +1038,7 @@ export function gg2rdf(
   function taxonNameURI(taxonName: Element, rankLimit?: string) {
     return URI(
       taxonNameBaseURI({ kingdom: taxonName.getAttribute("kingdom") }) +
-        taxonNameForURI({ taxonName }, rankLimit),
+        taxonNameForURI(taxonName, rankLimit),
       "_",
     );
   }
@@ -1076,7 +1063,7 @@ export function gg2rdf(
   ) {
     return URI(
       taxonConceptBaseURI({ kingdom: taxonName.getAttribute("kingdom") }) +
-        taxonNameForURI({ taxonName }) + taxonAuthority,
+        taxonNameForURI(taxonName) + taxonAuthority,
     );
   }
 
