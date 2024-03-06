@@ -605,6 +605,9 @@ export function gg2rdf(
       "subTribe",
       "genus",
       "subGenus",
+      "section",
+      "subSection",
+      "series",
       "species",
       "undef-species",
       "subSpecies",
@@ -989,6 +992,9 @@ export function gg2rdf(
       "subTribe",
       "genus",
       "subGenus",
+      "section",
+      "subSection",
+      "series",
       "species",
       "undef-species",
       "subSpecies",
@@ -1010,6 +1016,9 @@ export function gg2rdf(
     if (
       [
         "subGenus",
+        "section",
+        "subSection",
+        "series",
         "species",
         "undef-species",
         "subSpecies",
@@ -1021,9 +1030,13 @@ export function gg2rdf(
         taxonName.getAttribute("genus"),
         ranks.includes("species")
           ? taxonName.getAttribute("species")
-          : ranks.includes("subGenus")
-          ? taxonName.getAttribute("subGenus") // only put subGenus if no species present
-          : "",
+          // only put subGenus if no species present
+          : [
+            taxonName.getAttribute("subGenus"),
+            taxonName.getAttribute("section"),
+            taxonName.getAttribute("subSection"),
+            taxonName.getAttribute("series"),
+          ],
         ranks.includes("undef-species")
           ? taxonName.getAttribute("undef-species")
           : "",
@@ -1034,7 +1047,9 @@ export function gg2rdf(
         ranks.includes("form") ? taxonName.getAttribute("form") : "",
       ];
       return "/" +
-        partialURI(names.filter((n) => !!n).join("_").replaceAll(".", ""));
+        partialURI(
+          names.flat().filter((n) => !!n).join("_").replaceAll(".", ""),
+        );
     } else {
       const sigEpithet = normalizeSpace(taxonName.getAttribute(rank));
       if (sigEpithet) {
