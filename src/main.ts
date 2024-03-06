@@ -123,6 +123,7 @@ const webhookHandler = async (request: Request) => {
           till: json.after,
           author: json.pusher,
         };
+        db.addJob(job);
         worker.postMessage(job);
         console.log(
           `Job submitted: ${JSON.stringify(job, undefined, 2)}`,
