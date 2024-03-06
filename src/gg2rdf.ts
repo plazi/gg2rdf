@@ -113,12 +113,15 @@ export function gg2rdf(
         errors.push("the treatment taxon is lacking its rank attribute");
       }
       const sigEpithet = normalizeSpace(taxon.getAttribute(rank)); // get the attribute with the rank as the name
-      if (sigEpithet.match(/[^a-zA-Z\-]/)) {
+      const isValid = (
+        name: string,
+      ) => (!name.match(/[^a-zA-Z.\-'’]/) || !!name.match(/(undefined|sp\.?|species)\s*-?[0-9]*$/));
+      if (!isValid(sigEpithet)) {
         errors.push(`sigEpithet '${sigEpithet}' contains invalid characters`);
       }
       if (
         (rank === "subSpecies" || rank === "variety") &&
-        normalizeSpace(taxon.getAttribute("species")).match(/[^a-zA-Z\-]/)
+        !isValid(normalizeSpace(taxon.getAttribute("species")))
       ) {
         errors.push(
           `species '${
@@ -129,7 +132,7 @@ export function gg2rdf(
       if (
         (rank === "subGenus" || rank === "species" || rank === "subSpecies" ||
           rank === "variety") &&
-        normalizeSpace(taxon.getAttribute("genus")).match(/[^a-zA-Z\-]/)
+        !isValid(normalizeSpace(taxon.getAttribute("genus")))
       ) {
         errors.push(
           `genus '${
@@ -139,7 +142,7 @@ export function gg2rdf(
       }
       if (
         (rank === "subFamily" || rank === "tribe" || rank === "subTribe") &&
-        normalizeSpace(taxon.getAttribute("family")).match(/[^a-zA-Z\-]/)
+        !isValid(normalizeSpace(taxon.getAttribute("family")))
       ) {
         errors.push(
           `family '${
@@ -149,7 +152,7 @@ export function gg2rdf(
       }
       if (
         rank === "subOrder" &&
-        normalizeSpace(taxon.getAttribute("order")).match(/[^a-zA-Z\-]/)
+        !isValid(normalizeSpace(taxon.getAttribute("order")))
       ) {
         errors.push(
           `order '${
@@ -159,7 +162,7 @@ export function gg2rdf(
       }
       if (
         rank === "subClass" &&
-        normalizeSpace(taxon.getAttribute("class")).match(/[^a-zA-Z\-]/)
+        !isValid(normalizeSpace(taxon.getAttribute("class")))
       ) {
         errors.push(
           `class '${
@@ -169,7 +172,7 @@ export function gg2rdf(
       }
       if (
         rank === "subPhylum" &&
-        normalizeSpace(taxon.getAttribute("phylum")).match(/[^a-zA-Z\-]/)
+        !isValid(normalizeSpace(taxon.getAttribute("phylum")))
       ) {
         errors.push(
           `phylum '${
