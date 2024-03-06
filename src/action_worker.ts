@@ -58,7 +58,7 @@ async function gatherJobsForFullUpdate() {
         files.push(
           walkEntry.path.replace(`${config.workDir}/repo/source/`, ""),
         );
-        if (files.length >= 500) {
+        if (files.length >= 2000) {
           jobs.push({
             author: {
               name: "GG2RDF Service",
