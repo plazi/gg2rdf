@@ -107,90 +107,13 @@ export function gg2rdf(
     );
     if (!taxon) {
       errors.push("the treatment is lacking the taxon");
-    } else {
-      const rank = taxon.getAttribute("rank");
-      if (!rank) {
-        errors.push("the treatment taxon is lacking its rank attribute");
-      }
-      const sigEpithet = normalizeSpace(taxon.getAttribute(rank)); // get the attribute with the rank as the name
-      const isValid = (
-        name: string,
-      ) => (!!name && (!name.match(/[^a-zA-Z.\-'’]/) ||
-        !!name.match(/(undefined|sp\.?|species)\s*-?[0-9]*$/)));
-      if (!isValid(sigEpithet)) {
-        errors.push(
-          `sigEpithet ${STR(sigEpithet)} contains invalid characters`,
-        );
-      }
-      if (
-        (rank === "subSpecies" || rank === "variety") &&
-        !isValid(normalizeSpace(taxon.getAttribute("species")))
-      ) {
-        errors.push(
-          `species ${
-            STR(taxon.getAttribute("species"))
-          } contains invalid characters`,
-        );
-      }
-      if (
-        (rank === "subGenus" || rank === "species" || rank === "subSpecies" ||
-          rank === "variety") &&
-        !isValid(normalizeSpace(taxon.getAttribute("genus")))
-      ) {
-        errors.push(
-          `genus ${
-            STR(taxon.getAttribute("genus"))
-          } contains invalid characters`,
-        );
-      }
-      if (
-        (rank === "subFamily" || rank === "tribe" || rank === "subTribe") &&
-        !isValid(normalizeSpace(taxon.getAttribute("family")))
-      ) {
-        errors.push(
-          `family ${
-            STR(taxon.getAttribute("family"))
-          } contains invalid characters`,
-        );
-      }
-      if (
-        rank === "subOrder" &&
-        !isValid(normalizeSpace(taxon.getAttribute("order")))
-      ) {
-        errors.push(
-          `order ${
-            STR(taxon.getAttribute("order"))
-          } contains invalid characters`,
-        );
-      }
-      if (
-        rank === "subClass" &&
-        !isValid(normalizeSpace(taxon.getAttribute("class")))
-      ) {
-        errors.push(
-          `class ${
-            STR(taxon.getAttribute("class"))
-          } contains invalid characters`,
-        );
-      }
-      if (
-        rank === "subPhylum" &&
-        !isValid(normalizeSpace(taxon.getAttribute("phylum")))
-      ) {
-        errors.push(
-          `phylum ${
-            STR(taxon.getAttribute("phylum"))
-          } contains invalid characters`,
-        );
-      }
-      if (!taxon.getAttribute("kingdom")) {
-        log(
-          "Warning: treatment taxon is missing ancestor kingdom, defaulting to 'Animalia'",
-        );
-        output(
-          "# Warning: treatment taxon is missing ancestor kingdom, defaulting to 'Animalia'",
-        );
-      }
+    } else if (!taxon.getAttribute("kingdom")) {
+      log(
+        "Warning: treatment taxon is missing ancestor kingdom, defaulting to 'Animalia'",
+      );
+      output(
+        "# Warning: treatment taxon is missing ancestor kingdom, defaulting to 'Animalia'",
+      );
     }
     if (errors.length) {
       throw new Error(
@@ -198,6 +121,77 @@ export function gg2rdf(
           errors.join("\n - "),
       );
     }
+  }
+
+  function checkForEpithetErrors(taxon: Element): string[] {
+    const errors: string[] = [];
+    const rank = taxon.getAttribute("rank");
+    const sigEpithet = normalizeSpace(taxon.getAttribute(rank)); // get the attribute with the rank as the name
+    const isValid = (
+      name: string,
+    ) => (!!name && (!name.match(/[^a-zA-Z.\-'’]/) ||
+      !!name.match(/(undefined|sp\.?|species)\s*-?[0-9]*$/)));
+    if (!isValid(sigEpithet)) {
+      errors.push(
+        `sigEpithet ${STR(sigEpithet)} contains invalid characters`,
+      );
+    }
+    if (
+      (rank === "subSpecies" || rank === "variety") &&
+      !isValid(normalizeSpace(taxon.getAttribute("species")))
+    ) {
+      errors.push(
+        `species ${
+          STR(taxon.getAttribute("species"))
+        } contains invalid characters`,
+      );
+    }
+    if (
+      (rank === "subGenus" || rank === "species" || rank === "subSpecies" ||
+        rank === "variety") &&
+      !isValid(normalizeSpace(taxon.getAttribute("genus")))
+    ) {
+      errors.push(
+        `genus ${STR(taxon.getAttribute("genus"))} contains invalid characters`,
+      );
+    }
+    if (
+      (rank === "subFamily" || rank === "tribe" || rank === "subTribe") &&
+      !isValid(normalizeSpace(taxon.getAttribute("family")))
+    ) {
+      errors.push(
+        `family ${
+          STR(taxon.getAttribute("family"))
+        } contains invalid characters`,
+      );
+    }
+    if (
+      rank === "subOrder" &&
+      !isValid(normalizeSpace(taxon.getAttribute("order")))
+    ) {
+      errors.push(
+        `order ${STR(taxon.getAttribute("order"))} contains invalid characters`,
+      );
+    }
+    if (
+      rank === "subClass" &&
+      !isValid(normalizeSpace(taxon.getAttribute("class")))
+    ) {
+      errors.push(
+        `class ${STR(taxon.getAttribute("class"))} contains invalid characters`,
+      );
+    }
+    if (
+      rank === "subPhylum" &&
+      !isValid(normalizeSpace(taxon.getAttribute("phylum")))
+    ) {
+      errors.push(
+        `phylum ${
+          STR(taxon.getAttribute("phylum"))
+        } contains invalid characters`,
+      );
+    }
+    return errors;
   }
 
   /** outputs turtle describing the treatment
@@ -209,30 +203,41 @@ export function gg2rdf(
     const taxon: Element = document.querySelector(
       'document treatment subSubSection[type="nomenclature"] taxonomicName',
     ); // existence asserted by checkForErrors
-    const rank: string = taxon.getAttribute("rank");
-    const taxonStatus: string = taxon.getAttribute("status") ??
-      taxon.parentNode.querySelector(
-        `taxonomicName ~ taxonomicNameLabel[rank="${rank}"]`,
-      )?.innerText ?? "ABSENT";
 
-    const taxonConcept = makeTaxonConcept(taxon, taxon);
-
-    // add reference to subject taxon concept, using taxon name as a fallback if we're lacking a valid authority
-    if (!taxonConcept.ok) {
-      // no valid authority given, fall back to taxon name
-      t.addProperty("trt:treatsTaxonName", taxonNameURI(taxon));
+    const epithetErrors = checkForEpithetErrors(taxon);
+    if (epithetErrors.length) {
+      epithetErrors.forEach((e) => {
+        t.addProperty("# Warning: Could not add treatment taxon because", e);
+        log(`Warning: Could not add treatment taxon because ${e}`);
+      });
     } else {
-      // we have a valid authority, go for the taxon stringconcept
-      if (taxonStatus === "nomen dubium") {
-        t.addProperty(`trt:deprecates`, taxonConcept.uri);
-      } else if (
-        taxonStatus !== "ABSENT" ||
-        taxon.parentNode.querySelector(`taxonomicName ~ taxonomicNameLabel`)
-      ) {
-        t.addProperty(`trt:definesTaxonConcept`, taxonConcept.uri);
+      const rank: string = taxon.getAttribute("rank");
+      const taxonStatus: string = taxon.getAttribute("status") ??
+        taxon.parentNode.querySelector(
+          `taxonomicName ~ taxonomicNameLabel[rank="${rank}"]`,
+        )?.innerText ?? "ABSENT";
+
+      const taxonConcept = makeTaxonConcept(taxon, taxon);
+
+      // add reference to subject taxon concept, using taxon name as a fallback if we're lacking a valid authority
+      if (!taxonConcept.ok) {
+        // no valid authority given, fall back to taxon name
+        t.addProperty("trt:treatsTaxonName", taxonNameURI(taxon));
       } else {
-        t.addProperty(`trt:augmentsTaxonConcept`, taxonConcept.uri);
+        // we have a valid authority, go for the taxon stringconcept
+        if (taxonStatus === "nomen dubium") {
+          t.addProperty(`trt:deprecates`, taxonConcept.uri);
+        } else if (
+          taxonStatus !== "ABSENT" ||
+          taxon.parentNode.querySelector(`taxonomicName ~ taxonomicNameLabel`)
+        ) {
+          t.addProperty(`trt:definesTaxonConcept`, taxonConcept.uri);
+        } else {
+          t.addProperty(`trt:augmentsTaxonConcept`, taxonConcept.uri);
+        }
       }
+
+      makeTaxonName(taxon);
     }
 
     if (doc.hasAttribute("docTitle")) {
@@ -282,8 +287,6 @@ export function gg2rdf(
     t.addProperty(`a`, `trt:Treatment`);
 
     outputSubject(t);
-
-    makeTaxonName(taxon);
   }
 
   function getFigureUri(f: Element) {
@@ -1132,6 +1135,7 @@ export function gg2rdf(
   }
 
   function STR(s: string) {
+    if (!s) return `""`;
     return JSON.stringify(String(s));
   }
 
