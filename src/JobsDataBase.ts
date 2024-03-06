@@ -39,7 +39,7 @@ export class JobsDataBase {
     const status: JobStatus = {
       job,
       status: "pending",
-      dir: path.join(this.jobsDir, job.id),
+      dir: path.join(this.jobsDir, encodeURIComponent(job.id)),
     };
     Deno.mkdirSync(status.dir);
     Deno.writeTextFileSync(
@@ -52,7 +52,7 @@ export class JobsDataBase {
     const jobStatus: JobStatus = {
       job,
       status,
-      dir: path.join(this.jobsDir, job.id),
+      dir: path.join(this.jobsDir, encodeURIComponent(job.id)),
     };
     Deno.writeTextFileSync(
       path.join(jobStatus.dir, "status.json"),

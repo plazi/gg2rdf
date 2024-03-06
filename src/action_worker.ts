@@ -58,15 +58,15 @@ async function gatherJobsForFullUpdate() {
         files.push(
           walkEntry.path.replace(`${config.workDir}/repo/source/`, ""),
         );
-        if (files.length >= 2000) {
+        if (files.length >= 3000) { // github does not generate diffs if more than 3000 files have been changed
           jobs.push({
             author: {
               name: "GG2RDF Service",
               email: "gg2rdf@plazi.org",
             },
-            id: `${date} full update [${
-              (++block).toString(10).padStart(4, "0")
-            }`,
+            id: `${date} full update: ${
+              (++block).toString(10).padStart(3, "0")
+            }`, // note that the id must begin with a datestamp for correct ordering
             files: {
               modified: files,
             },
@@ -78,7 +78,7 @@ async function gatherJobsForFullUpdate() {
       }
     }
     jobs.forEach((j) => {
-      j.id += ` of ${block.toString(10).padStart(4, "0")}]`;
+      j.id += ` of ${block.toString(10).padStart(3, "0")}`;
       queue.addJob(j);
     });
     console.log(`succesfully created full-update jobs (${block} jobs)`);
