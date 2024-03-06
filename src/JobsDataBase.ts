@@ -1,4 +1,4 @@
-import * as path from "https://deno.land/std@0.209.0/path/mod.ts";
+import { path } from "./deps.ts";
 //import { config } from "../config/config.ts";
 
 //const jobsDir = `${config.workDir}/log`;

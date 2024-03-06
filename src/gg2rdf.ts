@@ -1,5 +1,5 @@
 import { DOMParser, parseArgs } from "./deps.ts";
-import type { Element } from "https://esm.sh/v135/linkedom@0.16.8/types/interface/element.d.ts";
+import type { Element } from "https://esm.sh/v135/linkedom@0.16.8/types/interface/element.d.ts"; // this does not work if imported via deps.ts for unclear reasons
 
 class Subject {
   properties: { [key: string]: Set<string> } = {};

@@ -1,9 +1,15 @@
-import { serveDir, serveFile, Server, Status, STATUS_TEXT } from "./deps.ts";
+import {
+  path,
+  serveDir,
+  serveFile,
+  Server,
+  Status,
+  STATUS_TEXT,
+} from "./deps.ts";
 import { config } from "../config/config.ts";
 import { createBadge } from "./log.ts";
 //import { getModifiedAfter } from "./repoActions.ts";
 import { Job, JobsDataBase } from "./JobsDataBase.ts";
-import * as path from "https://deno.land/std@0.209.0/path/mod.ts";
 
 const encoder = new TextEncoder();
 
