@@ -631,6 +631,7 @@ export function gg2rdf(
         s.addProperty(`dwc:${n}`, STR(normalizeSpace(attr)));
         if ((attr + "").includes(".")) {
           s.addProperty("# Warning:", `abbreviated ${n} ${STR(attr)}`);
+          if (!rankLimit) log(`Warning: abbreviated ${n} ${STR(attr)}`);
         }
         nextRankLimit = n;
       }
