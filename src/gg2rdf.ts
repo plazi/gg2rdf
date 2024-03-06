@@ -126,6 +126,10 @@ export function gg2rdf(
   function checkForEpithetErrors(taxon: Element): string[] {
     const errors: string[] = [];
     const rank = taxon.getAttribute("rank");
+    if (!rank) {
+      errors.push("the rank attribute is missing");
+      return errors;
+    }
     const sigEpithet = normalizeSpace(taxon.getAttribute(rank)); // get the attribute with the rank as the name
     const isValid = (
       name: string,
