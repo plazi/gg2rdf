@@ -115,19 +115,21 @@ export function gg2rdf(
       const sigEpithet = normalizeSpace(taxon.getAttribute(rank)); // get the attribute with the rank as the name
       const isValid = (
         name: string,
-      ) => (!name.match(/[^a-zA-Z.\-'’]/) ||
-        !!name.match(/(undefined|sp\.?|species)\s*-?[0-9]*$/));
+      ) => (!!name && (!name.match(/[^a-zA-Z.\-'’]/) ||
+        !!name.match(/(undefined|sp\.?|species)\s*-?[0-9]*$/)));
       if (!isValid(sigEpithet)) {
-        errors.push(`sigEpithet '${sigEpithet}' contains invalid characters`);
+        errors.push(
+          `sigEpithet ${STR(sigEpithet)} contains invalid characters`,
+        );
       }
       if (
         (rank === "subSpecies" || rank === "variety") &&
         !isValid(normalizeSpace(taxon.getAttribute("species")))
       ) {
         errors.push(
-          `species '${
-            normalizeSpace(taxon.getAttribute("species"))
-          }' contains invalid characters`,
+          `species ${
+            STR(taxon.getAttribute("species"))
+          } contains invalid characters`,
         );
       }
       if (
@@ -136,9 +138,9 @@ export function gg2rdf(
         !isValid(normalizeSpace(taxon.getAttribute("genus")))
       ) {
         errors.push(
-          `genus '${
-            normalizeSpace(taxon.getAttribute("genus"))
-          }' contains invalid characters`,
+          `genus ${
+            STR(taxon.getAttribute("genus"))
+          } contains invalid characters`,
         );
       }
       if (
@@ -146,9 +148,9 @@ export function gg2rdf(
         !isValid(normalizeSpace(taxon.getAttribute("family")))
       ) {
         errors.push(
-          `family '${
-            normalizeSpace(taxon.getAttribute("family"))
-          }' contains invalid characters`,
+          `family ${
+            STR(taxon.getAttribute("family"))
+          } contains invalid characters`,
         );
       }
       if (
@@ -156,9 +158,9 @@ export function gg2rdf(
         !isValid(normalizeSpace(taxon.getAttribute("order")))
       ) {
         errors.push(
-          `order '${
-            normalizeSpace(taxon.getAttribute("order"))
-          }' contains invalid characters`,
+          `order ${
+            STR(taxon.getAttribute("order"))
+          } contains invalid characters`,
         );
       }
       if (
@@ -166,9 +168,9 @@ export function gg2rdf(
         !isValid(normalizeSpace(taxon.getAttribute("class")))
       ) {
         errors.push(
-          `class '${
-            normalizeSpace(taxon.getAttribute("class"))
-          }' contains invalid characters`,
+          `class ${
+            STR(taxon.getAttribute("class"))
+          } contains invalid characters`,
         );
       }
       if (
@@ -176,9 +178,9 @@ export function gg2rdf(
         !isValid(normalizeSpace(taxon.getAttribute("phylum")))
       ) {
         errors.push(
-          `phylum '${
-            normalizeSpace(taxon.getAttribute("phylum"))
-          }' contains invalid characters`,
+          `phylum ${
+            STR(taxon.getAttribute("phylum"))
+          } contains invalid characters`,
         );
       }
       if (!taxon.getAttribute("kingdom")) {
@@ -1026,8 +1028,13 @@ export function gg2rdf(
       return "/" +
         partialURI(names.filter((n) => !!n).join("_").replaceAll(".", ""));
     } else {
-      return "/" +
-        partialURI(taxonName.getAttribute(rank).replaceAll(".", ""));
+      const sigEpithet = normalizeSpace(taxonName.getAttribute(rank));
+      if (sigEpithet) {
+        return "/" +
+          partialURI(taxonName.getAttribute(rank).replaceAll(".", ""));
+      } else {
+        throw new Error("Could not produce taxonNameURI");
+      }
     }
   }
 
