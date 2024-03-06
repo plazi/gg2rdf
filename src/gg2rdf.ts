@@ -115,7 +115,8 @@ export function gg2rdf(
       const sigEpithet = normalizeSpace(taxon.getAttribute(rank)); // get the attribute with the rank as the name
       const isValid = (
         name: string,
-      ) => (!name.match(/[^a-zA-Z.\-'’]/) || !!name.match(/(undefined|sp\.?|species)\s*-?[0-9]*$/));
+      ) => (!name.match(/[^a-zA-Z.\-'’]/) ||
+        !!name.match(/(undefined|sp\.?|species)\s*-?[0-9]*$/));
       if (!isValid(sigEpithet)) {
         errors.push(`sigEpithet '${sigEpithet}' contains invalid characters`);
       }
@@ -1034,9 +1035,11 @@ export function gg2rdf(
           ranks.includes("variety") ? taxonName.getAttribute("variety") : "",
           ranks.includes("form") ? taxonName.getAttribute("form") : "",
         ];
-        return "/" + partialURI(names.filter((n) => !!n).join("_"));
+        return "/" +
+          partialURI(names.filter((n) => !!n).join("_").replaceAll(".", ""));
       } else {
-        return "/" + partialURI(normalizeSpace(taxonName.getAttribute(rank)));
+        return "/" +
+          partialURI(taxonName.getAttribute(rank).replaceAll(".", ""));
       }
     }
   }
@@ -1136,7 +1139,7 @@ export function gg2rdf(
   /** removes reserved uri characters from `s`, to be later passed to URI */
   function partialURI(s: string) {
     if (!s) return "";
-    return s.replace(/[;\/\?:@&=\+\$,#]+/g, " ");
+    return normalizeSpace(s.replace(/[;\/\?:@&=\+\$,#]+/g, " "));
   }
 
   function URI(uri: string, replaceSpace = "") {
