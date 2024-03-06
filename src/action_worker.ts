@@ -109,21 +109,18 @@ function run() {
       if (job.files) {
         modified = job.files.modified || [];
         removed = job.files.removed || [];
-        message =
-          `committed by action runner ${config.sourceRepository} ${job.id}`;
+        message = `GG2RDF ${job.id} (${config.sourceRepository})`;
         updateLocalData("source", log); // also done by getModifiedAfter
       } else if (job.from) {
         const files = getModifiedAfter(job.from, job.till, log);
         modified = [...files.added, ...files.modified];
         removed = files.removed;
         if (files.till && files.till !== "HEAD") {
-          message =
-            `committed by action runner ${config.sourceRepository}@${files.till}`;
+          message = `GG2RDF ${config.sourceRepository}@${files.till}`;
           job.till = files.till;
           queue.setStatus(job, "pending"); // updates `till`
         } else {
-          message =
-            `committed by action runner ${config.sourceRepository}@${job.id}`;
+          message = `GG2RDF ${job.id} (${config.sourceRepository})`;
         }
       } else {
         throw new Error(
