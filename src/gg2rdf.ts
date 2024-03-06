@@ -1120,7 +1120,7 @@ export function gg2rdf(
   }
 
   function STR(s: string) {
-    return `"${s.replace(/"/g, `\\"`).replace(/\n/g, "\\n")}"`;
+    return JSON.stringify(String(s));
   }
 
   /** removes reserved uri characters from `s`, to be later passed to URI */
