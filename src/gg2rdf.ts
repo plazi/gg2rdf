@@ -445,7 +445,7 @@ export function gg2rdf(
     if (cTaxon.getAttribute("authority")) {
       s.addProperty(
         "dwc:scientificNameAuthorship",
-        STR(normalizeSpace(cTaxon.getAttribute("authority"))),
+        STR(normalizeAuthority(cTaxon.getAttribute("authority"))),
       );
     } else if (
       cTaxon.getAttribute("baseAuthorityName") &&
@@ -455,7 +455,7 @@ export function gg2rdf(
         "dwc:scientificNameAuthorship",
         `${
           STR(
-            normalizeSpace(
+            normalizeAuthority(
               `${cTaxon.getAttribute("baseAuthorityName")}, ${
                 cTaxon.getAttribute("baseAuthorityYear")
               }`,
@@ -470,7 +470,7 @@ export function gg2rdf(
       s.addProperty(
         "dwc:scientificNameAuthorship",
         STR(
-          normalizeSpace(
+          normalizeAuthority(
             `${cTaxon.getAttribute("authorityName")}, ${
               cTaxon.getAttribute("authorityYear")
             }`,
@@ -482,7 +482,7 @@ export function gg2rdf(
       s.addProperty(
         "dwc:scientificNameAuthorship",
         STR(
-          normalizeSpace(
+          normalizeAuthority(
             `${doc.getAttribute("docAuthor")}, ${doc.getAttribute("docDate")}`,
           ),
         ),
@@ -516,6 +516,15 @@ export function gg2rdf(
     s.addProperty("a", "dwcFP:TaxonConcept");
     makeTaxonName(cTaxon);
     return { ok: true, uri };
+  }
+
+  /** for dwc:scientificNameAuthorship and dwc:authority */
+  function normalizeAuthority(a: string): string {
+    if (!a) return "";
+    return normalizeSpace(a).replace(
+      /\s*,?\s*(\(?[0-9]{4}\)?)\s*[a-z]*\s*:\s*[0-9]*\s*[a-z]*\s*(\)?)\s*$/,
+      ", $1$2",
+    ).replace(/\)\)/, ")");
   }
 
   /** replaces <xsl:template match="materialsCitation[@specimenCode]" mode="subject"> */
