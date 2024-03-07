@@ -1,7 +1,7 @@
-FROM denoland/deno:ubuntu-1.39.0
+FROM denoland/deno:ubuntu-1.41.1
 
 RUN apt update
-RUN DEBIAN_FRONTEND=noninteractive apt install -y raptor2-utils openjdk-11-jdk git curl
+RUN DEBIAN_FRONTEND=noninteractive apt install -y raptor2-utils openjdk-17-jre-headless git
 RUN git config --system http.postBuffer 1048576000
 RUN git config --system --add safe.directory /workspaces/gg2rdf
 
@@ -12,6 +12,8 @@ WORKDIR /app
 
 # Prefer not to run as root.
 # USER deno
+
+ADD apache-jena-5.0.0-rc1.tar.gz jena
 
 # Cache the dependencies as a layer (the following two steps are re-run only when deps.ts is modified).
 # Ideally cache deps.ts will download and compile _all_ external files used in main.ts.
