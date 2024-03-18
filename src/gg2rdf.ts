@@ -69,7 +69,7 @@ export function gg2rdf(
   const doc = document.querySelector("document") as Element;
   if (!doc) {
     log(`Error: missing <document> in ${inputPath}.`);
-    output("# Could not create RDF due to missing <document>");
+    output("# Error: Could not create RDF due to missing <document>");
   }
   const id = partialURI(doc.getAttribute("docId") || "") || "MISSING_ID";
   log(`starting gg2rdf on document id: ${id}`);
@@ -92,8 +92,9 @@ export function gg2rdf(
   } catch (error) {
     log(error);
     output(
-      "# There was some Error in gg2rdf\n" +
-        ("# " + error).replace(/\n/g, "\n# "),
+      `# There was some Error in gg2rdf\n${error}\n${
+        error.stack ?? "[no stacktrace]"
+      }`.replace(/\n/g, "\n# "),
     );
   }
 
