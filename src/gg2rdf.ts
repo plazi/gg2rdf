@@ -523,9 +523,15 @@ export function gg2rdf(
   function normalizeAuthority(a: string): string {
     if (!a) return "";
     let result = normalizeSpace(a).replace(
-      /\s*,?\s*(\(?[0-9]{4}\)?)\s*[a-z]*\s*:\s*[0-9]*\s*[a-z]*\s*(\)?)\s*$/,
+      /\s*,?\s*(\(?[0-9]{4}\)?)\s*[a-z]*\s*:?(?:\s*[0-9]*\s*[a-z-]*\s*,?)*(\)?)\s*$/,
       ", $1$2",
-    ).replace(/\)\)$/, ")").replace(/^\s*[,:;]+\s*/, "");
+    ).replace(
+      /\)\)$/,
+      ")",
+    ).replace(
+      /^\s*[,:;]+\s*/,
+      "",
+    );
     if (result.lastIndexOf("(") > result.lastIndexOf(")")) {
       result += ")"; // sometimes closing brace is missing
     }
