@@ -795,13 +795,13 @@ export function gg2rdf(
     ) {
       if (cTaxonAuthority === "INVALID") {
         t.addProperty(
-          "# Warning",
+          "# Warning:",
           `Not adding 'trt:citesTaxonName ${
             taxonNameURI(cTaxon)
           }' due to issues with rank`,
         );
       } else {t.addProperty(
-          "# Warning",
+          "# Warning:",
           `Not adding 'trt:citesTaxonName ${
             taxonConceptURI({
               taxonName: cTaxon,
