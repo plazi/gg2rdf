@@ -457,9 +457,9 @@ export function gg2rdf(
         `${
           STR(
             normalizeAuthority(
-              `${cTaxon.getAttribute("baseAuthorityName")}, ${
+              `(${cTaxon.getAttribute("baseAuthorityName")}, ${
                 cTaxon.getAttribute("baseAuthorityYear")
-              }`,
+              })`,
             ),
           )
         }`,
@@ -528,6 +528,9 @@ export function gg2rdf(
     ).replace(
       /\)\)$/,
       ")",
+    ).replace(
+      /^\(\(/,
+      "(",
     ).replace(
       /^\s*[,:;]+\s*/,
       "",
