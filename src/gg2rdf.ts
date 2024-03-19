@@ -443,7 +443,8 @@ export function gg2rdf(
 
     s.addProperty("trt:hasTaxonName", taxonNameURI(cTaxon));
 
-    s.addProperty("trt:verbatim", STR(cTaxon.innerText));
+    // for debugging only
+    // s.addProperty("trt:verbatim", STR(cTaxon.innerText));
 
     let baseAuthority: string = cTaxon.getAttribute("baseAuthorityName") ?? "";
     if (baseAuthority) {
