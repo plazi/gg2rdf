@@ -422,7 +422,7 @@ export function gg2rdf(
         "higherTaxonomySource",
         "status",
       ].includes(n) && !n.startsWith("_") &&
-      !n.match(/\.|authority|Authority|evidence|Evicence|lsidName/)
+      !n.match(/\.|evidence|Evicence|lsidName/)
     ).forEach((n: string) => {
       // the xslt seems to special-case this, but output comparison suggests otherwise?
       // this is because it was only changed recently, so the change was not immediately obvious.
@@ -443,75 +443,112 @@ export function gg2rdf(
 
     s.addProperty("trt:hasTaxonName", taxonNameURI(cTaxon));
 
-    if (cTaxon.getAttribute("authority")) {
+    s.addProperty("trt:verbatim", STR(cTaxon.innerText));
+
+    let baseAuthority: string = cTaxon.getAttribute("baseAuthorityName") ?? "";
+    if (baseAuthority) {
+      baseAuthority = substringBefore(baseAuthority, " in ");
+      if (baseAuthority.length >= 2) {
+        baseAuthority = baseAuthority.replace(
+          /\w[A-Z]+\b[^.]/g,
+          (s) => s[0] + s.slice(1).toLowerCase(),
+        );
+      }
+      if (cTaxon.hasAttribute("baseAuthorityYear")) {
+        baseAuthority += ", " + cTaxon.getAttribute("baseAuthorityYear");
+      }
+
+      baseAuthority = normalizeAuthority("(" + baseAuthority + ")");
+    }
+    let authority: string = cTaxon.getAttribute("authorityName") ?? "";
+    if (authority) {
+      authority = substringBefore(authority, " in ");
+      if (authority === "L.") authority = "Linnaeus";
+      if (authority.length >= 2) {
+        authority = authority.replace(
+          /\w[A-Z]+\b[^.]/g,
+          (s) => s[0] + s.slice(1).toLowerCase(),
+        );
+      }
+      if (cTaxon.hasAttribute("authorityYear")) {
+        authority += ", " + cTaxon.getAttribute("authorityYear");
+      }
+
+      authority = normalizeAuthority(authority);
+      if (baseAuthority) {
+        authority = authority.replaceAll(
+          new RegExp(`\\(?${baseAuthority}\\)?[,:;\\s]*`, "g"),
+          "",
+        );
+      }
+    }
+    if (baseAuthority && authority) {
+      s.addProperty(
+        "dwc:scientificNameAuthorship",
+        STR(baseAuthority + " " + authority),
+      );
+    } else if (baseAuthority) {
+      s.addProperty(
+        "dwc:scientificNameAuthorship",
+        STR(baseAuthority),
+      );
+    } else if (authority) {
+      s.addProperty(
+        "dwc:scientificNameAuthorship",
+        STR(authority),
+      );
+    } else if (cTaxon.getAttribute("authority")) {
       s.addProperty(
         "dwc:scientificNameAuthorship",
         STR(normalizeAuthority(cTaxon.getAttribute("authority"))),
       );
-    } else if (
-      cTaxon.getAttribute("baseAuthorityName") &&
-      cTaxon.getAttribute("baseAuthorityYear")
-    ) {
-      s.addProperty(
-        "dwc:scientificNameAuthorship",
-        `${
-          STR(
-            normalizeAuthority(
-              `(${cTaxon.getAttribute("baseAuthorityName")}, ${
-                cTaxon.getAttribute("baseAuthorityYear")
-              })`,
-            ),
-          )
-        }`,
-      );
-    } else if (
-      cTaxon.getAttribute("authorityName") &&
-      cTaxon.getAttribute("authorityYear")
-    ) {
-      s.addProperty(
-        "dwc:scientificNameAuthorship",
-        STR(
-          normalizeAuthority(
-            `${cTaxon.getAttribute("authorityName")}, ${
-              cTaxon.getAttribute("authorityYear")
-            }`,
-          ),
-        ),
-      );
     } else if (taxon === cTaxon) {
       // if taxon is the treated taxon and no explicit authority info is given on the element, fall back to document info
+        const docAuthor = normalizeSpace(doc.getAttribute("docAuthor"))
+        .replace(
+          /([^,@&]+),\s+[^,@&]+/g,
+          "$1@",
+        ).replaceAll(
+          "@&",
+          " &",
+        ).replaceAll(
+          "@",
+          "",
+        );
       s.addProperty(
         "dwc:scientificNameAuthorship",
         STR(
           normalizeAuthority(
-            `${doc.getAttribute("docAuthor")}, ${doc.getAttribute("docDate")}`,
+            `${docAuthor}, ${doc.getAttribute("docDate")}`,
           ),
         ),
       );
-    }
-    if (taxon === cTaxon && !taxon.hasAttribute("authority")) {
-      // if taxon is the treated taxon and no explicit authority info is given on the element, fall back to document info
-      // unclear why dwc:authority* are only set in this one case
-      // also unlcear why they are simplified like in the uri
-      // TODO: change this if appropriate
-      s.addProperty(
-        `dwc:authority`,
-        STR(
-          normalizeSpace(
-            `${authorityNameForURI(doc.getAttribute("docAuthor"))}, ${
-              doc.getAttribute("docDate")
-            }`,
+      if (!taxon.hasAttribute("authority")) {
+        // if taxon is the treated taxon and no explicit authority info is given on the element, fall back to document info
+        // unclear why dwc:authority* are only set in this one case
+        // also unlcear why they are simplified like in the uri
+        // TODO: change this if appropriate
+        s.addProperty(
+          `dwc:authority`,
+          STR(
+            normalizeAuthority(
+              `${docAuthor}, ${doc.getAttribute("docDate")}`,
+            ),
           ),
-        ),
-      );
-      s.addProperty(
-        "dwc:authorityName",
-        STR(normalizeSpace(authorityNameForURI(doc.getAttribute("docAuthor")))),
-      );
-      s.addProperty(
-        "dwc:authorityYear",
-        STR(doc.getAttribute("docDate")),
-      );
+        );
+        s.addProperty(
+          "dwc:authorityName",
+          STR(docAuthor),
+        );
+        s.addProperty(
+          "dwc:authorityYear",
+          STR(doc.getAttribute("docDate")),
+        );
+        s.addProperty(
+          "# Info:",
+          "authority attributes generated from docAuthor",
+        );
+      }
     }
 
     s.addProperty("a", "dwcFP:TaxonConcept");
@@ -525,6 +562,12 @@ export function gg2rdf(
     let result = normalizeSpace(a).replace(
       /\s*,?\s*(\(?[0-9]{4}\)?)\s*[a-z]*\s*:?(?:\s*[0-9]*\s*[a-z-]*\s*,?)*(\)?)\s*$/,
       ", $1$2",
+    ).replace(
+      /\s+and\s+/g,
+      " & ",
+    ).replace(
+      /\s+et\s+([^a])/g,
+      " & $1",
     ).replace(
       /\)\)$/,
       ")",
@@ -977,16 +1020,21 @@ export function gg2rdf(
 
   /** replaces <xsl:call-template name="authorityNameForURI"> */
   function authorityNameForURI(authorityName: string) {
-    authorityName = normalizeSpace(authorityName);
-    authorityName = substringAfter(authorityName, ") ");
-    authorityName = substringAfter(authorityName, ")");
-    authorityName = substringAfter(authorityName, "] ");
-    authorityName = substringAfter(authorityName, "]");
-    authorityName = substringBefore(authorityName, " & ");
-    authorityName = substringBefore(authorityName, " et al");
-    authorityName = substringBefore(authorityName, ", ");
+    authorityName = normalizeSpace(normalizeAuthority(authorityName));
+    authorityName = authorityName.replaceAll(/\([^\)]*\)/g, "");
+    authorityName = authorityName.replaceAll(/\[[^\]]*\]/g, "");
+    // authorityName = substringAfter(authorityName, ") ");
+    // authorityName = substringAfter(authorityName, ")");
+    // authorityName = substringAfter(authorityName, "] ");
+    // authorityName = substringAfter(authorityName, "]");
+    authorityName = substringBefore(authorityName, " &");
+    authorityName = substringBefore(authorityName, " and");
+    authorityName = substringBefore(authorityName, " et");
+    authorityName = substringBefore(authorityName, ",");
     authorityName = substringAfter(authorityName, ". ");
     authorityName = substringAfter(authorityName, " ");
+    const match = authorityName.match(/^\S+/);
+    if (match && match[0]) return partialURI(match[0]);
     return partialURI(authorityName);
   }
 
