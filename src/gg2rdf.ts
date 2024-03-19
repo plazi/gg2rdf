@@ -79,6 +79,7 @@ export function gg2rdf(
   const taxonNames: Subject[] = [];
   const figures: Subject[] = [];
   const citedMaterials: Subject[] = [];
+  let treatmentTaxonUri = "";
 
   try {
     checkForErrors();
@@ -240,6 +241,7 @@ export function gg2rdf(
         } else {
           t.addProperty(`trt:augmentsTaxonConcept`, taxonConcept.uri);
         }
+        treatmentTaxonUri = taxonConcept.uri;
       }
 
       makeTaxonName(taxon);
@@ -505,7 +507,7 @@ export function gg2rdf(
       );
     } else if (taxon === cTaxon) {
       // if taxon is the treated taxon and no explicit authority info is given on the element, fall back to document info
-        const docAuthor = normalizeSpace(doc.getAttribute("docAuthor"))
+      let docAuthor = normalizeSpace(doc.getAttribute("docAuthor"))
         .replace(
           /([^,@&]+),\s+[^,@&]+/g,
           "$1@",
@@ -516,6 +518,12 @@ export function gg2rdf(
           "@",
           "",
         );
+      if (docAuthor.length >= 2) {
+        docAuthor = docAuthor.replace(
+          /\w[A-Z]+\b[^.]|\w[A-Z]+$/g,
+          (s) => s[0] + s.slice(1).toLowerCase(),
+        );
+      }
       s.addProperty(
         "dwc:scientificNameAuthorship",
         STR(
@@ -880,6 +888,8 @@ export function gg2rdf(
     // deprecate recombined, renamed, and synonymized names
     const taxonConcept = makeTaxonConcept(taxon, cTaxon);
     if (taxonConcept.ok) {
+      // do not let a taxon deprecate itself
+      if (taxonConcept.uri === treatmentTaxonUri) return;
       t.addProperty(`trt:deprecates`, taxonConcept.uri);
     } else {
       t.addProperty(`trt:citesTaxonName`, taxonNameURI(cTaxon));
@@ -1034,6 +1044,12 @@ export function gg2rdf(
     authorityName = substringBefore(authorityName, ",");
     authorityName = substringAfter(authorityName, ". ");
     authorityName = substringAfter(authorityName, " ");
+    if (authorityName.length >= 2) {
+      authorityName = authorityName.replace(
+        /\w[A-Z]+\b[^.]|\w[A-Z]+$/g,
+        (s) => s[0] + s.slice(1).toLowerCase(),
+      );
+    }
     const match = authorityName.match(/^\S+/);
     if (match && match[0]) return partialURI(match[0]);
     return partialURI(authorityName);
