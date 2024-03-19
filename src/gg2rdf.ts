@@ -270,8 +270,18 @@ export function gg2rdf(
       const cTaxon = e.tagName === "taxonomicName"
         ? e
         : e.querySelector("taxonomicName");
-      if (cTaxon) addTaxonConceptCitation(t, taxon, cTaxon);
-      else {
+      if (cTaxon) {
+        try {
+          addTaxonConceptCitation(t, taxon, cTaxon);
+        } catch (error) {
+          log(error);
+          t.addProperty(
+            "# Error:",
+            `Could not add TaxonConceptCitation\n${error}\n${error.stack ?? ""}`
+              .replace(/\n/g, "\n# "),
+          );
+        }
+      } else {
         log(`${e.tagName} found without taxonomicName`);
       }
     });
@@ -1146,7 +1156,7 @@ export function gg2rdf(
       const sigEpithet = normalizeSpace(taxonName.getAttribute(rank));
       if (sigEpithet) {
         return "/" +
-          partialURI(taxonName.getAttribute(rank).replaceAll(".", ""));
+          partialURI(sigEpithet.replaceAll(".", ""));
       } else {
         throw new Error("Could not produce taxonNameURI");
       }
