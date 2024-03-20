@@ -463,7 +463,7 @@ export function gg2rdf(
       baseAuthority = substringBefore(baseAuthority, " in ");
       if (baseAuthority.length >= 2) {
         baseAuthority = baseAuthority.replace(
-          /\w[A-Z]+\b[^.]/g,
+          /\w[A-Z]+\b[^.]|\w[A-Z]+$/g,
           (s) => s[0] + s.slice(1).toLowerCase(),
         );
       }
@@ -479,7 +479,7 @@ export function gg2rdf(
       if (authority === "L.") authority = "Linnaeus";
       if (authority.length >= 2) {
         authority = authority.replace(
-          /\w[A-Z]+\b[^.]/g,
+          /\w[A-Z]+\b[^.]|\w[A-Z]+$/g,
           (s) => s[0] + s.slice(1).toLowerCase(),
         );
       }
