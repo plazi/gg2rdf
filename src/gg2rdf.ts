@@ -1060,6 +1060,7 @@ export function gg2rdf(
         (s) => s[0] + s.slice(1).toLowerCase(),
       );
     }
+    if (authorityName === "L.") return partialURI("Linnaeus");
     const match = authorityName.match(/^\S+/);
     if (match && match[0]) return partialURI(match[0]);
     return partialURI(authorityName);
