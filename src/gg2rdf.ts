@@ -607,14 +607,17 @@ export function gg2rdf(
   function makeCitedMaterial(c: Element): string {
     const mcId = c.getAttribute("id");
     const httpUri = c.getAttribute("httpUri");
+    const gbifOccurrenceId = c.getAttribute("ID-GBIF-Occurrence");
     const specimenCode = c.getAttribute("specimenCode");
 
     const uri = mcId
       ? URI(`http://tb.plazi.org/GgServer/dwcaRecords/${id}.mc.${mcId}`)
-      : (httpUri ? URI(httpUri) : URI(
-        `http://treatment.plazi.org/id/${id}/${partialURI(specimenCode)}`,
-        "_",
-      ));
+      : (gbifOccurrenceId
+        ? URI(`https://www.gbif.org/occurrence/${gbifOccurrenceId}`)
+        : (httpUri ? URI(httpUri) : URI(
+          `http://treatment.plazi.org/id/${id}/${partialURI(specimenCode)}`,
+          "_",
+        )));
 
     if (!mcId && !httpUri && !specimenCode) {
       output(
