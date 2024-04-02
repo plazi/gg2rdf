@@ -1154,10 +1154,10 @@ export function gg2rdf(
       ];
       return "/" +
         partialURI(
-          names.flat().filter((n) => !!n).join("_").replaceAll(".", ""),
+          names.flat().map(removePunctuation).filter((n) => !!n).join("_").replaceAll(".", ""),
         );
     } else {
-      const sigEpithet = normalizeSpace(taxonName.getAttribute(rank));
+      const sigEpithet = removePunctuation(normalizeSpace(taxonName.getAttribute(rank)));
       if (sigEpithet) {
         return "/" +
           partialURI(sigEpithet.replaceAll(".", ""));
@@ -1253,6 +1253,16 @@ export function gg2rdf(
     return URI(uri);
     // TODO: check if this is enough or if more advanced escaping is neccesary
     // <xsl:template name="escapeDoi"> is very complicated, but I dont understand why exactly
+  }
+
+  function removePunctuation(s: string) {
+    if (!s) return "";
+    // if preserving `-` is desired, replace the regex with /(?:\p{Z}|\p{S}|\p{P})(?<![-])/ug
+    const result = s.replace(/\p{Z}|\p{S}|\p{P}/ug, "");
+    if (result !== s) {
+      console.log(`Warning: Normalizing "${s}" to "${result}".`);
+    }
+    return result;
   }
 
   function STR(s: string) {
