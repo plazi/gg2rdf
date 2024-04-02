@@ -4,7 +4,7 @@
 * The jobs are accepted as messages and stored on disk, when the worker is started uncompleted jobs are picked up and exxecuted.
 
 */
-import { path, walk } from "./deps.ts";
+import { existsSync, path, walk } from "./deps.ts";
 import { config } from "../config/config.ts";
 import { createBadge } from "./log.ts";
 import { type Job, JobsDataBase } from "./JobsDataBase.ts";
@@ -132,7 +132,10 @@ function run() {
 
       // run saxon on modified files
       for (const file of modified) {
-        if (file.endsWith(".xml")) {
+        if (
+          file.endsWith(".xml") &&
+          existsSync(`${config.workDir}/repo/source/${file}`)
+        ) {
           Deno.mkdirSync(
             config.workDir + "/tmpttl/" + file.slice(0, file.lastIndexOf("/")),
             {
@@ -151,6 +154,10 @@ function run() {
             log(error);
             throw new Error("gg2rdf failed");
           }
+        } else {
+          log(
+            `Skipping ${file} (not *.xml or does not exist in treatments-xml)`,
+          );
         }
       }
 
@@ -173,7 +180,7 @@ function run() {
             );
             // TODO check if newer?
           } catch (e) {
-            console.log(
+            log(
               `Failed to move ${config.workDir}/tmpttl/${
                 file.slice(0, -4)
               }.ttl to ${config.workDir}/repo/target/${
