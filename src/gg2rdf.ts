@@ -1259,8 +1259,7 @@ export function gg2rdf(
 
   function removePunctuation(s: string) {
     if (!s) return "";
-    // if preserving `-` is desired, replace the regex with /(?:\p{Z}|\p{S}|\p{P})(?<![-])/ug
-    const result = s.replace(/\p{Z}|\p{S}|\p{P}/ug, "");
+    const result = s.replace(/(?:\p{Z}|\p{S}|\p{P})(?<![-])/ug, "");
     if (result !== s) {
       console.log(`Warning: Normalizing "${s}" to "${result}".`);
     }
