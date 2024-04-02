@@ -62,7 +62,6 @@ export function gg2rdf(
 @prefix dwcFP: <http://filteredpush.org/ontologies/oa/dwcFP#> .
 @prefix fabio: <http://purl.org/spar/fabio/> .
 @prefix trt: <http://plazi.org/vocab/treatment#> .
-@prefix treatment: <http://treatment.plazi.org/id/> .
 @prefix xlink: <http://www.w3.org/1999/xlink/> .`);
 
   // this is the <document> surrounding everything. doc != document
@@ -204,7 +203,7 @@ export function gg2rdf(
    *
    * replaces <xsl:template match="document"> and <xsl:template match="treatment"> */
   function makeTreatment() {
-    const t = new Subject(`treatment:${id}`);
+    const t = new Subject(URI(`http://treatment.plazi.org/id/${id}`));
 
     const taxon: Element = document.querySelector(
       'document treatment subSubSection[type="nomenclature"] taxonomicName',
@@ -1154,10 +1153,13 @@ export function gg2rdf(
       ];
       return "/" +
         partialURI(
-          names.flat().map(removePunctuation).filter((n) => !!n).join("_").replaceAll(".", ""),
+          names.flat().map(removePunctuation).filter((n) => !!n).join("_")
+            .replaceAll(".", ""),
         );
     } else {
-      const sigEpithet = removePunctuation(normalizeSpace(taxonName.getAttribute(rank)));
+      const sigEpithet = removePunctuation(
+        normalizeSpace(taxonName.getAttribute(rank)),
+      );
       if (sigEpithet) {
         return "/" +
           partialURI(sigEpithet.replaceAll(".", ""));
