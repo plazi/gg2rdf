@@ -1,4 +1,4 @@
-import { DOMParser, parseArgs } from "./deps.ts";
+import { DOMParser, iso6393To1, parseArgs } from "./deps.ts";
 import type { Element } from "https://esm.sh/v135/linkedom@0.16.8/types/interface/element.d.ts"; // this does not work if imported via deps.ts for unclear reasons
 
 class Subject {
@@ -94,7 +94,7 @@ export function gg2rdf(
     output(
       `# There was some Error in gg2rdf\n${error}\n${
         error.stack ?? "[no stacktrace]"
-      }`.replace(/\n/g, "\n# "),
+      }`.replaceAll(/\n/g, "\n# "),
     );
   }
 
@@ -227,7 +227,7 @@ export function gg2rdf(
       // add reference to subject taxon concept, using taxon name as a fallback if we're lacking a valid authority
       if (!taxonConcept.ok) {
         // no valid authority given, fall back to taxon name
-        t.addProperty("trt:treatsTaxonName", taxonNameURI(taxon));
+        t.addProperty("trt:treatsTaxonName", taxonConcept.tnuri);
       } else {
         // we have a valid authority, go for the taxon stringconcept
         if (taxonStatus === "nomen dubium") {
@@ -243,7 +243,39 @@ export function gg2rdf(
         treatmentTaxonUri = taxonConcept.uri;
       }
 
-      makeTaxonName(taxon);
+      const treatmentTaxon = taxonNames.find((tn) =>
+        tn.uri === taxonConcept.tnuri
+      );
+      if (!treatmentTaxon) {
+        log("# Warning: Lost treatment-taxon, cannot add vernacular names");
+      } else {
+        doc.querySelectorAll("vernacularName").forEach((v: Element) => {
+          const language = v.getAttribute("language") || undefined;
+          const tag = language ? iso6393To1[language] : undefined;
+          if (tag) {
+            treatmentTaxon.addProperty(
+              "dwc:vernacularName",
+              `${STR(normalizeSpace(v.innerText))}@${tag}`,
+            );
+          } else {
+            treatmentTaxon.addProperty(
+              "dwc:vernacularName",
+              STR(normalizeSpace(v.innerText)),
+            );
+            treatmentTaxon.addProperty(
+              "# Info:",
+              `Couldn't generate language tag for ${
+                STR(normalizeSpace(v.innerText))
+              }@${language}`,
+            );
+            log(
+              `Info: Couldn't generate language tag for ${
+                STR(normalizeSpace(v.innerText))
+              }@${language}`,
+            );
+          }
+        });
+      }
     }
 
     if (doc.hasAttribute("docTitle")) {
@@ -277,7 +309,7 @@ export function gg2rdf(
           t.addProperty(
             "# Error:",
             `Could not add TaxonConceptCitation\n${error}\n${error.stack ?? ""}`
-              .replace(/\n/g, "\n# "),
+              .replaceAll(/\n/g, "\n# "),
           );
         }
       } else {
@@ -371,12 +403,14 @@ export function gg2rdf(
   /** outputs turtle describing the cTaxon concept
    * @returns object with
    * - ok: could create taxon-concept
-   * - uri: uri of taxon-concept or taxon-name if invalid authority
+   * - uri?: uri of taxon-concept or `undefined` if invalid authority
+   * - tnuri: uri of taxon-name
+   * both returned uris are valid turtle uris
    */
   function makeTaxonConcept(
     taxon: Element,
     cTaxon: Element,
-  ): { ok: boolean; uri: string } {
+  ): { ok: false; tnuri: string } | { ok: true; uri: string; tnuri: string } {
     const rank: string = cTaxon.getAttribute("rank");
     const cTaxonStatus: string = cTaxon.getAttribute("status") ??
       taxon.parentNode.querySelector(
@@ -390,10 +424,12 @@ export function gg2rdf(
     const taxonRelation = getTaxonRelation({ taxon, cTaxon });
     const cTaxonRankGroup = getTaxonRankGroup(cTaxon);
 
+    const tnuri = taxonNameURI(cTaxon);
+    makeTaxonName(cTaxon);
+
     if (cTaxonAuthority === "INVALID") {
-      const uri = taxonNameURI(cTaxon);
-      log(`Warning: Invalid Authority for ${uri}`);
-      return { ok: false, uri };
+      log(`Warning: Invalid Authority for ${tnuri}`);
+      return { ok: false, tnuri };
     }
 
     const uri = taxonConceptURI({
@@ -404,6 +440,8 @@ export function gg2rdf(
     const prev = taxonConcepts.find((t) => t.uri === uri);
     const s = prev || new Subject(uri);
     if (!prev) taxonConcepts.push(s);
+
+    s.addProperty("trt:hasTaxonName", tnuri);
 
     // check required attributes
     if (
@@ -417,8 +455,7 @@ export function gg2rdf(
         s.addProperty("# Error:", "Invalid taxon relation");
       }
       s.addProperty("a", "dwcFP:TaxonConcept");
-      makeTaxonName(cTaxon);
-      return { ok: true, uri };
+      return { ok: true, uri, tnuri };
     }
 
     /** replaces <xsl:template name="taxonNameDetails"> and <xsl:template match="taxonomicName/@*"> */
@@ -452,8 +489,6 @@ export function gg2rdf(
       }
     });
 
-    s.addProperty("trt:hasTaxonName", taxonNameURI(cTaxon));
-
     // for debugging only
     // s.addProperty("trt:verbatim", STR(cTaxon.innerText));
 
@@ -461,7 +496,7 @@ export function gg2rdf(
     if (baseAuthority) {
       baseAuthority = substringBefore(baseAuthority, " in ");
       if (baseAuthority.length >= 2) {
-        baseAuthority = baseAuthority.replace(
+        baseAuthority = baseAuthority.replaceAll(
           /\w[A-Z]+\b[^.]|\w[A-Z]+$/g,
           (s) => s[0] + s.slice(1).toLowerCase(),
         );
@@ -477,7 +512,7 @@ export function gg2rdf(
       authority = substringBefore(authority, " in ");
       if (authority === "L.") authority = "Linnaeus";
       if (authority.length >= 2) {
-        authority = authority.replace(
+        authority = authority.replaceAll(
           /\w[A-Z]+\b[^.]|\w[A-Z]+$/g,
           (s) => s[0] + s.slice(1).toLowerCase(),
         );
@@ -517,7 +552,7 @@ export function gg2rdf(
     } else if (taxon === cTaxon) {
       // if taxon is the treated taxon and no explicit authority info is given on the element, fall back to document info
       let docAuthor = normalizeSpace(doc.getAttribute("docAuthor"))
-        .replace(
+        .replaceAll(
           /([^,@&]+),\s+[^,@&]+/g,
           "$1@",
         ).replaceAll(
@@ -528,7 +563,7 @@ export function gg2rdf(
           "",
         );
       if (docAuthor.length >= 2) {
-        docAuthor = docAuthor.replace(
+        docAuthor = docAuthor.replaceAll(
           /\w[A-Z]+\b[^.]|\w[A-Z]+$/g,
           (s) => s[0] + s.slice(1).toLowerCase(),
         );
@@ -570,8 +605,7 @@ export function gg2rdf(
     }
 
     s.addProperty("a", "dwcFP:TaxonConcept");
-    makeTaxonName(cTaxon);
-    return { ok: true, uri };
+    return { ok: true, uri, tnuri };
   }
 
   /** for dwc:scientificNameAuthorship and dwc:authority */
@@ -580,10 +614,10 @@ export function gg2rdf(
     let result = normalizeSpace(a).replace(
       /\s*,?\s*(\(?[0-9]{4}\)?)\s*[a-z]*\s*:?(?:\s*[0-9]*\s*[a-z-]*\s*,?)*(\)?)\s*$/,
       ", $1$2",
-    ).replace(
+    ).replaceAll(
       /\s+and\s+/g,
       " & ",
-    ).replace(
+    ).replaceAll(
       /\s+et\s+([^a])/g,
       " & $1",
     ).replace(
@@ -890,7 +924,7 @@ export function gg2rdf(
       if (taxonConcept.ok) {
         t.addProperty(`cito:cites`, taxonConcept.uri);
       } else {
-        t.addProperty(`trt:citesTaxonName`, taxonNameURI(cTaxon));
+        t.addProperty(`trt:citesTaxonName`, taxonConcept.tnuri);
       }
       return;
     }
@@ -904,7 +938,7 @@ export function gg2rdf(
       if (taxonConcept.uri === treatmentTaxonUri) return;
       t.addProperty(`trt:deprecates`, taxonConcept.uri);
     } else {
-      t.addProperty(`trt:citesTaxonName`, taxonNameURI(cTaxon));
+      t.addProperty(`trt:citesTaxonName`, taxonConcept.tnuri);
     }
     return;
   }
@@ -1057,7 +1091,7 @@ export function gg2rdf(
     authorityName = substringAfter(authorityName, ". ");
     authorityName = substringAfter(authorityName, " ");
     if (authorityName.length >= 2) {
-      authorityName = authorityName.replace(
+      authorityName = authorityName.replaceAll(
         /\w[A-Z]+\b[^.]|\w[A-Z]+$/g,
         (s) => s[0] + s.slice(1).toLowerCase(),
       );
@@ -1259,9 +1293,9 @@ export function gg2rdf(
 
   function removePunctuation(s: string) {
     if (!s) return "";
-    const result = s.replace(/(?:\p{Z}|\p{S}|\p{P})(?<![-])/ug, "");
+    const result = s.replaceAll(/(?:\p{Z}|\p{S}|\p{P})(?<![-])/ug, "");
     if (result !== s) {
-      console.log(`Warning: Normalizing "${s}" to "${result}".`);
+      log(`Warning: Normalizing "${s}" to "${result}".`);
     }
     return result;
   }
@@ -1274,12 +1308,12 @@ export function gg2rdf(
   /** removes reserved uri characters from `s`, to be later passed to URI */
   function partialURI(s: string) {
     if (!s) return "";
-    return normalizeSpace(s.replace(/[;\/\?:@&=\+\$,#]+/g, " "));
+    return normalizeSpace(s.replaceAll(/[;\/\?:@&=\+\$,#]+/g, " "));
   }
 
   function URI(uri: string, replaceSpace = "") {
     if (!uri) return "[]"; // unique blank node
-    return `<${encodeURI(uri.trim().replace(/\s+/g, replaceSpace))}>`;
+    return `<${encodeURI(uri.trim().replaceAll(/\s+/g, replaceSpace))}>`;
   }
 
   /** returns the part of s before c, not including c
@@ -1299,7 +1333,7 @@ export function gg2rdf(
 
   function normalizeSpace(s: string) {
     if (!s) return "";
-    return s.replace(/\s+/, " ").trim();
+    return s.replaceAll(/\s+/g, " ").trim();
   }
 
   /** this function should only be called with valid turtle segments,
