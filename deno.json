@@ -1,0 +1,10 @@
+{
+    "lock": false,
+    "tasks": {
+      "check": "deno fmt --check && deno lint && deno check **/*.ts && deno check **/*.tsx"
+    },
+    "imports": {
+      "ghact/": "https://raw.githubusercontent.com/factsmission/ghact/main/",
+      "std/": "https://deno.land/std@0.223.0/"
+    }
+  }
