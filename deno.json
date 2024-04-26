@@ -4,7 +4,7 @@
     "check": "deno fmt --check && deno lint && deno check **/*.ts && deno check **/*.tsx"
   },
   "imports": {
-    "ghact/": "https://raw.githubusercontent.com/factsmission/ghact/main/",
+    "ghact/": "https://deno.land/x/ghact@0.1.0/",
     "std/": "https://deno.land/std@0.223.0/",
     "preact": "https://esm.sh/preact@10.15.1",
     "preact/": "https://esm.sh/preact@10.15.1/"
