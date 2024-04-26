@@ -1,10 +1,16 @@
 {
-    "lock": false,
-    "tasks": {
-      "check": "deno fmt --check && deno lint && deno check **/*.ts && deno check **/*.tsx"
-    },
-    "imports": {
-      "ghact/": "https://raw.githubusercontent.com/factsmission/ghact/main/",
-      "std/": "https://deno.land/std@0.223.0/"
-    }
+  "lock": false,
+  "tasks": {
+    "check": "deno fmt --check && deno lint && deno check **/*.ts && deno check **/*.tsx"
+  },
+  "imports": {
+    "ghact/": "https://raw.githubusercontent.com/factsmission/ghact/main/",
+    "std/": "https://deno.land/std@0.223.0/",
+    "preact": "https://esm.sh/preact@10.15.1",
+    "preact/": "https://esm.sh/preact@10.15.1/"
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact"
   }
+}
