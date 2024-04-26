@@ -56,7 +56,7 @@ const worker = new GhactServiceWorker(self, config, (job: Job) => {
     for (const file of modified) {
       if (
         file.endsWith(".xml") &&
-        existsSync(`${worker.gitRepository.workDir}${file}`)
+        existsSync(`${worker.gitRepository.workDir}/${file}`)
       ) {
         Deno.mkdirSync(
           config.workDir + "/tmpttl/" + file.slice(0, file.lastIndexOf("/")),
