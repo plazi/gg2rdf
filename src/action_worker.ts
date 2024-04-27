@@ -8,13 +8,12 @@ import GhactServiceWorker from "ghact/src/GhactServiceWorker.ts";
 import GitRepository from "ghact/src/GitRepository.ts";
 import { existsSync } from "./deps.ts";
 import { config } from "../config/config.ts";
-import { type Job } from "https://deno.land/x/ghact@0.0.1/src/JobsDataBase.ts";
+import { type Job } from "ghact/src/JobsDataBase.ts";
 import { gg2rdf } from "./gg2rdf.ts";
 
 const GHTOKEN = Deno.env.get("GHTOKEN");
-const log = console.log;
 
-const worker = new GhactServiceWorker(self, config, (job: Job) => {
+const worker = new GhactServiceWorker(self, config, (job: Job, log) => {
   try {
     log("Starting transformation\n" + JSON.stringify(job, undefined, 2));
 
