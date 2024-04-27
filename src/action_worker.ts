@@ -65,7 +65,7 @@ const worker = new GhactServiceWorker(self, config, (job: Job, log) => {
         );
         try {
           gg2rdf(
-            `${worker.gitRepository.workDir}${file}`,
+            `${worker.gitRepository.workDir}/${file}`,
             `${config.workDir}/tmpttl/${file.slice(0, -4)}.ttl`,
             log,
           );
