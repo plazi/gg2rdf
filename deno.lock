@@ -170,6 +170,15 @@
     "https://deno.land/x/ghact@1.2.0/src/helpers.ts": "4467522e830069480ae6ebbc28b23ae8b98d0f419924ef97e11f82619ee9fdc3",
     "https://deno.land/x/ghact@1.2.0/src/indexPage.ts": "de6efe66f495f0b8d6e1963c2f844beceeab7dcb47e6b56b468a837b8e6be05a",
     "https://deno.land/x/ghact@1.2.0/src/log.ts": "44b56d6b94c15a6360023d023e3c1a75d5cee8b1237e0512ca52ebfed69aef2a",
+    "https://deno.land/x/ghact@1.2.1/mod.ts": "6c273adaaf068349e6bf089bde9276823ec0b0375fde3f991917ad5d11e5fd4c",
+    "https://deno.land/x/ghact@1.2.1/src/GHActServer.ts": "f55cfae357e4255c75319e28e29b94604678c4ba150256da156b1a84f79947dc",
+    "https://deno.land/x/ghact@1.2.1/src/GHActWorker.ts": "449e3fa702b50896aa2f8b5fa6ac58dfa89bea42c067ad6f679fb6b90f97e6db",
+    "https://deno.land/x/ghact@1.2.1/src/GitRepository.ts": "e1d99c0ca50eb997cc0e056762385c795fbe6753bee576dbf85349a4848452b5",
+    "https://deno.land/x/ghact@1.2.1/src/JobsDataBase.ts": "c7493e7835aa97e1f7a0b9545969e8e6c59afeeadb77f3d20c1c44a3fb8e61a9",
+    "https://deno.land/x/ghact@1.2.1/src/deps.ts": "8fbfb6914db38a918a5bbf3203f0d1cd0f69f0aa45503b089ed87b9e194041f2",
+    "https://deno.land/x/ghact@1.2.1/src/helpers.ts": "4467522e830069480ae6ebbc28b23ae8b98d0f419924ef97e11f82619ee9fdc3",
+    "https://deno.land/x/ghact@1.2.1/src/indexPage.ts": "de6efe66f495f0b8d6e1963c2f844beceeab7dcb47e6b56b468a837b8e6be05a",
+    "https://deno.land/x/ghact@1.2.1/src/log.ts": "44b56d6b94c15a6360023d023e3c1a75d5cee8b1237e0512ca52ebfed69aef2a",
     "https://esm.sh/iso-639-3@3.0.1": "500bc358cd780f012f774170f3cc8d0d9256ca8ece8c31bdf52284aa05925fa0",
     "https://esm.sh/linkedom@0.16.8/cached": "aabc1d93a7cff937c729a4cfab6de78c413adeb91fe31b46ae7db9b08147bd8a"
   }
