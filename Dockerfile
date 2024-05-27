@@ -2,7 +2,7 @@ FROM denoland/deno:1.43.3
 
 # Install cron
 RUN DEBIAN_FRONTEND=noninteractive apt update
-RUN DEBIAN_FRONTEND=noninteractive apt install -y git
+RUN DEBIAN_FRONTEND=noninteractive apt install -y git openjdk-17-jre-headless
 RUN git config --system http.postBuffer 1048576000
 RUN git config --system --add safe.directory /workspaces/gg2rdf
 
