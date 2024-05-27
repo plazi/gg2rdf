@@ -1,20 +1,19 @@
 {
-	"name": "gg2rdf",
-	"dockerComposeFile": "docker-compose.yml",
-	"service": "gg2rdf",
-	"workspaceFolder": "/workspaces/gg2rdf",
-	"customizations": {
-	  "vscode": {
-		"extensions": [ "denoland.vscode-deno"],
-		"settings": {
-		  "terminal.integrated.defaultProfile.linux": "bash",
-		  "terminal.integrated.profiles.linux": {
-			"bash": {
-			  "path": "/bin/bash"
-			}
-		  }
-		}
-	  }
-	}
+  "name": "gg2rdf",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "gg2rdf",
+  "workspaceFolder": "/workspaces/gg2rdf",
+  "customizations": {
+    "vscode": {
+      "extensions": ["denoland.vscode-deno"],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "/bin/bash"
+          }
+        }
+      }
+    }
   }
-  
+}
