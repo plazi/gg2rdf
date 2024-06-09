@@ -1,6 +1,6 @@
 DIR=/workdir/repo/target
 
-rm "/workdir/log/validate/*"
+rm -rf "/workdir/log/validate"
 mkdir /workdir/log/validate
 
 for dir in "$DIR"/data/*; do

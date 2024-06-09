@@ -8,5 +8,5 @@ export const config = {
   targetBranch: "main",
   targetRepository: "plazi/treatments-rdf",
   targetRepositoryUri: "https://github.com/plazi/treatments-rdf.git",
-  workDir: "/workdir"
+  workDir: "/workdir",
 };
