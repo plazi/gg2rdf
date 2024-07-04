@@ -86,7 +86,7 @@ const worker = new GHActWorker(self, config, async (job: Job, log) => {
     }
   }
 
-  targetRepo.updateLocalData(log);
+  await targetRepo.updateLocalData(log);
 
   for (const file of modified) {
     if (file.endsWith(".xml")) {
