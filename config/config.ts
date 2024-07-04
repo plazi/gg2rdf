@@ -4,9 +4,9 @@ export const config = {
   email: "gg2rdf@plazi.org",
   sourceBranch: "main",
   sourceRepository: "plazi/treatments-xml",
-  sourceRepositoryUri: "https://github.com/plazi/treatments-xml.git",
+  sourceRepositoryUri: "https://git.ld.plazi.org/plazi/treatments-xml.git",
   targetBranch: "main",
   targetRepository: "plazi/treatments-rdf",
-  targetRepositoryUri: "https://github.com/plazi/treatments-rdf.git",
+  targetRepositoryUri: "https://git.ld.plazi.org/plazi/treatments-rdf.git",
   workDir: "/workdir",
 };
