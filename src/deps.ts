@@ -4,7 +4,7 @@ export {
   GHActWorker,
   GitRepository,
   type Job,
-} from "https://deno.land/x/ghact@1.2.1/mod.ts";
+} from "https://deno.land/x/ghact@1.2.2/mod.ts";
 
 export { existsSync } from "https://deno.land/std@0.224.0/fs/mod.ts";
 
