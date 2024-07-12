@@ -41,11 +41,19 @@ if (import.meta.main) {
   gg2rdf(flags.input, flags.output);
 }
 
+// Note that the order is important, as code will only ever update the status to a higher one.
+export const enum Status {
+  successful,
+  has_warnings,
+  has_errors,
+  failed,
+}
+
 export function gg2rdf(
   inputPath: string,
   outputPath: string,
   log: (msg: string) => void = console.log,
-) {
+): Status {
   const document = new DOMParser().parseFromString(
     Deno.readTextFileSync(inputPath).replaceAll(/(<\/?)mods:/g, "$1MODS"),
     "text/xml",
@@ -67,8 +75,9 @@ export function gg2rdf(
   // this is the <document> surrounding everything. doc != document
   const doc = document.querySelector("document") as Element;
   if (!doc) {
-    log(`Error: missing <document> in ${inputPath}.`);
+    log(`Error: missing <document> in ${inputPath}.\n Could not start gg2rdf.`);
     output("# Error: Could not create RDF due to missing <document>");
+    return Status.failed;
   }
   const id = partialURI(doc.getAttribute("docId") || "") || "MISSING_ID";
   log(`starting gg2rdf on document id: ${id}`);
@@ -79,6 +88,8 @@ export function gg2rdf(
   const figures: Subject[] = [];
   const citedMaterials: Subject[] = [];
   let treatmentTaxonUri = "";
+
+  let status: Status = Status.successful;
 
   try {
     checkForErrors();
@@ -96,7 +107,28 @@ export function gg2rdf(
         error.stack ?? "[no stacktrace]"
       }`.replaceAll(/\n/g, "\n# "),
     );
+    return Status.failed;
   }
+
+  const enum REL {
+    CITES,
+    SAME,
+    NONE,
+    DEPRECATES,
+  }
+  const enum RANKS {
+    INVALID,
+    kingdom,
+    phylum,
+    class,
+    order,
+    family,
+    tribe,
+    genus,
+    species,
+  }
+
+  return status;
 
   // end of top-level code
 
@@ -115,6 +147,7 @@ export function gg2rdf(
       output(
         "# Warning: treatment taxon is missing ancestor kingdom, defaulting to 'Animalia'",
       );
+      status = Math.max(status, Status.has_warnings);
     }
     if (errors.length) {
       throw new Error(
@@ -214,6 +247,7 @@ export function gg2rdf(
       epithetErrors.forEach((e) => {
         t.addProperty("# Warning: Could not add treatment taxon because", e);
         log(`Warning: Could not add treatment taxon because ${e}`);
+        status = Math.max(status, Status.has_warnings);
       });
     } else {
       const rank: string = taxon.getAttribute("rank");
@@ -248,6 +282,7 @@ export function gg2rdf(
       );
       if (!treatmentTaxon) {
         log("# Warning: Lost treatment-taxon, cannot add vernacular names");
+        status = Math.max(status, Status.has_warnings);
       } else {
         doc.querySelectorAll("vernacularName").forEach((v: Element) => {
           const language = v.getAttribute("language") || undefined;
@@ -311,6 +346,7 @@ export function gg2rdf(
             `Could not add TaxonConceptCitation\n${error}\n${error.stack ?? ""}`
               .replaceAll(/\n/g, "\n# "),
           );
+          status = Math.max(status, Status.has_errors);
         }
       } else {
         log(`${e.tagName} found without taxonomicName`);
@@ -429,6 +465,7 @@ export function gg2rdf(
 
     if (cTaxonAuthority === "INVALID") {
       log(`Warning: Invalid Authority for ${tnuri}`);
+      status = Math.max(status, Status.has_warnings);
       return { ok: false, tnuri };
     }
 
@@ -450,9 +487,11 @@ export function gg2rdf(
     ) {
       if (cTaxonRankGroup === RANKS.INVALID) {
         s.addProperty("# Error:", "Invalid Rank");
+        status = Math.max(status, Status.has_errors);
       }
       if (taxonRelation === REL.NONE) {
         s.addProperty("# Error:", "Invalid taxon relation");
+        status = Math.max(status, Status.has_errors);
       }
       s.addProperty("a", "dwcFP:TaxonConcept");
       return { ok: true, uri, tnuri };
@@ -656,6 +695,7 @@ export function gg2rdf(
       output(
         "# Warning: Failed to output a material citation, could not create identifier",
       );
+      status = Math.max(status, Status.has_warnings);
       return "";
     }
 
@@ -763,6 +803,7 @@ export function gg2rdf(
         if ((attr + "").includes(".")) {
           s.addProperty("# Warning:", `abbreviated ${n} ${STR(attr)}`);
           if (!rankLimit) log(`Warning: abbreviated ${n} ${STR(attr)}`);
+          status = Math.max(status, Status.has_warnings);
         }
         nextRankLimit = n;
       }
@@ -779,6 +820,7 @@ export function gg2rdf(
     } else {
       log(`Warning: Could not determine parent name of ${uri}`);
       s.addProperty("# Warning:", "Could not determine parent name");
+      status = Math.max(status, Status.has_warnings);
     }
 
     s.addProperty("a", "dwcFP:TaxonName");
@@ -901,7 +943,8 @@ export function gg2rdf(
             taxonNameURI(cTaxon)
           }' due to issues with rank`,
         );
-      } else {t.addProperty(
+      } else {
+        t.addProperty(
           "# Warning:",
           `Not adding 'trt:citesTaxonName ${
             taxonConceptURI({
@@ -909,7 +952,9 @@ export function gg2rdf(
               taxonAuthority: cTaxonAuthority,
             })
           }' due to issues with rank`,
-        );}
+        );
+      }
+      status = Math.max(status, Status.has_warnings);
       return;
     }
     if (cTaxonAuthority === "INVALID") {
@@ -941,13 +986,6 @@ export function gg2rdf(
       t.addProperty(`trt:citesTaxonName`, taxonConcept.tnuri);
     }
     return;
-  }
-
-  const enum REL {
-    CITES,
-    SAME,
-    NONE,
-    DEPRECATES,
   }
 
   /** replaces <xsl:template name="taxonRelation"> */
@@ -1007,18 +1045,6 @@ export function gg2rdf(
       return REL.SAME;
     }
     return REL.DEPRECATES;
-  }
-
-  const enum RANKS {
-    INVALID,
-    kingdom,
-    phylum,
-    class,
-    order,
-    family,
-    tribe,
-    genus,
-    species,
   }
 
   function getTaxonRankGroup(t: Element): RANKS {
@@ -1296,6 +1322,7 @@ export function gg2rdf(
     const result = s.replaceAll(/(?:\p{Z}|\p{S}|\p{P})(?<![-])/ug, "");
     if (result !== s) {
       log(`Warning: Normalizing "${s}" to "${result}".`);
+      status = Math.max(status, Status.has_warnings);
     }
     return result;
   }

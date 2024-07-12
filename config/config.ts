@@ -1,6 +1,7 @@
 export const config = {
   title: "GG2RDF",
-  description: "The Plazi service to transform GoldenGate XML into Turtle RDF.",
+  description:
+    'The Plazi service to transform GoldenGate XML into Turtle RDF.<br>See <a href="/workdir/fileStatus.txt">/workdir/fileStatus.txt</a> for per-file transformation status.',
   email: "gg2rdf@plazi.org",
   sourceBranch: "main",
   sourceRepository: "plazi/treatments-xml",
