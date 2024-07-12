@@ -30,7 +30,6 @@ const worker = new GHActWorker(self, config, async (job: Job, log) => {
       modified = [...modified, ...job.files.added];
       removed = job.files.removed;
     }
-    message = `GG2RDF ${job.id} (${config.sourceRepository})`;
     //ghact should take care of this
     //updateLocalData("source", log); // also done by getModifiedAfter
   } else if (job.from) {
@@ -41,16 +40,18 @@ const worker = new GHActWorker(self, config, async (job: Job, log) => {
     );
     modified = [...files.added, ...files.modified];
     removed = files.removed;
-    if (files.till && files.till !== "HEAD") {
-      message = `GG2RDF ${config.sourceRepository}@${files.till}`;
-      job.till = files.till;
-    } else {
-      message = `GG2RDF ${job.id} (${config.sourceRepository})`;
-    }
+    if (files.till && files.till !== "HEAD") job.till = files.till;
+    if (files.from && files.from !== "HEAD") job.from = files.from;
   } else {
     throw new Error(
       "Could not start job, neither explicit file list nor from-commit specified",
     );
+  }
+
+  if (job.till && job.till !== "HEAD") {
+    message = `GG2RDF ${config.sourceRepository}@${job.till}`;
+  } else {
+    message = `GG2RDF ${job.id} (${config.sourceRepository})`;
   }
 
   log(`\nTotal files: ${modified.length + removed.length}\n`);
