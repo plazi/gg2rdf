@@ -26,16 +26,34 @@ const saveStatusToDisk = (
   statusMap: Map<string, Status>,
   path = `${config.workDir}/fileStatus.txt`,
 ) => {
+  const encoder = new TextEncoder();
   using statusFile = Deno.openSync(path, {
     create: true,
     write: true,
     truncate: true,
   });
   statusFile.truncateSync();
-  const encoder = new TextEncoder();
+  statusFile.writeSync(
+    encoder.encode(
+      `: 0=successful, 1=has_warnings, 2=has_errors, 3=failed (stats at end)\n`,
+    ),
+  );
+  const counts = [0, 0, 0, 0];
   for (const [file, status] of statusMap) {
-    statusFile.writeSync(encoder.encode(`${file}: ${status}\n`));
+    counts[status]++;
+    if (file.at(0) !== "/") {
+      statusFile.writeSync(encoder.encode(`/${file}: ${status}\n`));
+    } else {
+      statusFile.writeSync(encoder.encode(`${file}: ${status}\n`));
+    }
   }
+  statusFile.writeSync(
+    encoder.encode(
+      `: (stats) 0=successful ${counts[0]}x, 1=has_warnings ${
+        counts[1]
+      }x, 2=has_errors ${counts[2]}x, 3=failed ${counts[3]}x\n`,
+    ),
+  );
 };
 
 const worker = new GHActWorker(self, config, async (job: Job, log) => {
