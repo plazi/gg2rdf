@@ -6,9 +6,55 @@
 */
 import { existsSync, GHActWorker, GitRepository, type Job } from "./deps.ts";
 import { config } from "../config/config.ts";
-import { gg2rdf } from "./gg2rdf.ts";
+import { gg2rdf, Status } from "./gg2rdf.ts";
 
 const GHTOKEN = Deno.env.get("GHTOKEN");
+
+const parseStatusFromDisk = (
+  path = `${config.workDir}/fileStatus.txt`,
+): Map<string, Status> => {
+  if (!existsSync(path)) return new Map();
+  const result = new Map<string, Status>();
+  Deno.readTextFileSync(path).split("\n").forEach((line) => {
+    const [file, status] = line.split(": ");
+    if (file) result.set(file, parseInt(status, 10));
+  });
+  return result;
+};
+
+const saveStatusToDisk = (
+  statusMap: Map<string, Status>,
+  path = `${config.workDir}/fileStatus.txt`,
+) => {
+  const encoder = new TextEncoder();
+  using statusFile = Deno.openSync(path, {
+    create: true,
+    write: true,
+    truncate: true,
+  });
+  statusFile.truncateSync();
+  statusFile.writeSync(
+    encoder.encode(
+      `: 0=successful, 1=has_warnings, 2=has_errors, 3=failed (stats at end)\n`,
+    ),
+  );
+  const counts = [0, 0, 0, 0];
+  for (const [file, status] of statusMap) {
+    counts[status]++;
+    if (file.at(0) !== "/") {
+      statusFile.writeSync(encoder.encode(`/${file}: ${status}\n`));
+    } else {
+      statusFile.writeSync(encoder.encode(`${file}: ${status}\n`));
+    }
+  }
+  statusFile.writeSync(
+    encoder.encode(
+      `: (stats) 0=successful ${counts[0]}x, 1=has_warnings ${
+        counts[1]
+      }x, 2=has_errors ${counts[2]}x, 3=failed ${counts[3]}x\n`,
+    ),
+  );
+};
 
 const worker = new GHActWorker(self, config, async (job: Job, log) => {
   log("Starting transformation\n" + JSON.stringify(job, undefined, 2));
@@ -56,6 +102,8 @@ const worker = new GHActWorker(self, config, async (job: Job, log) => {
 
   log(`\nTotal files: ${modified.length + removed.length}\n`);
 
+  const statusMap = parseStatusFromDisk();
+
   // run saxon on modified files
   for (const file of modified) {
     if (
@@ -69,16 +117,31 @@ const worker = new GHActWorker(self, config, async (job: Job, log) => {
         },
       );
       try {
-        gg2rdf(
+        const status = gg2rdf(
           `${worker.gitRepository.directory}/${file}`,
           `${config.workDir}/tmpttl/${file.slice(0, -4)}.ttl`,
           log,
         );
-        log("gg2rdf successful");
+        statusMap.set(file, status);
+        switch (status) {
+          case Status.successful:
+            log("gg2rdf successful");
+            break;
+          case Status.has_warnings:
+            log("gg2rdf successful with warnings");
+            break;
+          case Status.has_errors:
+            log("gg2rdf successful with errors");
+            break;
+          case Status.failed:
+            log("gg2rdf failed gracefully");
+            break;
+        }
       } catch (error) {
-        log("gg2rdf failed:");
+        log("gg2rdf failed catastrophically:");
         log(error);
-        throw new Error("gg2rdf failed");
+        saveStatusToDisk(statusMap);
+        throw new Error("gg2rdf failed catastrophically");
       }
     } else {
       log(
@@ -126,6 +189,7 @@ const worker = new GHActWorker(self, config, async (job: Job, log) => {
     }
   }
 
+  saveStatusToDisk(statusMap);
   await targetRepo.commit(job, message, log);
   await targetRepo.push(log);
   log("git push successful");
