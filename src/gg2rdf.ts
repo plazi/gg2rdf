@@ -562,6 +562,7 @@ export function gg2rdf(
 
       authority = normalizeAuthority(authority);
       if (baseAuthority) {
+        // ensures the baseAuthority is not present twice
         authority = authority.replaceAll(
           new RegExp(`\\(?${baseAuthority}\\)?[,:;\\s]*`, "g"),
           "",
@@ -569,10 +570,18 @@ export function gg2rdf(
       }
     }
     if (baseAuthority && authority) {
-      s.addProperty(
-        "dwc:scientificNameAuthorship",
-        STR(baseAuthority + " " + authority),
-      );
+      // Animalia has baseAuthority only in this case, all other Kingdoms get both.
+      if (getKingdom(cTaxon) === "Animalia") {
+        s.addProperty(
+          "dwc:scientificNameAuthorship",
+          STR(baseAuthority),
+        );
+      } else {
+        s.addProperty(
+          "dwc:scientificNameAuthorship",
+          STR(baseAuthority + " " + authority),
+        );
+      }
     } else if (baseAuthority) {
       s.addProperty(
         "dwc:scientificNameAuthorship",
@@ -1241,13 +1250,19 @@ export function gg2rdf(
     );
   }
 
+  /** Get kingdom of taxonName
+   *
+   * If `taxonName.getAttribute("kingdom")` is falsy (e.g. null or empty), returns "Animalia".
+   */
+  function getKingdom(taxonName: Element) {
+    return taxonName.getAttribute("kingdom") || "Animalia";
+  }
+
   /** returns plain uri
    *
    * replaces <xsl:call-template name="taxonConceptBaseURI"> */
   function taxonConceptBaseURI({ kingdom }: { kingdom: string }) {
-    return `http://taxon-concept.plazi.org/id/${
-      kingdom ? partialURI(kingdom) : "Animalia"
-    }`;
+    return `http://taxon-concept.plazi.org/id/${kingdom}`;
   }
 
   /** returns valid turtle uri
@@ -1260,7 +1275,7 @@ export function gg2rdf(
     },
   ) {
     return URI(
-      taxonConceptBaseURI({ kingdom: taxonName.getAttribute("kingdom") }) +
+      taxonConceptBaseURI({ kingdom: getKingdom(taxonName) }) +
         taxonNameForURI(taxonName) + taxonAuthority,
     );
   }
