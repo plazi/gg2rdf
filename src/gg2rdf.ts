@@ -451,21 +451,29 @@ export function gg2rdf(
         `taxonomicName ~ taxonomicNameLabel[rank="${rank}"]`,
       )?.innerText ?? "ABSENT";
 
-    const cTaxonAuthority = getAuthority({
-      taxonName: cTaxon,
-      taxonStatus: cTaxonStatus,
-    });
+    const { authority, warnings, fallback_doc_info } = getFullAuthority(
+      taxon,
+      cTaxon,
+      !(cTaxonStatus.includes("comb") || cTaxonStatus.includes("stat") ||
+        cTaxonStatus.includes("ABSENT")),
+    );
+
     const taxonRelation = getTaxonRelation({ taxon, cTaxon });
     const cTaxonRankGroup = getTaxonRankGroup(cTaxon);
 
     const tnuri = taxonNameURI(cTaxon);
     makeTaxonName(cTaxon);
 
-    if (cTaxonAuthority === "INVALID") {
+    if (authority === "INVALID") {
       log(`Warning: Invalid Authority for ${tnuri}`);
       status = Math.max(status, Status.has_warnings);
       return { ok: false, tnuri };
     }
+
+    const year = authority.match(/[0-9]+/)?.[0] || "";
+    const cTaxonAuthority = `_${authorityNameForURI(authority)}_${
+      partialURI(year)
+    }`;
 
     const uri = taxonConceptURI({
       taxonName: cTaxon,
@@ -529,6 +537,66 @@ export function gg2rdf(
     // for debugging only
     // s.addProperty("trt:verbatim", STR(cTaxon.innerText));
 
+    warnings.forEach((w) => s.addProperty("# Warning:", w));
+    s.addProperty("dwc:scientificNameAuthorship", STR(authority));
+
+    if (fallback_doc_info) {
+      // if taxon is the treated taxon and no explicit authority info is given on the element, fall back to document info
+      // unclear why dwc:authority* are only set in this one case
+      // also unlcear why they are simplified like in the uri
+      // TODO: change this if appropriate
+      let docAuthor = normalizeSpace(doc.getAttribute("docAuthor"))
+        .replaceAll(
+          /([^,@&]+),\s+[^,@&]+/g,
+          "$1@",
+        ).replaceAll(
+          "@&",
+          " &",
+        ).replaceAll(
+          "@",
+          "",
+        );
+      if (docAuthor.length >= 2) {
+        docAuthor = docAuthor.replaceAll(
+          /\w[A-Z]+\b[^.]|\w[A-Z]+$/g,
+          (s) => s[0] + s.slice(1).toLowerCase(),
+        );
+      }
+      s.addProperty(
+        `dwc:authority`,
+        STR(
+          normalizeAuthority(
+            `${docAuthor}, ${doc.getAttribute("docDate")}`,
+          ),
+        ),
+      );
+      s.addProperty(
+        "dwc:authorityName",
+        STR(docAuthor),
+      );
+      s.addProperty(
+        "dwc:authorityYear",
+        STR(doc.getAttribute("docDate")),
+      );
+      s.addProperty(
+        "# Info:",
+        "authority attributes generated from docAuthor",
+      );
+    }
+
+    s.addProperty("a", "dwcFP:TaxonConcept");
+    return { ok: true, uri, tnuri };
+  }
+
+  /** gets the human-readable authroty string for the cTaxon */
+  function getFullAuthority(
+    taxon: Element,
+    cTaxon: Element,
+    allow_fallback = true,
+  ): { authority: string; warnings: string[]; fallback_doc_info?: boolean } {
+    let fullAuthority = "INVALID";
+    const warnings: string[] = [];
+
     let baseAuthority: string = cTaxon.getAttribute("baseAuthorityName") ?? "";
     if (baseAuthority) {
       baseAuthority = substringBefore(baseAuthority, " in ");
@@ -545,10 +613,7 @@ export function gg2rdf(
           baseAuthority.match(/\(.*$/)?.[0] ??
           baseAuthority.match(/^.*\)/)?.[0] ?? "";
         if (/[a-zA-Z]/.test(inside) && inside != baseAuthority) {
-          s.addProperty(
-            "# Warning:",
-            `Removing "${inside}" from baseAuthority`,
-          );
+          warnings.push(`Removing "${inside}" from baseAuthority`);
           status = Math.max(status, Status.has_warnings);
           baseAuthority = baseAuthority.replace(inside, "").trim();
         }
@@ -576,10 +641,7 @@ export function gg2rdf(
           authority.match(/\(.*$/)?.[0] ??
           authority.match(/^.*\)/)?.[0] ?? "";
         if (/[a-zA-Z]/.test(inside) && inside != authority) {
-          s.addProperty(
-            "# Warning:",
-            `Removing "${inside}" from authority`,
-          );
+          warnings.push(`Removing "${inside}" from authority`);
           status = Math.max(status, Status.has_warnings);
           authority = authority.replace(inside, "").trim();
         }
@@ -601,32 +663,17 @@ export function gg2rdf(
     if (baseAuthority && authority) {
       // Animalia has baseAuthority only in this case, all other Kingdoms get both.
       if (getKingdom(cTaxon) === "Animalia") {
-        s.addProperty(
-          "dwc:scientificNameAuthorship",
-          STR(baseAuthority),
-        );
+        fullAuthority = baseAuthority;
       } else {
-        s.addProperty(
-          "dwc:scientificNameAuthorship",
-          STR(baseAuthority + " " + authority),
-        );
+        fullAuthority = baseAuthority + " " + authority;
       }
     } else if (baseAuthority) {
-      s.addProperty(
-        "dwc:scientificNameAuthorship",
-        STR(baseAuthority),
-      );
+      fullAuthority = baseAuthority;
     } else if (authority) {
-      s.addProperty(
-        "dwc:scientificNameAuthorship",
-        STR(authority),
-      );
+      fullAuthority = authority;
     } else if (cTaxon.getAttribute("authority")) {
-      s.addProperty(
-        "dwc:scientificNameAuthorship",
-        STR(normalizeAuthority(cTaxon.getAttribute("authority"))),
-      );
-    } else if (taxon === cTaxon) {
+      fullAuthority = normalizeAuthority(cTaxon.getAttribute("authority"));
+    } else if (taxon === cTaxon || allow_fallback) {
       // if taxon is the treated taxon and no explicit authority info is given on the element, fall back to document info
       let docAuthor = normalizeSpace(doc.getAttribute("docAuthor"))
         .replaceAll(
@@ -645,44 +692,12 @@ export function gg2rdf(
           (s) => s[0] + s.slice(1).toLowerCase(),
         );
       }
-      s.addProperty(
-        "dwc:scientificNameAuthorship",
-        STR(
-          normalizeAuthority(
-            `${docAuthor}, ${doc.getAttribute("docDate")}`,
-          ),
-        ),
+      fullAuthority = normalizeAuthority(
+        `${docAuthor}, ${doc.getAttribute("docDate")}`,
       );
-      if (!taxon.hasAttribute("authority")) {
-        // if taxon is the treated taxon and no explicit authority info is given on the element, fall back to document info
-        // unclear why dwc:authority* are only set in this one case
-        // also unlcear why they are simplified like in the uri
-        // TODO: change this if appropriate
-        s.addProperty(
-          `dwc:authority`,
-          STR(
-            normalizeAuthority(
-              `${docAuthor}, ${doc.getAttribute("docDate")}`,
-            ),
-          ),
-        );
-        s.addProperty(
-          "dwc:authorityName",
-          STR(docAuthor),
-        );
-        s.addProperty(
-          "dwc:authorityYear",
-          STR(doc.getAttribute("docDate")),
-        );
-        s.addProperty(
-          "# Info:",
-          "authority attributes generated from docAuthor",
-        );
-      }
+      return { authority: fullAuthority, warnings, fallback_doc_info: true };
     }
-
-    s.addProperty("a", "dwcFP:TaxonConcept");
-    return { ok: true, uri, tnuri };
+    return { authority: fullAuthority, warnings };
   }
 
   /** for dwc:scientificNameAuthorship and dwc:authority */
@@ -694,13 +709,15 @@ export function gg2rdf(
         ", $1$2",
       )
       .replaceAll('"', "")
+      .replaceAll("'", "")
       .replaceAll(/(?:\b\p{Uppercase_Letter}\.\s+)+(\w+)/ug, "$1")
       .replaceAll(/\s+and\s+/g, " & ")
       .replaceAll(/\s+et\s+([^a])/g, " & $1")
       .replace(/\)\)$/, ")")
       .replace(/^\(\(/, "(")
       .replace(/^\s*[,:;]+\s*/, "")
-      .replace(/\s*[,:;]+\s*$/, "");
+      .replace(/\s*[,:;]+\s*$/, "")
+      .trim();
     if (result.indexOf("&") != result.lastIndexOf("&")) {
       const split = result.split("&").map((s) => s.trim());
       result = split.slice(0, -1).join(", ") + " & " + split.at(-1);
@@ -961,10 +978,17 @@ export function gg2rdf(
     taxon: Element,
     cTaxon: Element,
   ): void {
-    const cTaxonAuthority = getAuthority({
-      taxonName: cTaxon,
-      taxonStatus: "ABSENT",
-    });
+    const { authority } = getFullAuthority(taxon, cTaxon, false);
+
+    let cTaxonAuthority = authority;
+
+    if (authority !== "INVALID") {
+      const year = authority.match(/[0-9]+/)?.[0] || "";
+      cTaxonAuthority = `_${authorityNameForURI(authority)}_${
+        partialURI(year)
+      }`;
+    }
+
     const taxonRelation = getTaxonRelation({ taxon, cTaxon });
     const cTaxonRankGroup = getTaxonRankGroup(cTaxon);
     // check required attributes
@@ -1105,61 +1129,29 @@ export function gg2rdf(
     return RANKS.INVALID;
   }
 
-  /** replaces <xsl:call-template name="authority"> */
-  function getAuthority(
-    { taxonName, taxonStatus }: { taxonName: Element; taxonStatus: string },
-  ) {
-    const baseAuthorityName: string = taxonName.getAttribute(
-      "baseAuthorityName",
-    );
-    const baseAuthorityYear: string = taxonName.getAttribute(
-      "baseAuthorityYear",
-    );
-    const authorityName: string = taxonName.getAttribute("authorityName");
-    const authorityYear: string = taxonName.getAttribute("authorityYear");
-    let docAuthor: string = doc.getAttribute("docAuthor");
-    let docDate: string = doc.getAttribute("docDate");
-
-    if (
-      taxonStatus.includes("ABSENT") || taxonStatus.includes("comb") ||
-      taxonStatus.includes("stat")
-    ) {
-      // in this case, don't consider docAuthor & docDate
-      docAuthor = "";
-      docDate = "";
-    }
-
-    const name = baseAuthorityName || authorityName || docAuthor;
-    const year = baseAuthorityYear || authorityYear || docDate;
-    if (name && year) {
-      return `_${authorityNameForURI(name)}_${partialURI(year)}`;
-    }
-    return "INVALID";
-  }
-
   /** replaces <xsl:call-template name="authorityNameForURI"> */
   function authorityNameForURI(authorityName: string) {
-    authorityName = normalizeSpace(normalizeAuthority(authorityName));
-    authorityName = authorityName.replaceAll(/\([^\)]*\)/g, "");
-    authorityName = authorityName.replaceAll(/\[[^\]]*\]/g, "");
-    // authorityName = substringAfter(authorityName, ") ");
-    // authorityName = substringAfter(authorityName, ")");
-    // authorityName = substringAfter(authorityName, "] ");
-    // authorityName = substringAfter(authorityName, "]");
+    // authorityName = normalizeSpace(normalizeAuthority(authorityName));
+    // authorityName = authorityName.replaceAll(/\([^\)]*\)/g, "");
+    // authorityName = authorityName.replaceAll(/\[[^\]]*\]/g, "");
+    // // authorityName = substringAfter(authorityName, ") ");
+    // // authorityName = substringAfter(authorityName, ")");
+    // // authorityName = substringAfter(authorityName, "] ");
+    // // authorityName = substringAfter(authorityName, "]");
     authorityName = substringBefore(authorityName, " &");
-    authorityName = substringBefore(authorityName, " and");
-    authorityName = substringBefore(authorityName, " et");
+    // authorityName = substringBefore(authorityName, " and");
+    // authorityName = substringBefore(authorityName, " et");
     authorityName = substringBefore(authorityName, ",");
-    authorityName = substringAfter(authorityName, ". ");
+    // authorityName = substringAfter(authorityName, ". ");
     authorityName = substringAfter(authorityName, " ");
-    if (authorityName.length >= 2) {
-      authorityName = authorityName.replaceAll(
-        /\w[A-Z]+\b[^.]|\w[A-Z]+$/g,
-        (s) => s[0] + s.slice(1).toLowerCase(),
-      );
-    }
-    if (authorityName === "L.") return partialURI("Linnaeus");
-    const match = authorityName.match(/^\S+/);
+    // if (authorityName.length >= 2) {
+    //   authorityName = authorityName.replaceAll(
+    //     /\w[A-Z]+\b[^.]|\w[A-Z]+$/g,
+    //     (s) => s[0] + s.slice(1).toLowerCase(),
+    //   );
+    // }
+    // if (authorityName === "L.") return partialURI("Linnaeus");
+    const match = authorityName.match(/\p{L}+/u);
     if (match && match[0]) return partialURI(match[0]);
     return partialURI(authorityName);
   }
