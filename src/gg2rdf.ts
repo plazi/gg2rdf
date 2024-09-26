@@ -563,10 +563,9 @@ export function gg2rdf(
       authority = normalizeAuthority(authority);
       if (baseAuthority) {
         // ensures the baseAuthority is not present twice
-        authority = authority.replaceAll(
-          new RegExp(`\\(?${baseAuthority}\\)?[,:;\\s]*`, "g"),
-          "",
-        );
+        authority = authority
+          .replaceAll(baseAuthority, "@@@")
+          .replaceAll(/\(?@@@\)?[,:;\s]*/g, "");
       }
     }
     if (baseAuthority && authority) {
@@ -659,25 +658,23 @@ export function gg2rdf(
   /** for dwc:scientificNameAuthorship and dwc:authority */
   function normalizeAuthority(a: string): string {
     if (!a) return "";
-    let result = normalizeSpace(a).replace(
-      /\s*,?\s*(\(?[0-9]{4}\)?)\s*[a-z]*\s*:?(?:\s*[0-9]*\s*[a-z-]*\s*,?)*(\)?)\s*$/,
-      ", $1$2",
-    ).replaceAll(
-      /\s+and\s+/g,
-      " & ",
-    ).replaceAll(
-      /\s+et\s+([^a])/g,
-      " & $1",
-    ).replace(
-      /\)\)$/,
-      ")",
-    ).replace(
-      /^\(\(/,
-      "(",
-    ).replace(
-      /^\s*[,:;]+\s*/,
-      "",
-    );
+    let result = normalizeSpace(a)
+      .replace(
+        /\s*,?\s*(\(?[0-9]{4}\)?)\s*[a-z]*\s*:?(?:\s*[0-9]*\s*[a-z-]*\s*,?)*(\)?)\s*$/,
+        ", $1$2",
+      )
+      .replaceAll('"', "")
+      .replaceAll(/(?:\p{Uppercase_Letter}\.\s+)+(\w+)/ug, "$1")
+      .replaceAll(/\s+and\s+/g, " & ")
+      .replaceAll(/\s+et\s+([^a])/g, " & $1")
+      .replace(/\)\)$/, ")")
+      .replace(/^\(\(/, "(")
+      .replace(/^\s*[,:;]+\s*/, "")
+      .replace(/\s*[,:;]+\s*$/, "");
+    if (result.indexOf("&") != result.lastIndexOf("&")) {
+      const split = result.split("&").map((s) => s.trim());
+      result = split.slice(0, -1).join(", ") + " & " + split.at(-1);
+    }
     if (result.lastIndexOf("(") > result.lastIndexOf(")")) {
       result += ")"; // sometimes closing brace is missing
     }
