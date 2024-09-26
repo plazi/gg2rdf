@@ -103,9 +103,7 @@ export function gg2rdf(
   } catch (error) {
     log(error);
     output(
-      `# There was some Error in gg2rdf\n${error}\n${
-        error.stack ?? "[no stacktrace]"
-      }`.replaceAll(/\n/g, "\n# "),
+      `# There was some Error in gg2rdf\n${error}`.replaceAll(/\n/g, "\n# "),
     );
     return Status.failed;
   }
@@ -343,7 +341,7 @@ export function gg2rdf(
           log(error);
           t.addProperty(
             "# Error:",
-            `Could not add TaxonConceptCitation\n${error}\n${error.stack ?? ""}`
+            `Could not add TaxonConceptCitation\n${error}`
               .replaceAll(/\n/g, "\n# "),
           );
           status = Math.max(status, Status.has_errors);
@@ -534,12 +532,28 @@ export function gg2rdf(
     let baseAuthority: string = cTaxon.getAttribute("baseAuthorityName") ?? "";
     if (baseAuthority) {
       baseAuthority = substringBefore(baseAuthority, " in ");
-      if (baseAuthority.length >= 2) {
+      if (baseAuthority === "L.") baseAuthority = "Linnaeus";
+      if (baseAuthority.length >= 2 && !/[a-z]/.test(baseAuthority)) {
         baseAuthority = baseAuthority.replaceAll(
           /\w[A-Z]+\b[^.]|\w[A-Z]+$/g,
           (s) => s[0] + s.slice(1).toLowerCase(),
         );
       }
+
+      if (baseAuthority.includes("(") || baseAuthority.includes(")")) {
+        const inside = baseAuthority.match(/\(.*\)/)?.[0] ??
+          baseAuthority.match(/\(.*$/)?.[0] ??
+          baseAuthority.match(/^.*\)/)?.[0] ?? "";
+        if (/[a-zA-Z]/.test(inside) && inside != baseAuthority) {
+          s.addProperty(
+            "# Warning:",
+            `Removing "${inside}" from baseAuthority`,
+          );
+          status = Math.max(status, Status.has_warnings);
+          baseAuthority = baseAuthority.replace(inside, "").trim();
+        }
+      }
+
       if (cTaxon.hasAttribute("baseAuthorityYear")) {
         baseAuthority += ", " + cTaxon.getAttribute("baseAuthorityYear");
       }
@@ -550,12 +564,27 @@ export function gg2rdf(
     if (authority) {
       authority = substringBefore(authority, " in ");
       if (authority === "L.") authority = "Linnaeus";
-      if (authority.length >= 2) {
+      if (authority.length >= 2 && !/[a-z]/.test(authority)) {
         authority = authority.replaceAll(
           /\w[A-Z]+\b[^.]|\w[A-Z]+$/g,
           (s) => s[0] + s.slice(1).toLowerCase(),
         );
       }
+
+      if (authority.includes("(") || authority.includes(")")) {
+        const inside = authority.match(/\(.*\)/)?.[0] ??
+          authority.match(/\(.*$/)?.[0] ??
+          authority.match(/^.*\)/)?.[0] ?? "";
+        if (/[a-zA-Z]/.test(inside) && inside != authority) {
+          s.addProperty(
+            "# Warning:",
+            `Removing "${inside}" from authority`,
+          );
+          status = Math.max(status, Status.has_warnings);
+          authority = authority.replace(inside, "").trim();
+        }
+      }
+
       if (cTaxon.hasAttribute("authorityYear")) {
         authority += ", " + cTaxon.getAttribute("authorityYear");
       }
@@ -567,6 +596,7 @@ export function gg2rdf(
           .replaceAll(baseAuthority, "@@@")
           .replaceAll(/\(?@@@\)?[,:;\s]*/g, "");
       }
+      authority = normalizeSpace(authority);
     }
     if (baseAuthority && authority) {
       // Animalia has baseAuthority only in this case, all other Kingdoms get both.
