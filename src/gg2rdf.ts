@@ -664,7 +664,7 @@ export function gg2rdf(
         ", $1$2",
       )
       .replaceAll('"', "")
-      .replaceAll(/(?:\p{Uppercase_Letter}\.\s+)+(\w+)/ug, "$1")
+      .replaceAll(/(?:\b\p{Uppercase_Letter}\.\s+)+(\w+)/ug, "$1")
       .replaceAll(/\s+and\s+/g, " & ")
       .replaceAll(/\s+et\s+([^a])/g, " & $1")
       .replace(/\)\)$/, ")")
