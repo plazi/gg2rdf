@@ -669,7 +669,28 @@ export function gg2rdf(
     } else if (authority) {
       fullAuthority = authority;
     } else if (cTaxon.getAttribute("authority")) {
-      fullAuthority = normalizeAuthority(cTaxon.getAttribute("authority"));
+      let authority: string = cTaxon.getAttribute("authority") ?? "";
+      if (authority) {
+        authority = substringBefore(authority, " in ");
+        if (authority === "L.") authority = "Linnaeus";
+        if (authority.length >= 2 && !/[a-z]/.test(authority)) {
+          authority = authority.replaceAll(
+            /\w[A-Z]+\b[^.]|\w[A-Z]+$/g,
+            (s) => s[0] + s.slice(1).toLowerCase(),
+          );
+        }
+
+        if (cTaxon.hasAttribute("authorityYear")) {
+          authority += ", " + cTaxon.getAttribute("authorityYear");
+        } else if (allow_defining && !/[0-9]/.test(authority)) {
+          // if this treatment defines this taxon and the authority given contains no year / numbers, infer from docDate
+          warnings.push(`Using document metadata for authority year`);
+          authority += ", " + doc.getAttribute("docDate");
+        }
+
+        authority = normalizeAuthority(authority);
+      }
+      fullAuthority = authority;
     } else if (allow_defining) {
       // if taxon is the treated taxon and no explicit authority info is given on the element, fall back to document info
       let docAuthor = normalizeSpace(doc.getAttribute("docAuthor"))
