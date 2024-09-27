@@ -592,7 +592,7 @@ export function gg2rdf(
 
     let baseAuthority: string = cTaxon.getAttribute("baseAuthorityName") ?? "";
     if (baseAuthority) {
-      baseAuthority = substringBefore(baseAuthority, " in ");
+      baseAuthority = baseAuthority.replace(/\bin\b[^0-9]*/, "");
       if (baseAuthority === "L.") baseAuthority = "Linnaeus";
       if (baseAuthority.length >= 2 && !/[a-z]/.test(baseAuthority)) {
         baseAuthority = baseAuthority.replaceAll(
@@ -620,7 +620,7 @@ export function gg2rdf(
     }
     let authority: string = cTaxon.getAttribute("authorityName") ?? "";
     if (authority) {
-      authority = substringBefore(authority, " in ");
+      authority = authority.replace(/\bin\b[^0-9]*/, "");
       if (authority === "L.") authority = "Linnaeus";
       if (authority.length >= 2 && !/[a-z]/.test(authority)) {
         authority = authority.replaceAll(
@@ -671,7 +671,7 @@ export function gg2rdf(
     } else if (cTaxon.getAttribute("authority")) {
       let authority: string = cTaxon.getAttribute("authority") ?? "";
       if (authority) {
-        authority = substringBefore(authority, " in ");
+        authority = authority.replace(/\bin\b[^0-9]*/, "");
         if (authority === "L.") authority = "Linnaeus";
         if (authority.length >= 2 && !/[a-z]/.test(authority)) {
           authority = authority.replaceAll(
