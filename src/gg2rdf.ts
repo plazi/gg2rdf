@@ -254,7 +254,11 @@ export function gg2rdf(
           `taxonomicName ~ taxonomicNameLabel[rank="${rank}"]`,
         )?.innerText ?? "ABSENT";
 
-      const taxonConcept = makeTaxonConcept(taxon, taxon);
+      const is_defining = taxonStatus !== "nomen dubium" &&
+        (taxonStatus !== "ABSENT" ||
+          taxon.parentNode.querySelector(`taxonomicName ~ taxonomicNameLabel`));
+
+      const taxonConcept = makeTaxonConcept(taxon, taxon, is_defining);
 
       // add reference to subject taxon concept, using taxon name as a fallback if we're lacking a valid authority
       if (!taxonConcept.ok) {
@@ -264,10 +268,7 @@ export function gg2rdf(
         // we have a valid authority, go for the taxon stringconcept
         if (taxonStatus === "nomen dubium") {
           t.addProperty(`trt:deprecates`, taxonConcept.uri);
-        } else if (
-          taxonStatus !== "ABSENT" ||
-          taxon.parentNode.querySelector(`taxonomicName ~ taxonomicNameLabel`)
-        ) {
+        } else if (is_defining) {
           t.addProperty(`trt:definesTaxonConcept`, taxonConcept.uri);
         } else {
           t.addProperty(`trt:augmentsTaxonConcept`, taxonConcept.uri);
@@ -444,18 +445,11 @@ export function gg2rdf(
   function makeTaxonConcept(
     taxon: Element,
     cTaxon: Element,
+    is_defining: boolean,
   ): { ok: false; tnuri: string } | { ok: true; uri: string; tnuri: string } {
-    const rank: string = cTaxon.getAttribute("rank");
-    const cTaxonStatus: string = cTaxon.getAttribute("status") ??
-      taxon.parentNode.querySelector(
-        `taxonomicName ~ taxonomicNameLabel[rank="${rank}"]`,
-      )?.innerText ?? "ABSENT";
-
     const { authority, warnings, fallback_doc_info } = getFullAuthority(
-      taxon,
       cTaxon,
-      !(cTaxonStatus.includes("comb") || cTaxonStatus.includes("stat") ||
-        cTaxonStatus.includes("ABSENT")),
+      is_defining,
     );
 
     const taxonRelation = getTaxonRelation({ taxon, cTaxon });
@@ -590,9 +584,8 @@ export function gg2rdf(
 
   /** gets the human-readable authroty string for the cTaxon */
   function getFullAuthority(
-    taxon: Element,
     cTaxon: Element,
-    allow_fallback = true,
+    allow_defining = true,
   ): { authority: string; warnings: string[]; fallback_doc_info?: boolean } {
     let fullAuthority = "INVALID";
     const warnings: string[] = [];
@@ -673,7 +666,7 @@ export function gg2rdf(
       fullAuthority = authority;
     } else if (cTaxon.getAttribute("authority")) {
       fullAuthority = normalizeAuthority(cTaxon.getAttribute("authority"));
-    } else if (taxon === cTaxon || allow_fallback) {
+    } else if (allow_defining) {
       // if taxon is the treated taxon and no explicit authority info is given on the element, fall back to document info
       let docAuthor = normalizeSpace(doc.getAttribute("docAuthor"))
         .replaceAll(
@@ -978,7 +971,7 @@ export function gg2rdf(
     taxon: Element,
     cTaxon: Element,
   ): void {
-    const { authority } = getFullAuthority(taxon, cTaxon, false);
+    const { authority } = getFullAuthority(cTaxon, false);
 
     let cTaxonAuthority = authority;
 
@@ -1025,7 +1018,7 @@ export function gg2rdf(
     }
     if (taxonRelation === REL.CITES) {
       // do not let a citing treatment deprecate a cited name
-      const taxonConcept = makeTaxonConcept(taxon, cTaxon);
+      const taxonConcept = makeTaxonConcept(taxon, cTaxon, false);
       if (taxonConcept.ok) {
         t.addProperty(`cito:cites`, taxonConcept.uri);
       } else {
@@ -1037,7 +1030,7 @@ export function gg2rdf(
     // skip taxon names with insufficient attributes
     if (taxonRelation === REL.SAME || taxonRelation === REL.NONE) return;
     // deprecate recombined, renamed, and synonymized names
-    const taxonConcept = makeTaxonConcept(taxon, cTaxon);
+    const taxonConcept = makeTaxonConcept(taxon, cTaxon, false);
     if (taxonConcept.ok) {
       // do not let a taxon deprecate itself
       if (taxonConcept.uri === treatmentTaxonUri) return;
