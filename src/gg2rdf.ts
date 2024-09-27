@@ -705,7 +705,7 @@ export function gg2rdf(
     if (!a) return "";
     let result = normalizeSpace(a)
       .replace(
-        /\s*,?\s*(\(?[0-9]{4}\)?)\s*[a-z]*\s*:?(?:\s*[0-9]*\s*[a-z-]*\s*,?)*(\)?)\s*$/,
+        /\s*,*\s*(\(?[0-9]{4}?)[^\)]*(\)?).*$/,
         ", $1$2",
       )
       .replaceAll('"', "")
