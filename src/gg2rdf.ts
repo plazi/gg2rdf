@@ -1128,26 +1128,13 @@ export function gg2rdf(
 
   /** replaces <xsl:call-template name="authorityNameForURI"> */
   function authorityNameForURI(authorityName: string) {
-    // authorityName = normalizeSpace(normalizeAuthority(authorityName));
-    // authorityName = authorityName.replaceAll(/\([^\)]*\)/g, "");
-    // authorityName = authorityName.replaceAll(/\[[^\]]*\]/g, "");
-    // // authorityName = substringAfter(authorityName, ") ");
-    // // authorityName = substringAfter(authorityName, ")");
-    // // authorityName = substringAfter(authorityName, "] ");
-    // // authorityName = substringAfter(authorityName, "]");
+    // Take baseAuthority if present
+    authorityName = substringBefore(authorityName, ")");
+    // Take first name given
     authorityName = substringBefore(authorityName, " &");
-    // authorityName = substringBefore(authorityName, " and");
-    // authorityName = substringBefore(authorityName, " et");
     authorityName = substringBefore(authorityName, ",");
-    // authorityName = substringAfter(authorityName, ". ");
+    // Take Last Name
     authorityName = substringAfter(authorityName, " ");
-    // if (authorityName.length >= 2) {
-    //   authorityName = authorityName.replaceAll(
-    //     /\w[A-Z]+\b[^.]|\w[A-Z]+$/g,
-    //     (s) => s[0] + s.slice(1).toLowerCase(),
-    //   );
-    // }
-    // if (authorityName === "L.") return partialURI("Linnaeus");
     const match = authorityName.match(/\p{L}+/u);
     if (match && match[0]) return partialURI(match[0]);
     return partialURI(authorityName);
