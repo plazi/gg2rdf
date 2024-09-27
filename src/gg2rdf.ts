@@ -582,7 +582,7 @@ export function gg2rdf(
     return { ok: true, uri, tnuri };
   }
 
-  /** gets the human-readable authroty string for the cTaxon */
+  /** gets the human-readable authority string for the cTaxon */
   function getFullAuthority(
     cTaxon: Element,
     allow_defining = true,
@@ -642,6 +642,10 @@ export function gg2rdf(
 
       if (cTaxon.hasAttribute("authorityYear")) {
         authority += ", " + cTaxon.getAttribute("authorityYear");
+      } else if (allow_defining && !/[0-9]/.test(authority)) {
+        // if this treatment defines this taxon and the authority given contains no year / numbers, infer from docDate
+        warnings.push(`Using document metadata for authority year`);
+        authority += ", " + doc.getAttribute("docDate");
       }
 
       authority = normalizeAuthority(authority);
