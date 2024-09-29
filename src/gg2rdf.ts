@@ -448,6 +448,7 @@ export function gg2rdf(
   function makeTaxonConcept(
     cTaxon: Element,
     is_defining: boolean,
+    recurse_tn = true,
   ): { ok: false; tnuri: string } | { ok: true; uri: string; tnuri: string } {
     const { authority, warnings, fallback_doc_info } = getFullAuthority(
       cTaxon,
@@ -458,7 +459,7 @@ export function gg2rdf(
     const cTaxonRankGroup = getTaxonRankGroup(cTaxon);
 
     const tnuri = taxonNameURI(cTaxon);
-    makeTaxonName(cTaxon);
+    makeTaxonName(cTaxon, undefined, recurse_tn);
 
     if (authority === "INVALID") {
       log(`Warning: Invalid Authority for ${tnuri}`);
@@ -534,7 +535,10 @@ export function gg2rdf(
     // s.addProperty("trt:verbatim", STR(cTaxon.innerText));
 
     warnings.forEach((w) => s.addProperty("# Warning:", w));
-    s.addProperty("dwc:scientificNameAuthorship", STR(authority));
+    if (!Object.hasOwn(s.properties, "dwc:scientificNameAuthorship")) {
+      // only add one dwc:scientificNameAuthorship; assuming the first <taxonomicName> is the most accurate.
+      s.addProperty("dwc:scientificNameAuthorship", STR(authority));
+    }
 
     if (fallback_doc_info) {
       // if taxon is the treated taxon and no explicit authority info is given on the element, fall back to document info
@@ -819,14 +823,18 @@ export function gg2rdf(
    * @param rankLimit treat taxon as if it's rank was strictly above rankLimit
    * @returns identifier of parent name
    */
-  function makeTaxonName(taxon: Element, rankLimit?: string): string {
+  function makeTaxonName(
+    taxon: Element,
+    rankLimit?: string,
+    recurse = true,
+  ): string {
     const uri = taxonNameURI(taxon, rankLimit);
 
     // TODO there are some checks in the xslt which abort outputting a tn -- are they neccesary?
 
     const prev = taxonNames.find((t) => t.uri === uri);
     const s = prev || new Subject(uri);
-    if (!prev) taxonNames.push(s);
+    if (!prev && recurse) taxonNames.push(s);
 
     let ranks = [
       "kingdom",
@@ -886,7 +894,7 @@ export function gg2rdf(
       s.addProperty("dwc:rank", STR(nextRankLimit));
     }
 
-    if (nextRankLimit === "kingdom") { /* stop recursion */ }
+    if (!recurse || nextRankLimit === "kingdom") { /* stop recursion */ }
     else if (nextRankLimit && rankLimit !== nextRankLimit) {
       const parent = makeTaxonName(taxon, nextRankLimit);
       if (parent && parent !== uri) s.addProperty("trt:hasParentName", parent);
@@ -1043,13 +1051,13 @@ export function gg2rdf(
       if (!alreadyCited.has(uri)) {
         t.addProperty(`trt:citesTaxonName`, uri);
         alreadyCited.add(uri);
-        makeTaxonName(cTaxon);
+        makeTaxonName(cTaxon, undefined, false);
       }
       return;
     }
     if (taxonRelation === REL.CITES) {
       // do not let a citing treatment deprecate a cited name
-      const taxonConcept = makeTaxonConcept(cTaxon, false);
+      const taxonConcept = makeTaxonConcept(cTaxon, false, false);
       if (taxonConcept.ok) {
         if (!alreadyCited.has(taxonConcept.uri)) {
           t.addProperty(`cito:cites`, taxonConcept.uri);
