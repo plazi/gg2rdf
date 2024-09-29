@@ -87,12 +87,12 @@ export function gg2rdf(
   const taxonNames: Subject[] = [];
   const figures: Subject[] = [];
   const citedMaterials: Subject[] = [];
-  let treatmentTaxonUri = "";
 
   let status: Status = Status.successful;
 
+  const treatmentTaxon = getTreatmentTaxon();
+
   try {
-    checkForErrors();
     makeTreatment();
     makePublication();
 
@@ -131,13 +131,15 @@ export function gg2rdf(
   // end of top-level code
 
   /** replaces <xsl:template match="/"> (root template) */
-  function checkForErrors() {
-    const errors: string[] = [];
+  function getTreatmentTaxon(): { uri: string | null; el: Element } | null {
     const taxon: Element | undefined = document.querySelector(
       'document treatment subSubSection[type="nomenclature"] taxonomicName',
     );
+
     if (!taxon) {
-      errors.push("the treatment is lacking the taxon");
+      log("Error: the treatment is lacking the taxon");
+      output("# Error: the treatment is lacking the taxon");
+      status = Math.max(status, Status.has_errors);
     } else if (!taxon.getAttribute("kingdom")) {
       log(
         "Warning: treatment taxon is missing ancestor kingdom, defaulting to 'Animalia'",
@@ -147,12 +149,8 @@ export function gg2rdf(
       );
       status = Math.max(status, Status.has_warnings);
     }
-    if (errors.length) {
-      throw new Error(
-        "Cannot produce RDF due to data errors:\n - " +
-          errors.join("\n - "),
-      );
-    }
+
+    return taxon ? { el: taxon, uri: null } : null;
   }
 
   function checkForEpithetErrors(taxon: Element): string[] {
@@ -236,79 +234,80 @@ export function gg2rdf(
   function makeTreatment() {
     const t = new Subject(URI(`http://treatment.plazi.org/id/${id}`));
 
-    const taxon: Element = document.querySelector(
-      'document treatment subSubSection[type="nomenclature"] taxonomicName',
-    ); // existence asserted by checkForErrors
-
-    const epithetErrors = checkForEpithetErrors(taxon);
-    if (epithetErrors.length) {
-      epithetErrors.forEach((e) => {
-        t.addProperty("# Warning: Could not add treatment taxon because", e);
-        log(`Warning: Could not add treatment taxon because ${e}`);
-        status = Math.max(status, Status.has_warnings);
-      });
-    } else {
-      const rank: string = taxon.getAttribute("rank");
-      const taxonStatus: string = taxon.getAttribute("status") ??
-        taxon.parentNode.querySelector(
-          `taxonomicName ~ taxonomicNameLabel[rank="${rank}"]`,
-        )?.innerText ?? "ABSENT";
-
-      const is_defining = taxonStatus !== "nomen dubium" &&
-        (taxonStatus !== "ABSENT" ||
-          taxon.parentNode.querySelector(`taxonomicName ~ taxonomicNameLabel`));
-
-      const taxonConcept = makeTaxonConcept(taxon, taxon, is_defining);
-
-      // add reference to subject taxon concept, using taxon name as a fallback if we're lacking a valid authority
-      if (!taxonConcept.ok) {
-        // no valid authority given, fall back to taxon name
-        t.addProperty("trt:treatsTaxonName", taxonConcept.tnuri);
-      } else {
-        // we have a valid authority, go for the taxon stringconcept
-        if (taxonStatus === "nomen dubium") {
-          t.addProperty(`trt:deprecates`, taxonConcept.uri);
-        } else if (is_defining) {
-          t.addProperty(`trt:definesTaxonConcept`, taxonConcept.uri);
-        } else {
-          t.addProperty(`trt:augmentsTaxonConcept`, taxonConcept.uri);
-        }
-        treatmentTaxonUri = taxonConcept.uri;
-      }
-
-      const treatmentTaxon = taxonNames.find((tn) =>
-        tn.uri === taxonConcept.tnuri
-      );
-      if (!treatmentTaxon) {
-        log("# Warning: Lost treatment-taxon, cannot add vernacular names");
-        status = Math.max(status, Status.has_warnings);
-      } else {
-        doc.querySelectorAll("vernacularName").forEach((v: Element) => {
-          const language = v.getAttribute("language") || undefined;
-          const tag = language ? iso6393To1[language] : undefined;
-          if (tag) {
-            treatmentTaxon.addProperty(
-              "dwc:vernacularName",
-              `${STR(normalizeSpace(v.innerText))}@${tag}`,
-            );
-          } else {
-            treatmentTaxon.addProperty(
-              "dwc:vernacularName",
-              STR(normalizeSpace(v.innerText)),
-            );
-            treatmentTaxon.addProperty(
-              "# Info:",
-              `Couldn't generate language tag for ${
-                STR(normalizeSpace(v.innerText))
-              }@${language}`,
-            );
-            log(
-              `Info: Couldn't generate language tag for ${
-                STR(normalizeSpace(v.innerText))
-              }@${language}`,
-            );
-          }
+    if (treatmentTaxon) {
+      const taxon = treatmentTaxon.el;
+      const epithetErrors = checkForEpithetErrors(taxon);
+      if (epithetErrors.length) {
+        epithetErrors.forEach((e) => {
+          t.addProperty("# Warning: Could not add treatment taxon because", e);
+          log(`Warning: Could not add treatment taxon because ${e}`);
+          status = Math.max(status, Status.has_warnings);
         });
+      } else {
+        const rank: string = taxon.getAttribute("rank");
+        const taxonStatus: string = taxon.getAttribute("status") ??
+          taxon.parentNode.querySelector(
+            `taxonomicName ~ taxonomicNameLabel[rank="${rank}"]`,
+          )?.innerText ?? "ABSENT";
+
+        const is_defining = taxonStatus !== "nomen dubium" &&
+          (taxonStatus !== "ABSENT" ||
+            taxon.parentNode.querySelector(
+              `taxonomicName ~ taxonomicNameLabel`,
+            ));
+
+        const taxonConcept = makeTaxonConcept(taxon, is_defining);
+
+        // add reference to subject taxon concept, using taxon name as a fallback if we're lacking a valid authority
+        if (!taxonConcept.ok) {
+          // no valid authority given, fall back to taxon name
+          t.addProperty("trt:treatsTaxonName", taxonConcept.tnuri);
+        } else {
+          // we have a valid authority, go for the taxon stringconcept
+          if (taxonStatus === "nomen dubium") {
+            t.addProperty(`trt:deprecates`, taxonConcept.uri);
+          } else if (is_defining) {
+            t.addProperty(`trt:definesTaxonConcept`, taxonConcept.uri);
+          } else {
+            t.addProperty(`trt:augmentsTaxonConcept`, taxonConcept.uri);
+          }
+          treatmentTaxon.uri = taxonConcept.uri;
+        }
+
+        const treatmentTaxonSubject = taxonNames.find((tn) =>
+          tn.uri === taxonConcept.tnuri
+        );
+        if (!treatmentTaxonSubject) {
+          log("# Warning: Lost treatment-taxon, cannot add vernacular names");
+          status = Math.max(status, Status.has_warnings);
+        } else {
+          doc.querySelectorAll("vernacularName").forEach((v: Element) => {
+            const language = v.getAttribute("language") || undefined;
+            const tag = language ? iso6393To1[language] : undefined;
+            if (tag) {
+              treatmentTaxonSubject.addProperty(
+                "dwc:vernacularName",
+                `${STR(normalizeSpace(v.innerText))}@${tag}`,
+              );
+            } else {
+              treatmentTaxonSubject.addProperty(
+                "dwc:vernacularName",
+                STR(normalizeSpace(v.innerText)),
+              );
+              treatmentTaxonSubject.addProperty(
+                "# Info:",
+                `Couldn't generate language tag for ${
+                  STR(normalizeSpace(v.innerText))
+                }@${language}`,
+              );
+              log(
+                `Info: Couldn't generate language tag for ${
+                  STR(normalizeSpace(v.innerText))
+                }@${language}`,
+              );
+            }
+          });
+        }
       }
     }
 
@@ -337,7 +336,7 @@ export function gg2rdf(
         : e.querySelector("taxonomicName");
       if (cTaxon) {
         try {
-          addTaxonConceptCitation(t, taxon, cTaxon);
+          addTaxonConceptCitation(t, cTaxon);
         } catch (error) {
           log(error);
           t.addProperty(
@@ -443,7 +442,6 @@ export function gg2rdf(
    * both returned uris are valid turtle uris
    */
   function makeTaxonConcept(
-    taxon: Element,
     cTaxon: Element,
     is_defining: boolean,
   ): { ok: false; tnuri: string } | { ok: true; uri: string; tnuri: string } {
@@ -452,7 +450,7 @@ export function gg2rdf(
       is_defining,
     );
 
-    const taxonRelation = getTaxonRelation({ taxon, cTaxon });
+    const taxonRelation = getTaxonRelation(cTaxon);
     const cTaxonRankGroup = getTaxonRankGroup(cTaxon);
 
     const tnuri = taxonNameURI(cTaxon);
@@ -519,7 +517,7 @@ export function gg2rdf(
           "rdfs:seeAlso",
           URI(
             `https://www.catalogueoflife.org/data/taxon/${
-              normalizeSpace(taxon.getAttribute(n))
+              normalizeSpace(cTaxon.getAttribute(n))
             }`,
           ),
         );
@@ -993,7 +991,6 @@ export function gg2rdf(
   /** replaces <xsl:template name="taxonConceptCitation"> */
   function addTaxonConceptCitation(
     t: Subject,
-    taxon: Element,
     cTaxon: Element,
   ): void {
     const { authority } = getFullAuthority(cTaxon, false);
@@ -1007,7 +1004,7 @@ export function gg2rdf(
       }`;
     }
 
-    const taxonRelation = getTaxonRelation({ taxon, cTaxon });
+    const taxonRelation = getTaxonRelation(cTaxon);
     const cTaxonRankGroup = getTaxonRankGroup(cTaxon);
     // check required attributes
     if (
@@ -1043,7 +1040,7 @@ export function gg2rdf(
     }
     if (taxonRelation === REL.CITES) {
       // do not let a citing treatment deprecate a cited name
-      const taxonConcept = makeTaxonConcept(taxon, cTaxon, false);
+      const taxonConcept = makeTaxonConcept(cTaxon, false);
       if (taxonConcept.ok) {
         t.addProperty(`cito:cites`, taxonConcept.uri);
       } else {
@@ -1055,10 +1052,10 @@ export function gg2rdf(
     // skip taxon names with insufficient attributes
     if (taxonRelation === REL.SAME || taxonRelation === REL.NONE) return;
     // deprecate recombined, renamed, and synonymized names
-    const taxonConcept = makeTaxonConcept(taxon, cTaxon, false);
+    const taxonConcept = makeTaxonConcept(cTaxon, false);
     if (taxonConcept.ok) {
       // do not let a taxon deprecate itself
-      if (taxonConcept.uri === treatmentTaxonUri) return;
+      if (taxonConcept.uri === treatmentTaxon?.uri) return;
       t.addProperty(`trt:deprecates`, taxonConcept.uri);
     } else {
       t.addProperty(`trt:citesTaxonName`, taxonConcept.tnuri);
@@ -1067,9 +1064,13 @@ export function gg2rdf(
   }
 
   /** replaces <xsl:template name="taxonRelation"> */
-  function getTaxonRelation(
-    { taxon, cTaxon }: { taxon: Element; cTaxon: Element },
-  ) {
+  function getTaxonRelation(cTaxon: Element) {
+    if (!treatmentTaxon) {
+      return REL.CITES;
+    }
+
+    const taxon = treatmentTaxon.el;
+
     const authorityMatch = (cTaxon.hasAttribute("authorityYear") &&
       cTaxon.getAttribute("authorityYear") ===
         taxon.getAttribute("authorityYear") &&
