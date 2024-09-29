@@ -88,6 +88,8 @@ export function gg2rdf(
   const figures: Subject[] = [];
   const citedMaterials: Subject[] = [];
 
+  const alreadyCited: Set<string> = new Set();
+
   let status: Status = Status.successful;
 
   const treatmentTaxon = getTreatmentTaxon();
@@ -272,7 +274,9 @@ export function gg2rdf(
             t.addProperty(`trt:augmentsTaxonConcept`, taxonConcept.uri);
           }
           treatmentTaxon.uri = taxonConcept.uri;
+          alreadyCited.add(taxonConcept.uri);
         }
+        alreadyCited.add(taxonConcept.tnuri);
 
         const treatmentTaxonSubject = taxonNames.find((tn) =>
           tn.uri === taxonConcept.tnuri
@@ -320,7 +324,7 @@ export function gg2rdf(
 
     // add cited taxon concepts
     document.querySelectorAll(
-      "subSubSection[type='reference_group'] treatmentCitationGroup, subSubSection[type='reference_group'] treatmentCitation, subSubSection[type='reference_group'] taxonomicName",
+      "subSubSection[type='reference_group'] treatmentCitationGroup, subSubSection[type='reference_group'] treatmentCitation, subSubSection[type='reference_group'] taxonomicName, taxonomicName",
     ).forEach((e: Element) => {
       if (
         (e.tagName === "treatmentCitation" &&
@@ -1032,20 +1036,29 @@ export function gg2rdf(
       status = Math.max(status, Status.has_warnings);
       return;
     }
+
     if (cTaxonAuthority === "INVALID") {
       // no valid authority cited, fall back to taxon name
-      t.addProperty(`trt:citesTaxonName`, taxonNameURI(cTaxon));
-      makeTaxonName(cTaxon);
+      const uri = taxonNameURI(cTaxon);
+      if (!alreadyCited.has(uri)) {
+        t.addProperty(`trt:citesTaxonName`, uri);
+        alreadyCited.add(uri);
+        makeTaxonName(cTaxon);
+      }
       return;
     }
     if (taxonRelation === REL.CITES) {
       // do not let a citing treatment deprecate a cited name
       const taxonConcept = makeTaxonConcept(cTaxon, false);
       if (taxonConcept.ok) {
-        t.addProperty(`cito:cites`, taxonConcept.uri);
-      } else {
+        if (!alreadyCited.has(taxonConcept.uri)) {
+          t.addProperty(`cito:cites`, taxonConcept.uri);
+          alreadyCited.add(taxonConcept.uri);
+        }
+      } else if (!alreadyCited.has(taxonConcept.tnuri)) {
         t.addProperty(`trt:citesTaxonName`, taxonConcept.tnuri);
       }
+      alreadyCited.add(taxonConcept.tnuri);
       return;
     }
     // do not let a taxon deprecate itself
@@ -1057,15 +1070,20 @@ export function gg2rdf(
       // do not let a taxon deprecate itself
       if (taxonConcept.uri === treatmentTaxon?.uri) return;
       t.addProperty(`trt:deprecates`, taxonConcept.uri);
-    } else {
+      alreadyCited.add(taxonConcept.uri);
+    } else if (!alreadyCited.has(taxonConcept.tnuri)) {
       t.addProperty(`trt:citesTaxonName`, taxonConcept.tnuri);
     }
+    alreadyCited.add(taxonConcept.tnuri);
     return;
   }
 
   /** replaces <xsl:template name="taxonRelation"> */
   function getTaxonRelation(cTaxon: Element) {
-    if (!treatmentTaxon) {
+    if (
+      !treatmentTaxon ||
+      !cTaxon.closest("subSubSection[type='reference_group']")
+    ) {
       return REL.CITES;
     }
 
