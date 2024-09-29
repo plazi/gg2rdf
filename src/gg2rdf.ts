@@ -877,18 +877,31 @@ export function gg2rdf(
 
     let nextRankLimit = "";
 
-    ranks.map((n: string) => {
-      const attr = taxon.getAttribute(n);
-      if (attr) {
-        s.addProperty(`dwc:${n}`, STR(normalizeSpace(attr)));
-        if ((attr + "").includes(".")) {
-          s.addProperty("# Warning:", `abbreviated ${n} ${STR(attr)}`);
-          if (!rankLimit) log(`Warning: abbreviated ${n} ${STR(attr)}`);
-          status = Math.max(status, Status.has_warnings);
-        }
-        nextRankLimit = n;
+    if (rankLimit) {
+      // only not put higher-order rank data on cited taxon, not on its parents
+      // if ranklimit then we are recursing
+      ranks = ranks.filter((n) => taxon.getAttribute(n));
+      if (ranks.length) {
+        nextRankLimit = ranks[ranks.length - 1];
+        s.addProperty(
+          `dwc:${nextRankLimit}`,
+          STR(normalizeSpace(taxon.getAttribute(nextRankLimit))),
+        );
       }
-    });
+    } else {
+      ranks.map((n: string) => {
+        const attr = taxon.getAttribute(n);
+        if (attr) {
+          s.addProperty(`dwc:${n}`, STR(normalizeSpace(attr)));
+          if ((attr + "").includes(".")) {
+            s.addProperty("# Warning:", `abbreviated ${n} ${STR(attr)}`);
+            log(`Warning: abbreviated ${n} ${STR(attr)}`);
+            status = Math.max(status, Status.has_warnings);
+          }
+          nextRankLimit = n;
+        }
+      });
+    }
 
     if (nextRankLimit) {
       s.addProperty("dwc:rank", STR(nextRankLimit));
