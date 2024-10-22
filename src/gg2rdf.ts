@@ -1451,6 +1451,7 @@ export function gg2rdf(
   function outputSubject(s: Subject) {
     if (s.propNames.length) {
       if (s.propNames[s.propNames.length - 1].startsWith("#")) {
+        // only comments
         output(
           `\n# No properties for ${s.uri}\n    ${
             s.propNames.map((n) => `${n} ${[...s.properties[n]].join(", ")}`)
@@ -1462,7 +1463,9 @@ export function gg2rdf(
       } else {
         output(
           `\n${s.uri}\n    ${
-            s.propNames.map((n) => `${n} ${[...s.properties[n]].join(", ")}`)
+            s.propNames.map((n) =>
+              `${n} ${[...s.properties[n]].sort().join(", ")}`
+            )
               .join(
                 " ;\n    ",
               )
