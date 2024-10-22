@@ -69,8 +69,7 @@ export function gg2rdf(
 @prefix dwc: <http://rs.tdwg.org/dwc/terms/> .
 @prefix dwcFP: <http://filteredpush.org/ontologies/oa/dwcFP#> .
 @prefix fabio: <http://purl.org/spar/fabio/> .
-@prefix trt: <http://plazi.org/vocab/treatment#> .
-@prefix xlink: <http://www.w3.org/1999/xlink/> .`);
+@prefix trt: <http://plazi.org/vocab/treatment#> .`);
 
   // this is the <document> surrounding everything. doc != document
   const doc = document.querySelector("document") as Element;
