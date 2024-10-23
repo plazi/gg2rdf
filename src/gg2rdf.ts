@@ -379,6 +379,10 @@ export function gg2rdf(
     ) {
       t.properties["cito:cites"] = t.properties["cito:cites"]
         .difference(t.properties["trt:deprecates"]);
+
+      if (t.properties["cito:cites"].size === 0) {
+        delete t.properties["cito:cites"];
+      }
     }
 
     outputSubject(t);
