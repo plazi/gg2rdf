@@ -371,6 +371,16 @@ export function gg2rdf(
 
     t.addProperty(`a`, `trt:Treatment`);
 
+    // remove duplicate citations
+    // no cito:cites that are also trt:deprecates
+    if (
+      Object.hasOwn(t.properties, "cito:cites") &&
+      Object.hasOwn(t.properties, "trt:deprecates")
+    ) {
+      t.properties["cito:cites"] = t.properties["cito:cites"]
+        .difference(t.properties["trt:deprecates"]);
+    }
+
     outputSubject(t);
   }
 
