@@ -323,7 +323,7 @@ export function gg2rdf(
 
     // add cited taxon concepts
     document.querySelectorAll(
-      "subSubSection[type='reference_group'] treatmentCitationGroup, subSubSection[type='reference_group'] treatmentCitation, subSubSection[type='reference_group'] taxonomicName, taxonomicName",
+      "subSubSection[type='reference_group'] treatmentCitationGroup, subSubSection[type='reference_group'] treatmentCitation, subSubSection[type='reference_group'] taxonomicName",
     ).forEach((e: Element) => {
       if (
         (e.tagName === "treatmentCitation" &&
