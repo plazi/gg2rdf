@@ -102,7 +102,7 @@ export function gg2rdf(
     figures.forEach(outputSubject);
     citedMaterials.forEach(outputSubject);
   } catch (error) {
-    log(error);
+    log(error as string);
     output(
       `# There was some Error in gg2rdf\n${error}`.replaceAll(/\n/g, "\n# "),
     );
@@ -341,7 +341,7 @@ export function gg2rdf(
         try {
           addTaxonConceptCitation(t, cTaxon);
         } catch (error) {
-          log(error);
+          log(error as string);
           t.addProperty(
             "# Error:",
             `Could not add TaxonConceptCitation\n${error}`
@@ -1035,8 +1035,8 @@ export function gg2rdf(
 
     let cTaxonAuthority = authority;
 
+    const year = authority.match(/[0-9]+/)?.[0] || "";
     if (authority !== "INVALID") {
-      const year = authority.match(/[0-9]+/)?.[0] || "";
       cTaxonAuthority = `_${authorityNameForURI(authority)}_${
         partialURI(year)
       }`;
@@ -1085,7 +1085,10 @@ export function gg2rdf(
       // do not let a citing treatment deprecate a cited name
       const taxonConcept = makeTaxonConcept(cTaxon, false, false);
       if (taxonConcept.ok) {
-        if (!alreadyCited.has(taxonConcept.uri)) {
+        if (
+          !alreadyCited.has(taxonConcept.uri) &&
+          !alreadyCited.has(taxonConcept.tnuri) && !!year
+        ) {
           t.addProperty(`cito:cites`, taxonConcept.uri);
           alreadyCited.add(taxonConcept.uri);
         }
