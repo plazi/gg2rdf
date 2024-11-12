@@ -1294,7 +1294,7 @@ export function gg2rdf(
     ) {
       const names: string[] = [
         taxonName.getAttribute("genus"),
-        taxonName.getAttribute("isHybrid") === "true" ? "×" : "",
+        taxonName.getAttribute("isHybrid") === "true" ? "x" : "",
         ranks.includes("species")
           ? taxonName.getAttribute("species")
           // only put subGenus if no species present
