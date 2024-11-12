@@ -905,6 +905,12 @@ export function gg2rdf(
           `dwc:${nextRankLimit}`,
           STR(normalizeSpace(taxon.getAttribute(nextRankLimit))),
         );
+        if (ranks.includes("genus")) {
+          s.addProperty(
+            `dwc:genus`,
+            STR(normalizeSpace(taxon.getAttribute("genus"))),
+          );
+        }
       }
     } else {
       ranks.map((n: string) => {
