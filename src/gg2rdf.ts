@@ -527,20 +527,22 @@ export function gg2rdf(
       ].includes(n) && !n.startsWith("_") &&
       !n.match(/\.|evidence|Evicence|lsidName/)
     ).forEach((n: string) => {
-      // the xslt seems to special-case this, but output comparison suggests otherwise?
-      // this is because it was only changed recently, so the change was not immediately obvious.
-      // see https://github.com/plazi/gg2rdf/issues/10
+      const attr = cTaxon.getAttribute(n);
       if (n === "ID-CoL") {
         s.addProperty(
           "rdfs:seeAlso",
           URI(
             `https://www.catalogueoflife.org/data/taxon/${
-              normalizeSpace(cTaxon.getAttribute(n))
+              normalizeSpace(attr)
             }`,
           ),
         );
+      } else if (/^\W*(var|subsp|f)\W*$/i.test(attr)) {
+        s.addProperty("# Warning:", `ignoring ${n} ${STR(attr)}`);
+        log(`Warning: ignoring ${n} ${STR(attr)}`);
+        status = Math.max(status, Status.has_warnings);
       } else {
-        s.addProperty(`dwc:${n}`, STR(normalizeSpace(cTaxon.getAttribute(n))));
+        s.addProperty(`dwc:${n}`, STR(normalizeSpace(attr)));
       }
     });
 
@@ -893,7 +895,10 @@ export function gg2rdf(
     if (rankLimit) {
       // only not put higher-order rank data on cited taxon, not on its parents
       // if ranklimit then we are recursing
-      ranks = ranks.filter((n) => taxon.getAttribute(n));
+      ranks = ranks.filter((n) =>
+        taxon.getAttribute(n) &&
+        !/^\W*(var|subsp|f)\W*$/i.test(taxon.getAttribute(n).trim())
+      );
       if (ranks.length) {
         nextRankLimit = ranks[ranks.length - 1];
         s.addProperty(
@@ -903,15 +908,22 @@ export function gg2rdf(
       }
     } else {
       ranks.map((n: string) => {
-        const attr = taxon.getAttribute(n);
-        if (attr) {
-          s.addProperty(`dwc:${n}`, STR(normalizeSpace(attr)));
-          if ((attr + "").includes(".")) {
-            s.addProperty("# Warning:", `abbreviated ${n} ${STR(attr)}`);
-            log(`Warning: abbreviated ${n} ${STR(attr)}`);
+        const attr_: string | null = taxon.getAttribute(n);
+        if (attr_) {
+          const attr = attr_.trim();
+          if (/^\W*(var|subsp|f)\W*$/i.test(attr)) {
+            s.addProperty("# Warning:", `ignoring ${n} ${STR(attr)}`);
+            log(`Warning: ignoring ${n} ${STR(attr)}`);
             status = Math.max(status, Status.has_warnings);
+          } else {
+            s.addProperty(`dwc:${n}`, STR(normalizeSpace(attr)));
+            if (attr.includes(".")) {
+              s.addProperty("# Warning:", `abbreviated ${n} ${STR(attr)}`);
+              log(`Warning: abbreviated ${n} ${STR(attr)}`);
+              status = Math.max(status, Status.has_warnings);
+            }
+            nextRankLimit = n;
           }
-          nextRankLimit = n;
         }
       });
     }
@@ -1282,6 +1294,7 @@ export function gg2rdf(
     ) {
       const names: string[] = [
         taxonName.getAttribute("genus"),
+        taxonName.getAttribute("isHybrid") === "true" ? "×" : "",
         ranks.includes("species")
           ? taxonName.getAttribute("species")
           // only put subGenus if no species present
@@ -1302,8 +1315,11 @@ export function gg2rdf(
       ];
       return "/" +
         partialURI(
-          names.flat().map(removePunctuation).filter((n) => !!n).join("_")
-            .replaceAll(".", ""),
+          names
+            .flat()
+            .filter((n) => !!n && !/^\W*(var|subsp|f|\.)\W*$/i.test(n))
+            .map(removePunctuation)
+            .join("_"),
         );
     } else {
       const sigEpithet = removePunctuation(
