@@ -1230,7 +1230,7 @@ export function gg2rdf(
     authorityName = substringBefore(authorityName, ",");
     // Take Last Name
     authorityName = substringAfter(authorityName, " ");
-    const match = authorityName.match(/\p{L}+/u);
+    const match = authorityName.match(/\(?\p{L}+/u);
     if (match && match[0]) return partialURI(match[0]);
     return partialURI(authorityName);
   }
