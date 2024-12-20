@@ -905,10 +905,18 @@ export function gg2rdf(
           `dwc:${nextRankLimit}`,
           STR(normalizeSpace(taxon.getAttribute(nextRankLimit))),
         );
+        // SynoSpecies only shows Taxa with Genus and Kingdom, so we add these
+        // for higher order taxa too, to make sure that they appear always.
         if (ranks.includes("genus")) {
           s.addProperty(
             `dwc:genus`,
             STR(normalizeSpace(taxon.getAttribute("genus"))),
+          );
+        }
+        if (ranks.includes("kingdom")) {
+          s.addProperty(
+            `dwc:kingdom`,
+            STR(normalizeSpace(taxon.getAttribute("kingdom"))),
           );
         }
       }
