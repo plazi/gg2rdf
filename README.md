@@ -55,7 +55,7 @@ volumes:
   gg2rdf:
 ```
 
-## Configuration
+### Configuration
 
 Edit the file `config/config.ts`. Should be self-explanatory what goes where.
 
@@ -67,3 +67,26 @@ using git from inside the devcontainer.
 To start from the terminal in vscode:
 
     set -a; source .env; set +a; deno run -A src/main.ts
+
+#### Check for behaviour changes
+use `git diff origin/main HEAD --` from the target-repo inside the container after running some big transformation.
+
+## Notes
+
+gg2rdf will ouput the follwing messages and put them as comments into the
+generated ttl:
+
+- Errors:
+  - «Error: Could not create RDF due to missing &lt;document>»
+  - «There was some Error in gg2rdf» followed by the javascript error if one
+    occurs
+  - «Cannot produce RDF due to data errors:»
+    - «the treatment is lacking the taxon» if no element matches
+      `document treatment subSubSection[type="nomenclature"] taxonomicName`
+  - «Error: Invalid Rank» and «Error: Invalid taxon relation» for invalid taxon-concepts
+- Warnings:
+  - «Warning: Failed to output a material citation, could not create identifier»
+  - «Warning: treatment taxon is missing ancestor kingdom»
+  - «Warning: abbreviated `rank` "`name`"» if a taxon name component contains
+    a `.` (e.g. «Warning: abbreviated genus "T."»)
+  - «Warning: Could not determine parent name of `tn-uri`»
