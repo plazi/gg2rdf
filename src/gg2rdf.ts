@@ -143,10 +143,10 @@ export function gg2rdf(
       status = Math.max(status, Status.has_errors);
     } else if (!taxon.getAttribute("kingdom")) {
       log(
-        "Warning: treatment taxon is missing ancestor kingdom, defaulting to 'Animalia'",
+        "Warning: treatment taxon is missing ancestor kingdom",
       );
       output(
-        "# Warning: treatment taxon is missing ancestor kingdom, defaulting to 'Animalia'",
+        "# Warning: treatment taxon is missing ancestor kingdom",
       );
       status = Math.max(status, Status.has_warnings);
     }
@@ -1246,7 +1246,7 @@ export function gg2rdf(
   /** replaces <xsl:call-template name="taxonNameBaseURI"> */
   function taxonNameBaseURI({ kingdom }: { kingdom: string }) {
     return `http://taxon-name.plazi.org/id/${
-      kingdom ? partialURI(kingdom) : "Animalia"
+      kingdom ? partialURI(kingdom) : "INVALID"
     }`;
   }
 
@@ -1362,10 +1362,10 @@ export function gg2rdf(
 
   /** Get kingdom of taxonName
    *
-   * If `taxonName.getAttribute("kingdom")` is falsy (e.g. null or empty), returns "Animalia".
+   * If `taxonName.getAttribute("kingdom")` is falsy (e.g. null or empty), returns "INVALID".
    */
   function getKingdom(taxonName: Element) {
-    return taxonName.getAttribute("kingdom") || "Animalia";
+    return taxonName.getAttribute("kingdom") || "INVALID";
   }
 
   /** returns plain uri
