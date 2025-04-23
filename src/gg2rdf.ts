@@ -252,6 +252,7 @@ export function gg2rdf(
           )?.innerText ?? "ABSENT";
 
         const is_defining = taxonStatus !== "nomen dubium" &&
+          taxonStatus !== "(nomen dubium)" &&
           (taxonStatus !== "ABSENT" ||
             taxon.parentNode.querySelector(
               `taxonomicName ~ taxonomicNameLabel`,
@@ -265,7 +266,9 @@ export function gg2rdf(
           t.addProperty("trt:treatsTaxonName", taxonConcept.tnuri);
         } else {
           // we have a valid authority, go for the taxon stringconcept
-          if (taxonStatus === "nomen dubium") {
+          if (
+            taxonStatus === "nomen dubium" || taxonStatus === "(nomen dubium)"
+          ) {
             t.addProperty(`trt:deprecates`, taxonConcept.uri);
           } else if (is_defining) {
             t.addProperty(`trt:definesTaxonConcept`, taxonConcept.uri);
