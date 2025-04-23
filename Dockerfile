@@ -1,4 +1,4 @@
-FROM denoland/deno:1.43.3
+FROM denoland/deno:2.0.3
 
 # Install cron
 RUN DEBIAN_FRONTEND=noninteractive apt update

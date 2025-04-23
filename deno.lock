@@ -1,16 +1,5 @@
 {
-  "version": "3",
-  "packages": {
-    "specifiers": {
-      "npm:@types/node": "npm:@types/node@18.16.19"
-    },
-    "npm": {
-      "@types/node@18.16.19": {
-        "integrity": "sha512-IXl7o+R9iti9eBW4Wg2hx1xQDig183jj7YLn8F7udNceyfkbn1ZxmzZXuak20gR40D7pIkIY1kYGx5VIGbaHKA==",
-        "dependencies": {}
-      }
-    }
-  },
+  "version": "4",
   "remote": {
     "https://deno.land/std@0.224.0/assert/assert.ts": "09d30564c09de846855b7b071e62b5974b001bb72a4b797958fe0660e7849834",
     "https://deno.land/std@0.224.0/assert/assertion_error.ts": "ba8752bd27ebc51f723702fac2f54d3e94447598f54264a6653d6413738a8917",
@@ -172,24 +161,6 @@
     "https://deno.land/std@0.224.0/streams/writer_from_stream_writer.ts": "22cba4e5162fc443c7e5ef62f2054674cd6a20f5d7519a62db8d201496463931",
     "https://deno.land/std@0.224.0/streams/zip_readable_streams.ts": "53eb10d7557539b489bd858907aab6dd28247f074b3446573801de3150cb932e",
     "https://deno.land/std@0.224.0/version.ts": "f6a28c9704d82d1c095988777e30e6172eb674a6570974a0d27a653be769bbbe",
-    "https://deno.land/x/ghact@1.2.0/mod.ts": "6c273adaaf068349e6bf089bde9276823ec0b0375fde3f991917ad5d11e5fd4c",
-    "https://deno.land/x/ghact@1.2.0/src/GHActServer.ts": "f55cfae357e4255c75319e28e29b94604678c4ba150256da156b1a84f79947dc",
-    "https://deno.land/x/ghact@1.2.0/src/GHActWorker.ts": "449e3fa702b50896aa2f8b5fa6ac58dfa89bea42c067ad6f679fb6b90f97e6db",
-    "https://deno.land/x/ghact@1.2.0/src/GitRepository.ts": "79584cf4c5ebe2523c4bab8a524e272ed0ad7d323f39b5750fecc4ef3e74a4a5",
-    "https://deno.land/x/ghact@1.2.0/src/JobsDataBase.ts": "c7493e7835aa97e1f7a0b9545969e8e6c59afeeadb77f3d20c1c44a3fb8e61a9",
-    "https://deno.land/x/ghact@1.2.0/src/deps.ts": "8fbfb6914db38a918a5bbf3203f0d1cd0f69f0aa45503b089ed87b9e194041f2",
-    "https://deno.land/x/ghact@1.2.0/src/helpers.ts": "4467522e830069480ae6ebbc28b23ae8b98d0f419924ef97e11f82619ee9fdc3",
-    "https://deno.land/x/ghact@1.2.0/src/indexPage.ts": "de6efe66f495f0b8d6e1963c2f844beceeab7dcb47e6b56b468a837b8e6be05a",
-    "https://deno.land/x/ghact@1.2.0/src/log.ts": "44b56d6b94c15a6360023d023e3c1a75d5cee8b1237e0512ca52ebfed69aef2a",
-    "https://deno.land/x/ghact@1.2.1/mod.ts": "6c273adaaf068349e6bf089bde9276823ec0b0375fde3f991917ad5d11e5fd4c",
-    "https://deno.land/x/ghact@1.2.1/src/GHActServer.ts": "f55cfae357e4255c75319e28e29b94604678c4ba150256da156b1a84f79947dc",
-    "https://deno.land/x/ghact@1.2.1/src/GHActWorker.ts": "449e3fa702b50896aa2f8b5fa6ac58dfa89bea42c067ad6f679fb6b90f97e6db",
-    "https://deno.land/x/ghact@1.2.1/src/GitRepository.ts": "e1d99c0ca50eb997cc0e056762385c795fbe6753bee576dbf85349a4848452b5",
-    "https://deno.land/x/ghact@1.2.1/src/JobsDataBase.ts": "c7493e7835aa97e1f7a0b9545969e8e6c59afeeadb77f3d20c1c44a3fb8e61a9",
-    "https://deno.land/x/ghact@1.2.1/src/deps.ts": "8fbfb6914db38a918a5bbf3203f0d1cd0f69f0aa45503b089ed87b9e194041f2",
-    "https://deno.land/x/ghact@1.2.1/src/helpers.ts": "4467522e830069480ae6ebbc28b23ae8b98d0f419924ef97e11f82619ee9fdc3",
-    "https://deno.land/x/ghact@1.2.1/src/indexPage.ts": "de6efe66f495f0b8d6e1963c2f844beceeab7dcb47e6b56b468a837b8e6be05a",
-    "https://deno.land/x/ghact@1.2.1/src/log.ts": "44b56d6b94c15a6360023d023e3c1a75d5cee8b1237e0512ca52ebfed69aef2a",
     "https://deno.land/x/ghact@1.2.4/mod.ts": "6c273adaaf068349e6bf089bde9276823ec0b0375fde3f991917ad5d11e5fd4c",
     "https://deno.land/x/ghact@1.2.4/src/GHActServer.ts": "cc15148596503406c4a9f8243f338e40b99ce7b4c6b3c21768df53306658a529",
     "https://deno.land/x/ghact@1.2.4/src/GHActWorker.ts": "18c273429120b35a8a46c402e751ecc0330e1239cd58e67ba9c08f5441d12d6e",
@@ -200,7 +171,7 @@
     "https://deno.land/x/ghact@1.2.4/src/indexPage.ts": "bda1ef6cc5bc2cd76e15c8887ccb586e851ffca32636f0ffe66f7a6167a67bad",
     "https://deno.land/x/ghact@1.2.4/src/log.ts": "44b56d6b94c15a6360023d023e3c1a75d5cee8b1237e0512ca52ebfed69aef2a",
     "https://esm.sh/iso-639-3@3.0.1": "500bc358cd780f012f774170f3cc8d0d9256ca8ece8c31bdf52284aa05925fa0",
-    "https://esm.sh/linkedom@0.16.8/cached": "aabc1d93a7cff937c729a4cfab6de78c413adeb91fe31b46ae7db9b08147bd8a",
+    "https://esm.sh/linkedom@0.16.8/cached": "f7918c4889d8b5fe37cee65695d1b2ebd9595a30f18596f4fa7505fe579e6a4c",
     "https://esm.sh/v135/boolbase@1.0.0/denonext/boolbase.mjs": "4e3bd67e9b1c5c55094eae98345d0107c6a44ef57bd3d4b9579698fa44722280",
     "https://esm.sh/v135/canvas@2.11.2/denonext/canvas.mjs": "4245b1d01d91b5e807b85e40e98efe28c93634260bd8cb5ac0da71c42098a1a4",
     "https://esm.sh/v135/css-select@5.1.0/denonext/css-select.mjs": "7f4fb680eff2223a68fb5a1efa12e905077d7e6c44ae66c01fc437fe7af58f8b",
@@ -216,6 +187,7 @@
     "https://esm.sh/v135/htmlparser2@9.1.0/denonext/htmlparser2.mjs": "e5186144ca1dd8829bda984fd778500356f241597c67e2c674213c684168e985",
     "https://esm.sh/v135/iso-639-3@3.0.1/denonext/iso-639-3.mjs": "73cd6db43502f5317ba37ef284c1cda1715a13b156f02e5b9fc65c4abf65fd37",
     "https://esm.sh/v135/linkedom@0.16.8/denonext/cached.js": "a1bd1f0accd32264c6260680fe312aba142a9078100edcc792f82c1aad2789d7",
+    "https://esm.sh/v135/linkedom@0.16.8/denonext/linkedom.mjs": "b3151e7f5c113d9727668b44d35103d21f076df761af0936d97c576658b14422",
     "https://esm.sh/v135/nth-check@2.1.1/denonext/nth-check.mjs": "638b4f5a22236cd05c7d1d43e5c6ea719695c4a8bc7beccdf8d97a434bea96dc",
     "https://esm.sh/v135/uhyphen@0.2.0/denonext/uhyphen.mjs": "53c707ad31488ef2f131e2ac9257d91b7b590a777e60288a34b3a04f1e65ad5a"
   }
