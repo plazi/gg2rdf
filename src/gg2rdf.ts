@@ -247,6 +247,8 @@ export function gg2rdf(
       } else {
         const rank: string = taxon.getAttribute("rank");
         const taxonStatus: string = taxon.getAttribute("status") ??
+          taxon.parentNode.querySelector(`taxonomicName ~ taxonomicNameLabel`)
+            ?.innerText ??
           taxon.parentNode.querySelector(`taxonomicNameLabel[rank="${rank}"]`)
             ?.innerText ??
           "ABSENT";
