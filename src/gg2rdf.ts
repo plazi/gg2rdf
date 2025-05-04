@@ -1431,16 +1431,23 @@ export function gg2rdf(
     }
     if (doiID.includes("doi.org")) {
       return escapeDoi(doiID);
+    } else if (!doiID.startsWith("http")) {
+      // prefer ID-DOI over docSource, as the latter is sometimes wrong
+      return escapeDoi(`http://doi.org/${doiID}`);
     }
     const docSource: string | undefined = doc.getAttribute("docSource");
     if (docSource?.includes("doi.org")) {
       return escapeDoi(docSource);
     }
-    return escapeDoi(`http://dx.doi.org/${doiID}`);
+    return escapeDoi(`http://doi.org/${doiID}`);
   }
 
   function escapeDoi(uri: string) {
-    return URI(uri);
+    return URI(
+      uri
+        .replace("https://", "http://")
+        .replace("http://dx.doi.org/", "http://doi.org/"),
+    );
     // TODO: check if this is enough or if more advanced escaping is neccesary
     // <xsl:template name="escapeDoi"> is very complicated, but I dont understand why exactly
   }
