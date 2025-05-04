@@ -247,16 +247,12 @@ export function gg2rdf(
       } else {
         const rank: string = taxon.getAttribute("rank");
         const taxonStatus: string = taxon.getAttribute("status") ??
-          taxon.parentNode.querySelector(
-            `taxonomicName ~ taxonomicNameLabel[rank="${rank}"]`,
-          )?.innerText ?? "ABSENT";
+          taxon.parentNode.querySelector(`taxonomicNameLabel[rank="${rank}"]`)
+            ?.innerText ??
+          "ABSENT";
 
         const is_defining = taxonStatus !== "nomen dubium" &&
-          taxonStatus !== "(nomen dubium)" &&
-          (taxonStatus !== "ABSENT" ||
-            taxon.parentNode.querySelector(
-              `taxonomicName ~ taxonomicNameLabel`,
-            ));
+          taxonStatus !== "(nomen dubium)" && taxonStatus !== "ABSENT";
 
         const taxonConcept = makeTaxonConcept(taxon, is_defining);
 
