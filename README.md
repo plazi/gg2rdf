@@ -71,6 +71,8 @@ To start from the terminal in vscode:
 #### Check for behaviour changes
 use `git diff origin/main HEAD --` from the target-repo inside the container after running some big transformation.
 
+Hint: run `git switch --discard-changes --force-create main --track origin/main` before gg2rdf tries to reclone the branch if there are already changes in the target-repo.
+
 ## Notes
 
 gg2rdf will ouput the follwing messages and put them as comments into the
