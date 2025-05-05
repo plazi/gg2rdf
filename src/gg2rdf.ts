@@ -254,8 +254,8 @@ export function gg2rdf(
           "ABSENT";
 
         const is_defining = !!taxonStatus &&
-          !(taxonStatus in
-            ["nomen dubium", "(nomen dubium)", "ABSENT", "incertae sedis"]);
+          !["nomen dubium", "(nomen dubium)", "ABSENT", "incertae sedis"]
+            .includes(taxonStatus);
 
         const taxonConcept = makeTaxonConcept(taxon, is_defining);
 
