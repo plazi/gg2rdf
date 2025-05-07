@@ -1115,7 +1115,7 @@ export function gg2rdf(
       if (taxonConcept.ok) {
         if (
           !alreadyCited.has(taxonConcept.uri) &&
-          !alreadyCited.has(taxonConcept.tnuri) && !!year
+          (!alreadyCited.has(taxonConcept.tnuri) || !!year)
         ) {
           t.addProperty(`cito:cites`, taxonConcept.uri);
           alreadyCited.add(taxonConcept.uri);
