@@ -233,7 +233,7 @@ export function gg2rdf(
    *
    * replaces <xsl:template match="document"> and <xsl:template match="treatment"> */
   function makeTreatment() {
-    const t = new Subject(URI(`http://treatment.plazi.org/id/${id}`));
+    const t = new Subject(URI(`https://treatment.plazi.org/id/${id}`));
 
     if (treatmentTaxon) {
       const taxon = treatmentTaxon.el;
@@ -772,16 +772,21 @@ export function gg2rdf(
   /** replaces <xsl:template match="materialsCitation[@specimenCode]" mode="subject"> */
   function makeCitedMaterial(c: Element): string {
     const mcId = c.getAttribute("id");
-    const httpUri = c.getAttribute("httpUri");
+    // TreatmentBank still hands out http:// for its own resources; https:// is
+    // the canonical scheme for everything under plazi.org (see issue #33)
+    const httpUri = c.getAttribute("httpUri")?.replace(
+      /^http:\/\/(?=[a-z0-9-]+\.plazi\.org\/)/,
+      "https://",
+    );
     const gbifOccurrenceId = c.getAttribute("ID-GBIF-Occurrence");
     const specimenCode = c.getAttribute("specimenCode");
 
     const uri = mcId
-      ? URI(`http://tb.plazi.org/GgServer/dwcaRecords/${id}.mc.${mcId}`)
+      ? URI(`https://tb.plazi.org/GgServer/dwcaRecords/${id}.mc.${mcId}`)
       : (gbifOccurrenceId
         ? URI(`https://www.gbif.org/occurrence/${gbifOccurrenceId}`)
         : (httpUri ? URI(httpUri) : URI(
-          `http://treatment.plazi.org/id/${id}/${partialURI(specimenCode)}`,
+          `https://treatment.plazi.org/id/${id}/${partialURI(specimenCode)}`,
           "_",
         )));
 
@@ -1247,7 +1252,7 @@ export function gg2rdf(
 
   /** replaces <xsl:call-template name="taxonNameBaseURI"> */
   function taxonNameBaseURI({ kingdom }: { kingdom: string }) {
-    return `http://taxon-name.plazi.org/id/${
+    return `https://taxon-name.plazi.org/id/${
       kingdom ? partialURI(kingdom) : "INVALID"
     }`;
   }
@@ -1374,7 +1379,7 @@ export function gg2rdf(
    *
    * replaces <xsl:call-template name="taxonConceptBaseURI"> */
   function taxonConceptBaseURI({ kingdom }: { kingdom: string }) {
-    return `http://taxon-concept.plazi.org/id/${kingdom}`;
+    return `https://taxon-concept.plazi.org/id/${kingdom}`;
   }
 
   /** returns valid turtle uri
@@ -1423,7 +1428,7 @@ export function gg2rdf(
     const doiID: string | undefined = doc.getAttribute("ID-DOI");
     if (!doiID) {
       return URI(
-        `http://publication.plazi.org/id/${
+        `https://publication.plazi.org/id/${
           partialURI(doc.getAttribute("masterDocId"))
         }`,
       );
