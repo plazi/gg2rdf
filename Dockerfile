@@ -1,8 +1,18 @@
+# Jena (riot, used by src/validate_everything.bash) needs a Java runtime. It is
+# taken from the Temurin image rather than from the distribution under the Deno
+# image, whose OpenJDK packages come and go with its Debian release.
+FROM eclipse-temurin:21-jre AS jre
+
 FROM denoland/deno:2.0.3
+
+COPY --from=jre /opt/java/openjdk /opt/java/openjdk
+ENV JAVA_HOME=/opt/java/openjdk
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
+RUN java -version
 
 # Install cron
 RUN DEBIAN_FRONTEND=noninteractive apt update
-RUN DEBIAN_FRONTEND=noninteractive apt install -y git openjdk-17-jre-headless
+RUN DEBIAN_FRONTEND=noninteractive apt install -y git
 RUN git config --system http.postBuffer 1048576000
 RUN git config --system --add safe.directory /workspaces/gg2rdf
 
