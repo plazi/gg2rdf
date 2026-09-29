@@ -25,13 +25,13 @@ This webserver also exposes the follwing paths:
 
 Every IRI gg2rdf mints for a Plazi resource uses the `https://` scheme:
 
-| Resource                        | IRI                                                     |
-| ------------------------------- | ------------------------------------------------------- |
-| treatment                       | `https://treatment.plazi.org/id/<treatment-id>`         |
-| material citation               | `https://tb.plazi.org/GgServer/dwcaRecords/<id>.mc.<n>` |
-| taxon name                      | `https://taxon-name.plazi.org/id/<kingdom>/<name>`      |
-| taxon concept                   | `https://taxon-concept.plazi.org/id/<kingdom>/<name>`   |
-| publication without a DOI       | `https://publication.plazi.org/id/<masterDocId>`        |
+| Resource                  | IRI                                                     |
+| ------------------------- | ------------------------------------------------------- |
+| treatment                 | `https://treatment.plazi.org/id/<treatment-id>`         |
+| material citation         | `https://tb.plazi.org/GgServer/dwcaRecords/<id>.mc.<n>` |
+| taxon name                | `https://taxon-name.plazi.org/id/<kingdom>/<name>`      |
+| taxon concept             | `https://taxon-concept.plazi.org/id/<kingdom>/<name>`   |
+| publication without a DOI | `https://publication.plazi.org/id/<masterDocId>`        |
 
 `https://` is canonical: it is the scheme that resolves on every Plazi host, and
 it is the scheme the loaders (`turtle-hook`, `turtle-hook-nq`) name their graphs
@@ -40,15 +40,15 @@ attribute TreatmentBank supplies with `http://` is rewritten to `https://` when
 it points at a Plazi host; identifiers of other publishers (DOIs, GBIF) are
 taken as they are.
 
-Vocabulary namespaces are a different matter and stay as they are —
-`trt:` is `http://plazi.org/vocab/treatment#`, alongside `dwc:`, `cito:` and
-`fabio:`, which are `http://` by convention. Changing a vocabulary namespace
-breaks every consumer's prefix declarations and belongs to a redesign of the
-ontologies, not to this pipeline.
+Vocabulary namespaces are a different matter and stay as they are — `trt:` is
+`http://plazi.org/vocab/treatment#`, alongside `dwc:`, `cito:` and `fabio:`,
+which are `http://` by convention. Changing a vocabulary namespace breaks every
+consumer's prefix declarations and belongs to a redesign of the ontologies, not
+to this pipeline.
 
-Output produced before this change (plazi/gg2rdf#33) carries `http://`
-subjects. Rewriting a store that holds such data in place, without replaying
-every file, is described in turtle-hook's README.
+Output produced before this change (plazi/gg2rdf#33) carries `http://` subjects.
+Rewriting a store that holds such data in place, without replaying every file,
+is described in turtle-hook's README.
 
 ## Usage
 
