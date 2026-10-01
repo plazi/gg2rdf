@@ -56,7 +56,7 @@ const saveStatusToDisk = (
   );
 };
 
-const worker = new GHActWorker(self, config, async (job: Job, log) => {
+const worker = new GHActWorker(self, async (job: Job, log) => {
   log("Starting transformation\n" + JSON.stringify(job, undefined, 2));
 
   let modified: string[] = [];
@@ -79,7 +79,7 @@ const worker = new GHActWorker(self, config, async (job: Job, log) => {
     //ghact should take care of this
     //updateLocalData("source", log); // also done by getModifiedAfter
   } else if (job.from) {
-    const files = await worker.gitRepository.getModifiedAfter(
+    const files = await worker.gitRepository!.getModifiedAfter(
       job.from,
       job.till,
       log,
@@ -108,7 +108,7 @@ const worker = new GHActWorker(self, config, async (job: Job, log) => {
   for (const file of modified) {
     if (
       file.endsWith(".xml") &&
-      existsSync(`${worker.gitRepository.directory}/${file}`)
+      existsSync(`${worker.gitRepository!.directory}/${file}`)
     ) {
       Deno.mkdirSync(
         config.workDir + "/tmpttl/" + file.slice(0, file.lastIndexOf("/")),
@@ -118,7 +118,7 @@ const worker = new GHActWorker(self, config, async (job: Job, log) => {
       );
       try {
         const status = gg2rdf(
-          `${worker.gitRepository.directory}/${file}`,
+          `${worker.gitRepository!.directory}/${file}`,
           `${config.workDir}/tmpttl/${file.slice(0, -4)}.ttl`,
           log,
         );
@@ -139,7 +139,7 @@ const worker = new GHActWorker(self, config, async (job: Job, log) => {
         }
       } catch (error) {
         log("gg2rdf failed catastrophically:");
-        log(error);
+        log(String(error));
         saveStatusToDisk(statusMap);
         throw new Error("gg2rdf failed catastrophically");
       }
