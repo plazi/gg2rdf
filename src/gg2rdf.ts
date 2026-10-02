@@ -802,9 +802,12 @@ export function gg2rdf(
     const s = prev || new Subject(uri);
     if (!prev) citedMaterials.push(s);
 
-    const addProp = (xml: string, rdf: string) => {
-      if (c.hasAttribute(xml)) {
-        s.addProperty(rdf, STR(c.getAttribute(xml)));
+    // the first of the given attributes that is present wins; later ones are
+    // legacy names still found in older TreatmentBank markup
+    const addProp = (xml: string | string[], rdf: string) => {
+      const attr = [xml].flat().find((a) => c.hasAttribute(a));
+      if (attr) {
+        s.addProperty(rdf, STR(c.getAttribute(attr)));
       }
     };
 
@@ -814,8 +817,9 @@ export function gg2rdf(
     addProp("latitude", "dwc:verbatimLatitude");
     addProp("longitude", "dwc:verbatimLongitude");
     addProp("elevation", "dwc:verbatimElevation");
-    addProp("collectingCountry", "dwc:countryCode");
-    addProp("collectingRegion", "dwc:stateProvince");
+    // TreatmentBank marks up a country name (not an ISO code), hence dwc:country
+    addProp(["country", "collectingCountry"], "dwc:country");
+    addProp(["stateProvince", "collectingRegion"], "dwc:stateProvince");
     addProp("collectingMunicipality", "dwc:municipality");
     addProp("collectingCounty", "dwc:county");
     addProp("location", "dwc:locality");
