@@ -821,7 +821,7 @@ export function gg2rdf(
     addProp(["country", "collectingCountry"], "dwc:country");
     addProp(["stateProvince", "collectingRegion"], "dwc:stateProvince");
     addProp("collectingMunicipality", "dwc:municipality");
-    addProp("collectingCounty", "dwc:county");
+    addProp(["county", "collectingCounty"], "dwc:county");
     addProp("location", "dwc:locality");
     addProp("locationDeviation", "dwc:verbatimLocality");
     addProp("collectorName", "dwc:recordedBy");
