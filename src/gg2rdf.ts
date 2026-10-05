@@ -29,6 +29,10 @@ class Subject {
   }
 }
 
+/** identifiers.org's pattern for the insdc namespace (GenBank/ENA/DDBJ) */
+const INSDC_ACCESSION =
+  /^([A-Z]\d{5}|[A-Z]{2}\d{6}|[A-Z]{4,6}\d{8,10}|[A-J][A-Z]{2}\d{5})(\.\d+)?$/;
+
 if (import.meta.main) {
   // we are running as a standalone program
   const flags = parseArgs(Deno.args, {
@@ -830,6 +834,19 @@ export function gg2rdf(
     addProp("ID-GBIF-Occurrence", "trt:gbifOccurrenceId");
     addProp("ID-GBIF-Specimen", "trt:gbifSpecimenId");
 
+    for (const accession of citedAccessions(c)) {
+      s.addProperty("dwc:associatedSequences", STR(accession));
+      // link out only where the value is an INSDC accession; the httpUri
+      // TreatmentBank stores is not reused, as it is inconsistent (ENA vs NCBI)
+      // and sometimes points at a collection or a different record
+      if (INSDC_ACCESSION.test(accession)) {
+        s.addProperty(
+          "rdfs:seeAlso",
+          URI(`https://identifiers.org/insdc:${accession}`),
+        );
+      }
+    }
+
     if (httpUri) {
       s.addProperty("trt:httpUri", URI(httpUri));
     }
@@ -1473,6 +1490,30 @@ export function gg2rdf(
   function STR(s: string) {
     if (!s) return `""`;
     return JSON.stringify(String(s));
+  }
+
+  /** the sequence accessions cited by a material citation: its
+   * accessionNumber attribute and any nested accessionNumber elements, with
+   * lists ("MK340682 and MK340683", "MK340682, MK340683") split up */
+  function citedAccessions(c: Element): string[] {
+    const values = [
+      c.getAttribute("accessionNumber") ?? "",
+      ...c.querySelectorAll("accessionNumber").map((e: Element) =>
+        e.textContent ?? ""
+      ),
+    ];
+    return [
+      ...new Set(
+        values.flatMap((v) => v.split(/\s*(?:[,;&]|\band\b)\s*/))
+          .map(normalizeSpace)
+          .filter((v) => !!v)
+          // "MK 340681" in running text is the INSDC accession MK340681
+          .map((v) => {
+            const compact = v.replaceAll(" ", "");
+            return INSDC_ACCESSION.test(compact) ? compact : v;
+          }),
+      ),
+    ];
   }
 
   /** removes reserved uri characters from `s`, to be later passed to URI */
