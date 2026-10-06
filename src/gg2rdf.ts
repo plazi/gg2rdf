@@ -29,9 +29,11 @@ class Subject {
   }
 }
 
-/** identifiers.org's pattern for the insdc namespace (GenBank/ENA/DDBJ) */
+/** INSDC accessions (GenBank/ENA/DDBJ), as identifiers.org's insdc namespace
+ * lists them: each letter count only with its own digit count (4/8, 5/9, 6/10),
+ * so that malformed values do not get a link */
 const INSDC_ACCESSION =
-  /^([A-Z]\d{5}|[A-Z]{2}\d{6}|[A-Z]{4,6}\d{8,10}|[A-J][A-Z]{2}\d{5})(\.\d+)?$/;
+  /^([A-Z]\d{5}|[A-Z]{2}\d{6}|[A-Z]{4}\d{8}|[A-Z]{5}\d{9}|[A-Z]{6}\d{10}|[A-J][A-Z]{2}\d{5})(\.\d+)?$/;
 
 if (import.meta.main) {
   // we are running as a standalone program
@@ -71,6 +73,7 @@ export function gg2rdf(
 @prefix cito: <http://purl.org/spar/cito/> .
 @prefix dc: <http://purl.org/dc/elements/1.1/> .
 @prefix dwc: <http://rs.tdwg.org/dwc/terms/> .
+@prefix dwciri: <http://rs.tdwg.org/dwc/iri/> .
 @prefix dwcFP: <http://filteredpush.org/ontologies/oa/dwcFP#> .
 @prefix fabio: <http://purl.org/spar/fabio/> .
 @prefix trt: <http://plazi.org/vocab/treatment#> .`);
@@ -838,10 +841,11 @@ export function gg2rdf(
       s.addProperty("dwc:associatedSequences", STR(accession));
       // link out only where the value is an INSDC accession; the httpUri
       // TreatmentBank stores is not reused, as it is inconsistent (ENA vs NCBI)
-      // and sometimes points at a collection or a different record
+      // and sometimes points at a collection or a different record.
+      // dwciri:associatedSequences is not (yet) a ratified Darwin Core term
       if (INSDC_ACCESSION.test(accession)) {
         s.addProperty(
-          "rdfs:seeAlso",
+          "dwciri:associatedSequences",
           URI(`https://identifiers.org/insdc:${accession}`),
         );
       }
