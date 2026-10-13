@@ -6,7 +6,7 @@ export {
   type Job,
 } from "https://deno.land/x/ghact@1.4.2/mod.ts";
 
-export { existsSync } from "https://deno.land/std@0.224.0/fs/mod.ts";
+export { existsSync, walk } from "https://deno.land/std@0.224.0/fs/mod.ts";
 
 // used by gg2rdf.ts:
 export { parseArgs } from "https://deno.land/std@0.224.0/cli/parse_args.ts";

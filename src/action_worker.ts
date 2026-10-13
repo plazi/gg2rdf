@@ -4,7 +4,13 @@
 * The jobs are accepted as messages and stored on disk, when the worker is started uncompleted jobs are picked up and exxecuted.
 
 */
-import { existsSync, GHActWorker, GitRepository, type Job } from "./deps.ts";
+import {
+  existsSync,
+  GHActWorker,
+  GitRepository,
+  type Job,
+  walk,
+} from "./deps.ts";
 import { config } from "../config/config.ts";
 import { gg2rdf, Status } from "./gg2rdf.ts";
 
@@ -54,6 +60,56 @@ const saveStatusToDisk = (
       }x, 2=has_errors ${counts[2]}x, 3=failed ${counts[3]}x\n`,
     ),
   );
+};
+
+/** A full update is split into blocks with ids like "<date> full update: 007 of 304".
+ * Returns true for the last block, after which every existing xml file has been transformed. */
+const isLastFullUpdateBlock = (job: Job): boolean => {
+  const match = job.id.match(/ full update: (\d+) of (\d+)$/);
+  return !!match && match[1] === match[2];
+};
+
+/** Above this share of all ttl files, orphan pruning is refused as a likely broken source checkout. */
+const MAX_ORPHAN_SHARE = 0.05;
+
+/**
+ * Removes ttl files in the target repository whose xml file no longer exists in the source repository.
+ * Incremental jobs remove the ttl of a deleted xml, but a deletion they never saw (e.g. while the service was down)
+ * leaves an orphan behind that a full update, which only transforms existing xml files, does not touch either.
+ */
+const pruneOrphans = async (
+  sourceDir: string,
+  targetDir: string,
+  log: (msg: string) => void,
+) => {
+  const orphans: string[] = [];
+  let total = 0;
+  for await (
+    const entry of walk(targetDir, {
+      exts: [".ttl"],
+      includeDirs: false,
+      skip: [/\/\.git\//],
+    })
+  ) {
+    total++;
+    const relative = entry.path.slice(targetDir.length + 1);
+    if (!existsSync(`${sourceDir}/${relative.slice(0, -4)}.xml`)) {
+      orphans.push(entry.path);
+    }
+  }
+  log(`Found ${orphans.length} orphaned ttl files of ${total}`);
+  if (orphans.length > total * MAX_ORPHAN_SHARE) {
+    log(
+      `Not pruning: more than ${
+        MAX_ORPHAN_SHARE * 100
+      }% of ttl files would be removed, the source checkout may be incomplete`,
+    );
+    return;
+  }
+  for (const file of orphans) {
+    log(`Removing orphan ${file.slice(targetDir.length + 1)}`);
+    Deno.removeSync(file);
+  }
 };
 
 const worker = new GHActWorker(self, async (job: Job, log) => {
@@ -187,6 +243,14 @@ const worker = new GHActWorker(self, async (job: Job, log) => {
         );
       }
     }
+  }
+
+  if (isLastFullUpdateBlock(job)) {
+    await pruneOrphans(
+      worker.gitRepository!.directory,
+      targetRepo.directory,
+      log,
+    );
   }
 
   saveStatusToDisk(statusMap);
