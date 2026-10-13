@@ -7,6 +7,7 @@
 import { existsSync, GHActWorker, GitRepository, type Job } from "./deps.ts";
 import { config } from "../config/config.ts";
 import { gg2rdf, Status } from "./gg2rdf.ts";
+import { isLastFullUpdateBlock, pruneOrphans } from "./prune.ts";
 
 const GHTOKEN = Deno.env.get("GHTOKEN");
 
@@ -54,6 +55,12 @@ const saveStatusToDisk = (
       }x, 2=has_errors ${counts[2]}x, 3=failed ${counts[3]}x\n`,
     ),
   );
+};
+
+/** Drops an xml file from the status map, whichever way its path was stored (see saveStatusToDisk). */
+const forgetStatus = (statusMap: Map<string, Status>, file: string) => {
+  statusMap.delete(file);
+  statusMap.delete(`/${file}`);
 };
 
 const worker = new GHActWorker(self, async (job: Job, log) => {
@@ -178,6 +185,7 @@ const worker = new GHActWorker(self, async (job: Job, log) => {
 
   for (const file of removed) {
     if (file.endsWith(".xml")) {
+      forgetStatus(statusMap, file);
       const ttlFile = `${targetRepo.directory}/${file.slice(0, -4)}.ttl`;
       try {
         Deno.removeSync(ttlFile);
@@ -191,6 +199,29 @@ const worker = new GHActWorker(self, async (job: Job, log) => {
 
   saveStatusToDisk(statusMap);
   await targetRepo.commit(job, message, log);
+
+  if (isLastFullUpdateBlock(job.id)) {
+    // Own commit: the removals stay apart from the block's transformations, easy to review and to revert.
+    const pruned = await pruneOrphans(
+      worker.gitRepository!.directory,
+      targetRepo.directory,
+      log,
+    );
+    if (pruned.length > 0) {
+      for (const file of pruned) {
+        forgetStatus(statusMap, `${file.slice(0, -4)}.xml`);
+      }
+      saveStatusToDisk(statusMap);
+      await targetRepo.commit(
+        job,
+        `GG2RDF prune ${pruned.length} orphaned ttl files (${config.sourceRepository} full update ${
+          job.id.split(" ")[0]
+        })`,
+        log,
+      );
+    }
+  }
+
   await targetRepo.push(log);
   log("git push successful");
   log("Completed transformation successfully");
