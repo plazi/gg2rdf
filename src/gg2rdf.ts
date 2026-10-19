@@ -76,6 +76,7 @@ export function gg2rdf(
 @prefix dwciri: <http://rs.tdwg.org/dwc/iri/> .
 @prefix dwcFP: <http://filteredpush.org/ontologies/oa/dwcFP#> .
 @prefix fabio: <http://purl.org/spar/fabio/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix trt: <http://plazi.org/vocab/treatment#> .`);
 
   // this is the <document> surrounding everything. doc != document
@@ -93,6 +94,7 @@ export function gg2rdf(
   const taxonNames: Subject[] = [];
   const figures: Subject[] = [];
   const citedMaterials: Subject[] = [];
+  const sequences: Subject[] = [];
 
   const alreadyCited: Set<string> = new Set();
 
@@ -108,6 +110,7 @@ export function gg2rdf(
     taxonNames.forEach(outputSubject);
     figures.forEach(outputSubject);
     citedMaterials.forEach(outputSubject);
+    sequences.forEach(outputSubject);
   } catch (error) {
     log(error as string);
     output(
@@ -844,10 +847,18 @@ export function gg2rdf(
       // and sometimes points at a collection or a different record.
       // dwciri:associatedSequences is not (yet) a ratified Darwin Core term
       if (INSDC_ACCESSION.test(accession)) {
-        s.addProperty(
-          "dwciri:associatedSequences",
-          URI(`https://identifiers.org/insdc:${accession}`),
-        );
+        const seqUri = URI(`https://identifiers.org/insdc:${accession}`);
+        s.addProperty("dwciri:associatedSequences", seqUri);
+        // also the http slash form, which is in wider use in the RDF world
+        // (e.g. UniProt), so data using either form joins up
+        if (!sequences.some((t) => t.uri === seqUri)) {
+          const seq = new Subject(seqUri);
+          seq.addProperty(
+            "owl:sameAs",
+            URI(`http://identifiers.org/insdc/${accession}`),
+          );
+          sequences.push(seq);
+        }
       }
     }
 
