@@ -29,6 +29,12 @@ class Subject {
   }
 }
 
+/** INSDC accessions (GenBank/ENA/DDBJ), as identifiers.org's insdc namespace
+ * lists them: each letter count only with its own digit count (4/8, 5/9, 6/10),
+ * so that malformed values do not get a link */
+const INSDC_ACCESSION =
+  /^([A-Z]\d{5}|[A-Z]{2}\d{6}|[A-Z]{4}\d{8}|[A-Z]{5}\d{9}|[A-Z]{6}\d{10}|[A-J][A-Z]{2}\d{5})(\.\d+)?$/;
+
 if (import.meta.main) {
   // we are running as a standalone program
   const flags = parseArgs(Deno.args, {
@@ -67,8 +73,10 @@ export function gg2rdf(
 @prefix cito: <http://purl.org/spar/cito/> .
 @prefix dc: <http://purl.org/dc/elements/1.1/> .
 @prefix dwc: <http://rs.tdwg.org/dwc/terms/> .
+@prefix dwciri: <http://rs.tdwg.org/dwc/iri/> .
 @prefix dwcFP: <http://filteredpush.org/ontologies/oa/dwcFP#> .
 @prefix fabio: <http://purl.org/spar/fabio/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix trt: <http://plazi.org/vocab/treatment#> .`);
 
   // this is the <document> surrounding everything. doc != document
@@ -86,6 +94,7 @@ export function gg2rdf(
   const taxonNames: Subject[] = [];
   const figures: Subject[] = [];
   const citedMaterials: Subject[] = [];
+  const sequences: Subject[] = [];
 
   const alreadyCited: Set<string> = new Set();
 
@@ -101,6 +110,7 @@ export function gg2rdf(
     taxonNames.forEach(outputSubject);
     figures.forEach(outputSubject);
     citedMaterials.forEach(outputSubject);
+    sequences.forEach(outputSubject);
   } catch (error) {
     log(error as string);
     output(
@@ -830,6 +840,28 @@ export function gg2rdf(
     addProp("ID-GBIF-Occurrence", "trt:gbifOccurrenceId");
     addProp("ID-GBIF-Specimen", "trt:gbifSpecimenId");
 
+    for (const accession of citedAccessions(c)) {
+      s.addProperty("dwc:associatedSequences", STR(accession));
+      // link out only where the value is an INSDC accession; the httpUri
+      // TreatmentBank stores is not reused, as it is inconsistent (ENA vs NCBI)
+      // and sometimes points at a collection or a different record.
+      // dwciri:associatedSequences is not (yet) a ratified Darwin Core term
+      if (INSDC_ACCESSION.test(accession)) {
+        const seqUri = URI(`https://identifiers.org/insdc:${accession}`);
+        s.addProperty("dwciri:associatedSequences", seqUri);
+        // also the http slash form, which is in wider use in the RDF world
+        // (e.g. UniProt), so data using either form joins up
+        if (!sequences.some((t) => t.uri === seqUri)) {
+          const seq = new Subject(seqUri);
+          seq.addProperty(
+            "owl:sameAs",
+            URI(`http://identifiers.org/insdc/${accession}`),
+          );
+          sequences.push(seq);
+        }
+      }
+    }
+
     if (httpUri) {
       s.addProperty("trt:httpUri", URI(httpUri));
     }
@@ -1473,6 +1505,30 @@ export function gg2rdf(
   function STR(s: string) {
     if (!s) return `""`;
     return JSON.stringify(String(s));
+  }
+
+  /** the sequence accessions cited by a material citation: its
+   * accessionNumber attribute and any nested accessionNumber elements, with
+   * lists ("MK340682 and MK340683", "MK340682, MK340683") split up */
+  function citedAccessions(c: Element): string[] {
+    const values = [
+      c.getAttribute("accessionNumber") ?? "",
+      ...c.querySelectorAll("accessionNumber").map((e: Element) =>
+        e.textContent ?? ""
+      ),
+    ];
+    return [
+      ...new Set(
+        values.flatMap((v) => v.split(/\s*(?:[,;&]|\band\b)\s*/))
+          .map(normalizeSpace)
+          .filter((v) => !!v)
+          // "MK 340681" in running text is the INSDC accession MK340681
+          .map((v) => {
+            const compact = v.replaceAll(" ", "");
+            return INSDC_ACCESSION.test(compact) ? compact : v;
+          }),
+      ),
+    ];
   }
 
   /** removes reserved uri characters from `s`, to be later passed to URI */
