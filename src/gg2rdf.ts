@@ -492,10 +492,7 @@ export function gg2rdf(
       return { ok: false, tnuri };
     }
 
-    const year = authority.match(/[0-9]+/)?.[0] || "";
-    const cTaxonAuthority = `_${authorityNameForURI(authority)}_${
-      partialURI(year)
-    }`;
+    const cTaxonAuthority = taxonConceptAuthorityForURI(authority);
 
     const uri = taxonConceptURI({
       taxonName: cTaxon,
@@ -1106,9 +1103,7 @@ export function gg2rdf(
 
     const year = authority.match(/[0-9]+/)?.[0] || "";
     if (authority !== "INVALID") {
-      cTaxonAuthority = `_${authorityNameForURI(authority)}_${
-        partialURI(year)
-      }`;
+      cTaxonAuthority = taxonConceptAuthorityForURI(authority);
     }
 
     const taxonRelation = getTaxonRelation(cTaxon);
@@ -1270,6 +1265,17 @@ export function gg2rdf(
     }
     if (t.getAttribute("kingdom")) return RANKS.kingdom;
     return RANKS.INVALID;
+  }
+
+  /** returns the authority part of a taxon-concept uri, e.g. `_Linnaeus_1758`.
+   *
+   * A parenthesized authority keeps its parentheses, balanced around name and
+   * year: `(Johannsen, 1912)` → `_(Johannsen_1912)`. Treatments citing the same
+   * taxon with and without parentheses thus still get distinct concepts. */
+  function taxonConceptAuthorityForURI(authority: string) {
+    const name = authorityNameForURI(authority);
+    const year = partialURI(authority.match(/[0-9]+/)?.[0] || "");
+    return `_${name}_${year}${name.startsWith("(") ? ")" : ""}`;
   }
 
   /** replaces <xsl:call-template name="authorityNameForURI"> */
